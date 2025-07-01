@@ -265,4 +265,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Account Service](src/services/Account/README.md)
 - [Transaction Service](src/services/Transaction/README.md)
 - [Movement Service](src/services/Movement/README.md)
-  Bank System Microservices developed in .NET
