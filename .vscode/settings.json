@@ -1,0 +1,12 @@
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "./docs/dotnet-development-guidelines.md"
+    }
+  ],
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": "./github/git-commit-messages-instructions.md"
+    }
+  ]
+}
