@@ -1,7 +1,6 @@
 ﻿using Asp.Versioning;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.RateLimiting;
+using Security.Api.Filters;
 using Security.Api.Middleware;
 using Security.Api.Services;
 using Security.Infrastructure.Data;
@@ -91,38 +90,5 @@ public static class DependencyInjection
             .AddDbContextCheck<SecurityDbContext>("database");
 
         return services;
-    }
-}
-
-/// <summary>
-/// Global exception filter for consistent error handling
-/// </summary>
-public class GlobalExceptionFilter : IExceptionFilter
-{
-    private readonly ILogger<GlobalExceptionFilter> _logger;
-
-    public GlobalExceptionFilter(ILogger<GlobalExceptionFilter> logger)
-    {
-        _logger = logger;
-    }
-
-    public void OnException(ExceptionContext context)
-    {
-        _logger.LogError(context.Exception, "Unhandled exception occurred");
-
-        var problemDetails = new ProblemDetails
-        {
-            Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-            Title = "An error occurred while processing your request",
-            Status = StatusCodes.Status500InternalServerError,
-            Instance = context.HttpContext.Request.Path
-        };
-
-        context.Result = new ObjectResult(problemDetails)
-        {
-            StatusCode = StatusCodes.Status500InternalServerError
-        };
-
-        context.ExceptionHandled = true;
     }
 }

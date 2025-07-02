@@ -3,15 +3,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Entities;
 using Security.Infrastructure.Data;
 using Security.Infrastructure.Services;
+using Security.Infrastructure.Validators;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using Microsoft.Extensions.Logging;
 
 namespace Security.Infrastructure;
 
@@ -147,64 +148,5 @@ public static class DependencyInjection
         // Remove the old IUserService registration as we're using MediatR now
 
         return services;
-    }
-}
-
-/// <summary>
-/// Custom password validator with enhanced security requirements
-/// </summary>
-public class CustomPasswordValidator : IPasswordValidator<ApplicationUser>
-{
-    public Task<IdentityResult> ValidateAsync(UserManager<ApplicationUser> manager, ApplicationUser user, string? password)
-    {
-        var errors = new List<IdentityError>();
-
-        // Check if password is null or empty
-        if (string.IsNullOrEmpty(password))
-        {
-            errors.Add(new IdentityError
-            {
-                Code = "PasswordRequired",
-                Description = "Password is required."
-            });
-            return Task.FromResult(IdentityResult.Failed(errors.ToArray()));
-        }
-
-        // Check for common passwords
-        var commonPasswords = new[] { "password", "123456", "qwerty", "admin", "letmein" };
-        if (commonPasswords.Any(p => string.Equals(p, password, StringComparison.OrdinalIgnoreCase)))
-        {
-            errors.Add(new IdentityError
-            {
-                Code = "CommonPassword",
-                Description = "Password is too common and easily guessable."
-            });
-        }
-
-        // Check for username in password
-        if (!string.IsNullOrEmpty(user.UserName) && 
-            password.Contains(user.UserName, StringComparison.OrdinalIgnoreCase))
-        {
-            errors.Add(new IdentityError
-            {
-                Code = "PasswordContainsUserName",
-                Description = "Password cannot contain the username."
-            });
-        }
-
-        // Check for email in password
-        if (!string.IsNullOrEmpty(user.Email) && 
-            password.Contains(user.Email.Split('@')[0], StringComparison.OrdinalIgnoreCase))
-        {
-            errors.Add(new IdentityError
-            {
-                Code = "PasswordContainsEmail",
-                Description = "Password cannot contain parts of the email address."
-            });
-        }
-
-        return Task.FromResult(errors.Count == 0 
-            ? IdentityResult.Success 
-            : IdentityResult.Failed(errors.ToArray()));
     }
 }

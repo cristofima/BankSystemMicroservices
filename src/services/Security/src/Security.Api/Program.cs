@@ -16,21 +16,8 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline with proper security
 
-// Security headers middleware
-app.Use(async (context, next) =>
-{
-    // Security headers
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["X-Frame-Options"] = "DENY";
-    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
-    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';";
-    
-    // Remove server header
-    context.Response.Headers.Remove("Server");
-    
-    await next();
-});
+// Security headers middleware (conditional based on path)
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 // Development-specific middleware
 if (app.Environment.IsDevelopment())
@@ -38,9 +25,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
-        options.WithTitle("Security API")
-               .WithTheme(ScalarTheme.Moon)
-               .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.WithTitle("Security API");
     });
 }
 else
