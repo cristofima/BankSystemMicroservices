@@ -1,0 +1,1 @@
+﻿public record ForgotPasswordDto(string Email);
