@@ -13,6 +13,7 @@ The documentation is organized into modular, focused guideline files that serve 
 - **[Code Generation](code-generation.md)** - Comprehensive .NET 9 code generation standards
 - **[API Design](api-design.md)** - RESTful API design best practices
 - **[Configuration Management](configuration-management.md)** - IOptions pattern and configuration best practices
+- **[Entity Framework](entity-framework.md)** - Entity Framework Core migrations and best practices
 
 ### Code Review Guidelines
 
@@ -142,6 +143,41 @@ Microservices communicate through domain events:
 - **Projection**: Select only needed fields
 - **AsNoTracking()**: For read-only queries
 - **Connection Pooling**: Optimize database connections
+
+#### Entity Framework Migrations
+
+**Package Configuration**: The `Microsoft.EntityFrameworkCore.Design` package should be placed only in the **API/Startup project** to avoid conflicts.
+
+**Migration Commands** (run from the service root directory):
+
+```powershell
+# Create a new migration
+dotnet ef migrations add MigrationName --project Security.Infrastructure --startup-project Security.Api
+
+# Apply migrations to database
+dotnet ef database update --project Security.Infrastructure --startup-project Security.Api
+
+# List all migrations
+dotnet ef migrations list --project Security.Infrastructure --startup-project Security.Api
+
+# Remove last migration (if not applied to database)
+dotnet ef migrations remove --project Security.Infrastructure --startup-project Security.Api
+
+# Generate SQL script for migrations
+dotnet ef migrations script --project Security.Infrastructure --startup-project Security.Api
+
+# Apply migrations for specific environment
+dotnet ef database update --project Security.Infrastructure --startup-project Security.Api --environment Production
+```
+
+**Best Practices**:
+
+- Always specify both `--project` (where migrations are stored) and `--startup-project` (where DbContext is configured)
+- Use descriptive migration names (e.g., `AddUserRoles`, `UpdateTransactionSchema`)
+- Review generated migration code before applying to database
+- Keep migrations small and focused on single changes
+- Test migrations in development environment first
+- Generate SQL scripts for production deployments
 
 ### Caching Strategy
 

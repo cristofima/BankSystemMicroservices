@@ -483,6 +483,10 @@ spec:
 
 ### Database Migrations
 
+**Package Configuration**: The `Microsoft.EntityFrameworkCore.Design` package is configured only in the **Security.Api** project to avoid conflicts.
+
+**All commands should be run from the `src/services/Security/src/` directory.**
+
 ```bash
 # Add new migration
 dotnet ef migrations add <MigrationName> --project Security.Infrastructure --startup-project Security.Api
@@ -490,9 +494,20 @@ dotnet ef migrations add <MigrationName> --project Security.Infrastructure --sta
 # Update database
 dotnet ef database update --project Security.Infrastructure --startup-project Security.Api
 
-# Remove last migration
+# List all migrations
+dotnet ef migrations list --project Security.Infrastructure --startup-project Security.Api
+
+# Remove last migration (only if not applied to database)
 dotnet ef migrations remove --project Security.Infrastructure --startup-project Security.Api
+
+# Generate SQL script for production deployment
+dotnet ef migrations script --project Security.Infrastructure --startup-project Security.Api --output migration-script.sql
+
+# Apply specific migration
+dotnet ef database update <MigrationName> --project Security.Infrastructure --startup-project Security.Api
 ```
+
+For more detailed Entity Framework documentation, see [Entity Framework Guidelines](../../docs/guidelines/entity-framework.md).
 
 ## 🤝 Contributing
 

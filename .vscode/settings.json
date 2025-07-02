@@ -8,6 +8,9 @@
     },
     {
       "file": "./docs/guidelines/configuration-management.md"
+    },
+    {
+      "file": "./docs/guidelines/entity-framework.md"
     }
   ],
   "github.copilot.chat.codeReview.instructions": [
