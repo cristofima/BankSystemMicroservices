@@ -1,0 +1,40 @@
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "./docs/guidelines/code-generation.md"
+    },
+    {
+      "file": "./docs/guidelines/api-design.md"
+    },
+    {
+      "file": "./docs/guidelines/configuration-management.md"
+    },
+    {
+      "file": "./docs/guidelines/entity-framework.md"
+    }
+  ],
+  "github.copilot.chat.codeReview.instructions": [
+    {
+      "file": "./docs/guidelines/code-review.md"
+    },
+    {
+      "file": "./docs/guidelines/security-review.md"
+    },
+    {
+      "file": "./docs/guidelines/performance-review.md"
+    }
+  ],
+  "github.copilot.chat.unitTest.instructions": [
+    {
+      "file": "./docs/guidelines/unit-testing.md"
+    },
+    {
+      "file": "./docs/guidelines/integration-testing.md"
+    }
+  ],
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": "./github/git-commit-messages-instructions.md"
+    }
+  ]
+}
