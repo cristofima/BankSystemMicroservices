@@ -4,6 +4,20 @@
 
 This document provides comprehensive guidelines for generating high-quality .NET 9 code in the Bank System Microservices project. Follow these guidelines when creating controllers, services, repositories, entities, and other components.
 
+**Important**: All code generation should follow the [Clean Code principles](./clean-code.md) outlined in our Clean Code guidelines. This document complements those principles with specific .NET implementation patterns.
+
+## Prerequisites
+
+Before generating any code, ensure you understand and apply:
+
+1. **Clean Code Fundamentals** - Code should be readable, focused, and well-tested
+2. **Meaningful Names** - Use intention-revealing, searchable names
+3. **Small Functions** - Functions should be small and do one thing
+4. **Error Handling** - Use Result patterns and appropriate exception handling
+5. **SOLID Principles** - Especially Single Responsibility and Dependency Inversion
+
+Refer to [Clean Code Guidelines](./clean-code.md) for detailed principles and examples.
+
 ## General Code Quality Standards
 
 ### Naming Conventions
