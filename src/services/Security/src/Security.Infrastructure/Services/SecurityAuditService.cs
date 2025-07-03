@@ -17,8 +17,8 @@ public class SecurityAuditService : ISecurityAuditService
         ILogger<SecurityAuditService> logger,
         IOptions<SecurityOptions> securityOptions)
     {
-        _logger = logger;
-        _securityOptions = securityOptions.Value;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _securityOptions = securityOptions?.Value ?? throw new ArgumentNullException(nameof(securityOptions));
     }
 
     public Task LogSuccessfulAuthenticationAsync(string userId, string? ipAddress)

@@ -19,9 +19,9 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
         ISecurityAuditService auditService,
         ILogger<LogoutCommandHandler> logger)
     {
-        _refreshTokenService = refreshTokenService;
-        _auditService = auditService;
-        _logger = logger;
+        _refreshTokenService = refreshTokenService ?? throw new ArgumentNullException(nameof(refreshTokenService));
+        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)
@@ -30,11 +30,8 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
         {
             _logger.LogInformation("Processing logout for user {UserId}", request.UserId);
 
-            // Revoke all user tokens through the service
-            await _refreshTokenService.RevokeAllUserTokensAsync(request.UserId, request.IpAddress, "User logout");
-
-            // Audit log
-            await _auditService.LogUserLogoutAsync(request.UserId, request.IpAddress);
+            await RevokeUserTokensAsync(request);
+            await LogUserLogoutAsync(request);
 
             _logger.LogInformation("Successfully processed logout for user {UserId}", request.UserId);
 
@@ -45,5 +42,15 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
             _logger.LogError(ex, "Error during logout for user {UserId}", request.UserId);
             return Result.Failure("An error occurred during logout");
         }
+    }
+
+    private async Task RevokeUserTokensAsync(LogoutCommand request)
+    {
+        await _refreshTokenService.RevokeAllUserTokensAsync(request.UserId, request.IpAddress, "User logout");
+    }
+
+    private async Task LogUserLogoutAsync(LogoutCommand request)
+    {
+        await _auditService.LogUserLogoutAsync(request.UserId, request.IpAddress);
     }
 }

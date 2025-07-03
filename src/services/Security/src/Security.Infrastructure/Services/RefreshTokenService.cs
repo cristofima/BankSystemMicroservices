@@ -26,10 +26,10 @@ public class RefreshTokenService : IRefreshTokenService
         IOptions<JwtOptions> jwtOptions,
         IOptions<SecurityOptions> securityOptions)
     {
-        _context = context;
-        _logger = logger;
-        _jwtOptions = jwtOptions.Value;
-        _securityOptions = securityOptions.Value;
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+        _securityOptions = securityOptions?.Value ?? throw new ArgumentNullException(nameof(securityOptions));
     }
 
     public async Task<RefreshToken?> CreateRefreshTokenAsync(
@@ -41,47 +41,14 @@ public class RefreshTokenService : IRefreshTokenService
     {
         try
         {
-            // Check if user has reached max concurrent sessions
-            if (_securityOptions.TokenSecurity.MaxConcurrentSessions > 0)
-            {
-                var currentTime = DateTime.UtcNow;
-                var activeTokensCount = await _context.RefreshTokens
-                    .CountAsync(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime, cancellationToken);
-
-                if (activeTokensCount >= _securityOptions.TokenSecurity.MaxConcurrentSessions)
-                {
-                    // Revoke oldest token to make room
-                    var oldestToken = await _context.RefreshTokens
-                        .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime)
-                        .OrderBy(rt => rt.CreatedAt)
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (oldestToken != null)
-                    {
-                        oldestToken.Revoke(ipAddress, "Exceeded maximum concurrent sessions");
-                        _logger.LogInformation("Revoked oldest token for user {UserId} due to session limit", userId);
-                    }
-                }
-            }
-
-            var refreshToken = new RefreshToken
-            {
-                Token = GenerateSecureToken(),
-                JwtId = jwtId,
-                UserId = userId,
-                ExpiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
-                CreatedByIp = ipAddress,
-                DeviceInfo = deviceInfo,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = userId
-            };
-
+            await EnforceSessionLimitAsync(userId, ipAddress, cancellationToken);
+            
+            var refreshToken = CreateRefreshTokenEntity(userId, jwtId, ipAddress, deviceInfo);
+            
             _context.RefreshTokens.Add(refreshToken);
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Created refresh token for user {UserId} from IP {IpAddress}", 
-                userId, ipAddress);
-
+            LogSuccessfulTokenCreation(userId, ipAddress);
             return refreshToken;
         }
         catch (Exception ex)
@@ -89,6 +56,60 @@ public class RefreshTokenService : IRefreshTokenService
             _logger.LogError(ex, "Error creating refresh token for user {UserId}", userId);
             return null;
         }
+    }
+
+    private async Task EnforceSessionLimitAsync(string userId, string? ipAddress, CancellationToken cancellationToken)
+    {
+        if (_securityOptions.TokenSecurity.MaxConcurrentSessions <= 0)
+            return;
+
+        var currentTime = DateTime.UtcNow;
+        var activeTokensCount = await GetActiveTokensCountAsync(userId, currentTime, cancellationToken);
+
+        if (activeTokensCount >= _securityOptions.TokenSecurity.MaxConcurrentSessions)
+        {
+            await RevokeOldestTokenAsync(userId, ipAddress, currentTime, cancellationToken);
+        }
+    }
+
+    private async Task<int> GetActiveTokensCountAsync(string userId, DateTime currentTime, CancellationToken cancellationToken)
+    {
+        return await _context.RefreshTokens
+            .CountAsync(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime, cancellationToken);
+    }
+
+    private async Task RevokeOldestTokenAsync(string userId, string? ipAddress, DateTime currentTime, CancellationToken cancellationToken)
+    {
+        var oldestToken = await _context.RefreshTokens
+            .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime)
+            .OrderBy(rt => rt.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (oldestToken != null)
+        {
+            oldestToken.Revoke(ipAddress, "Exceeded maximum concurrent sessions");
+            _logger.LogInformation("Revoked oldest token for user {UserId} due to session limit", userId);
+        }
+    }
+
+    private RefreshToken CreateRefreshTokenEntity(string userId, string jwtId, string? ipAddress, string? deviceInfo)
+    {
+        return new RefreshToken
+        {
+            Token = GenerateSecureToken(),
+            JwtId = jwtId,
+            UserId = userId,
+            ExpiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
+            CreatedByIp = ipAddress,
+            DeviceInfo = deviceInfo,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = userId
+        };
+    }
+
+    private void LogSuccessfulTokenCreation(string userId, string? ipAddress)
+    {
+        _logger.LogInformation("Created refresh token for user {UserId} from IP {IpAddress}", userId, ipAddress);
     }
 
     public async Task<RefreshToken?> ValidateRefreshTokenAsync(
@@ -99,35 +120,18 @@ public class RefreshTokenService : IRefreshTokenService
     {
         try
         {
-            var refreshToken = await _context.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Token == token, cancellationToken);
-
+            var refreshToken = await FindRefreshTokenAsync(token, cancellationToken);
             if (refreshToken == null)
             {
-                _logger.LogWarning("Invalid refresh token attempted for user {UserId}", userId);
+                LogInvalidTokenAttempt(userId);
                 return null;
             }
 
-            // Check if token belongs to the user and JWT
-            if (refreshToken.UserId != userId || refreshToken.JwtId != jwtId)
-            {
-                _logger.LogWarning("Refresh token mismatch for user {UserId}", userId);
+            if (!IsTokenValidForUser(refreshToken, userId, jwtId))
                 return null;
-            }
 
-            // Check if token is expired
-            if (refreshToken.IsExpired)
-            {
-                _logger.LogWarning("Expired refresh token used for user {UserId}", userId);
+            if (IsTokenExpiredOrRevoked(refreshToken, userId))
                 return null;
-            }
-
-            // Check if token is revoked
-            if (refreshToken.IsRevoked)
-            {
-                _logger.LogWarning("Revoked refresh token used for user {UserId}", userId);
-                return null;
-            }
 
             return refreshToken;
         }
@@ -136,6 +140,44 @@ public class RefreshTokenService : IRefreshTokenService
             _logger.LogError(ex, "Error validating refresh token for user {UserId}", userId);
             return null;
         }
+    }
+
+    private async Task<RefreshToken?> FindRefreshTokenAsync(string token, CancellationToken cancellationToken)
+    {
+        return await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Token == token, cancellationToken);
+    }
+
+    private void LogInvalidTokenAttempt(string userId)
+    {
+        _logger.LogWarning("Invalid refresh token attempted for user {UserId}", userId);
+    }
+
+    private bool IsTokenValidForUser(RefreshToken refreshToken, string userId, string jwtId)
+    {
+        if (refreshToken.UserId != userId || refreshToken.JwtId != jwtId)
+        {
+            _logger.LogWarning("Refresh token mismatch for user {UserId}", userId);
+            return false;
+        }
+        return true;
+    }
+
+    private bool IsTokenExpiredOrRevoked(RefreshToken refreshToken, string userId)
+    {
+        if (refreshToken.IsExpired)
+        {
+            _logger.LogWarning("Expired refresh token used for user {UserId}", userId);
+            return true;
+        }
+
+        if (refreshToken.IsRevoked)
+        {
+            _logger.LogWarning("Revoked refresh token used for user {UserId}", userId);
+            return true;
+        }
+
+        return false;
     }
 
     public async Task<RefreshToken?> RefreshTokenAsync(

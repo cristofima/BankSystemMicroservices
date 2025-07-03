@@ -20,7 +20,11 @@ public class TokenService : ITokenService
 
     public TokenService(IOptions<JwtOptions> jwtOptions)
     {
-        _jwtOptions = jwtOptions.Value;
+        _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+        
+        if (string.IsNullOrWhiteSpace(_jwtOptions.Key))
+            throw new ArgumentException("JWT key cannot be null or empty", nameof(jwtOptions));
+
         _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         _tokenHandler = new JwtSecurityTokenHandler();
     }

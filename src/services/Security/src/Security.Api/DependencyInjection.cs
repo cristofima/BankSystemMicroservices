@@ -44,6 +44,13 @@ public static class DependencyInjection
         // Add memory cache for token revocation
         services.AddMemoryCache();
 
+        // Add HTTP context accessor for services that need it
+        services.AddHttpContextAccessor();
+
+        // Register API helper services
+        services.AddScoped<IHttpContextInfoService, HttpContextInfoService>();
+        services.AddScoped<IApiResponseService, ApiResponseService>();
+
         // Register middleware services
         services.AddScoped<ITokenRevocationService, TokenRevocationService>();
 

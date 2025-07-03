@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Security.Api.Services;
 using Security.Application.Dtos;
 using Security.Application.Features.Authentication.Commands.Login;
 using Security.Application.Features.Authentication.Commands.Logout;
@@ -14,19 +15,23 @@ namespace Security.Api.Controllers;
 /// <summary>
 /// Authentication and authorization endpoints
 /// </summary>
-[ApiController]
 [Route("api/v1/auth")]
 [Consumes("application/json")]
 [Produces("application/json")]
-public class AuthController : ControllerBase
+public class AuthController : BaseController
 {
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IMediator mediator, ILogger<AuthController> logger)
+    public AuthController(
+        IMediator mediator, 
+        ILogger<AuthController> logger,
+        IHttpContextInfoService httpContextInfoService,
+        IApiResponseService apiResponseService) 
+        : base(httpContextInfoService, apiResponseService)
     {
-        _mediator = mediator;
-        _logger = logger;
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -49,36 +54,52 @@ public class AuthController : ControllerBase
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
+        var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
         _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}", 
-            request.UserName, GetClientIpAddress());
+            request.UserName, clientIpAddress);
 
         if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+            return ValidationError("Invalid request data");
 
-        var command = new LoginCommand(
-            request.UserName,
-            request.Password,
-            GetClientIpAddress(),
-            GetDeviceInfo());
-
+        var command = CreateLoginCommand(request, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
-        {
-            _logger.LogWarning("Login failed for user {UserName}: {Error}", request.UserName, result.Error);
-            return Unauthorized(CreateProblemDetails("Authentication failed", result.Error, 401));
-        }
+            return HandleLoginFailure(request.UserName, result.Error);
 
-        var response = new TokenResponse(
-            result.Value!.AccessToken,
-            result.Value.RefreshToken,
-            result.Value.AccessTokenExpiry,
-            result.Value.RefreshTokenExpiry);
+        var response = CreateTokenResponse(result.Value!);
+        LogSuccessfulLogin(request.UserName);
+        
+        return Success(response);
+    }
 
-        _logger.LogInformation("User {UserName} successfully authenticated", request.UserName);
-        return Ok(response);
+    private LoginCommand CreateLoginCommand(LoginRequest request, string clientIpAddress)
+    {
+        return new LoginCommand(
+            request.UserName,
+            request.Password,
+            clientIpAddress,
+            HttpContextInfoService.GetDeviceInfo());
+    }
+
+    private IActionResult HandleLoginFailure(string userName, string error)
+    {
+        _logger.LogWarning("Login failed for user {UserName}: {Error}", userName, error);
+        return AuthenticationFailed(error);
+    }
+
+    private TokenResponse CreateTokenResponse(dynamic tokenData)
+    {
+        return new TokenResponse(
+            tokenData.AccessToken,
+            tokenData.RefreshToken,
+            tokenData.AccessTokenExpiry,
+            tokenData.RefreshTokenExpiry);
+    }
+
+    private void LogSuccessfulLogin(string userName)
+    {
+        _logger.LogInformation("User {UserName} successfully authenticated", userName);
     }
 
     /// <summary>
@@ -99,36 +120,42 @@ public class AuthController : ControllerBase
         [FromBody] RefreshTokenRequest request,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Token refresh attempt from IP {IpAddress}", GetClientIpAddress());
+        var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
+        _logger.LogInformation("Token refresh attempt from IP {IpAddress}", clientIpAddress);
 
         if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+            return ValidationError("Invalid request data");
 
-        var command = new RefreshTokenCommand(
-            request.AccessToken,
-            request.RefreshToken,
-            GetClientIpAddress(),
-            GetDeviceInfo());
-
+        var command = CreateRefreshTokenCommand(request, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
-        {
-            _logger.LogWarning("Token refresh failed from IP {IpAddress}: {Error}", 
-                GetClientIpAddress(), result.Error);
-            return Unauthorized(CreateProblemDetails("Token refresh failed", result.Error, 401));
-        }
+            return HandleRefreshTokenFailure(clientIpAddress, result.Error);
 
-        var response = new TokenResponse(
-            result.Value!.AccessToken,
-            result.Value.RefreshToken,
-            result.Value.AccessTokenExpiry,
-            result.Value.RefreshTokenExpiry);
+        var response = CreateTokenResponse(result.Value!);
+        LogSuccessfulTokenRefresh(clientIpAddress);
+        
+        return Success(response);
+    }
 
-        _logger.LogInformation("Token successfully refreshed from IP {IpAddress}", GetClientIpAddress());
-        return Ok(response);
+    private RefreshTokenCommand CreateRefreshTokenCommand(RefreshTokenRequest request, string clientIpAddress)
+    {
+        return new RefreshTokenCommand(
+            request.AccessToken,
+            request.RefreshToken,
+            clientIpAddress,
+            HttpContextInfoService.GetDeviceInfo());
+    }
+
+    private IActionResult HandleRefreshTokenFailure(string clientIpAddress, string error)
+    {
+        _logger.LogWarning("Token refresh failed from IP {IpAddress}: {Error}", clientIpAddress, error);
+        return AuthenticationFailed(error);
+    }
+
+    private void LogSuccessfulTokenRefresh(string clientIpAddress)
+    {
+        _logger.LogInformation("Token successfully refreshed from IP {IpAddress}", clientIpAddress);
     }
 
     /// <summary>
@@ -151,29 +178,39 @@ public class AuthController : ControllerBase
         [FromBody] RevokeTokenRequest request,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Token revocation attempt from IP {IpAddress}", GetClientIpAddress());
+        var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
+        _logger.LogInformation("Token revocation attempt from IP {IpAddress}", clientIpAddress);
 
         if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+            return ValidationError("Invalid request data");
 
-        var command = new RevokeTokenCommand(
-            request.Token,
-            GetClientIpAddress(),
-            "Manual revocation");
-
+        var command = CreateRevokeTokenCommand(request, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
-        {
-            _logger.LogWarning("Token revocation failed from IP {IpAddress}: {Error}", 
-                GetClientIpAddress(), result.Error);
-            return BadRequest(CreateProblemDetails("Token revocation failed", result.Error, 400));
-        }
+            return HandleTokenRevocationFailure(clientIpAddress, result.Error);
 
-        _logger.LogInformation("Token successfully revoked from IP {IpAddress}", GetClientIpAddress());
-        return NoContent();
+        LogSuccessfulTokenRevocation(clientIpAddress);
+        return SuccessNoContent();
+    }
+
+    private RevokeTokenCommand CreateRevokeTokenCommand(RevokeTokenRequest request, string clientIpAddress)
+    {
+        return new RevokeTokenCommand(
+            request.Token,
+            clientIpAddress,
+            "Manual revocation");
+    }
+
+    private IActionResult HandleTokenRevocationFailure(string clientIpAddress, string error)
+    {
+        _logger.LogWarning("Token revocation failed from IP {IpAddress}: {Error}", clientIpAddress, error);
+        return ValidationError(error);
+    }
+
+    private void LogSuccessfulTokenRevocation(string clientIpAddress)
+    {
+        _logger.LogInformation("Token successfully revoked from IP {IpAddress}", clientIpAddress);
     }
 
     /// <summary>
@@ -189,27 +226,42 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        
+        var userId = GetCurrentUserId();
         if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(CreateProblemDetails("Invalid user context", "User ID not found in token", 401));
-        }
+            return AuthenticationFailed("User ID not found in token");
 
-        _logger.LogInformation("Logout attempt for user {UserId} from IP {IpAddress}", 
-            userId, GetClientIpAddress());
+        var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
+        LogLogoutAttempt(userId, clientIpAddress);
 
-        var command = new LogoutCommand(userId, GetClientIpAddress());
+        var command = new LogoutCommand(userId, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
-        {
-            _logger.LogWarning("Logout failed for user {UserId}: {Error}", userId, result.Error);
-            return BadRequest(CreateProblemDetails("Logout failed", result.Error, 400));
-        }
-        
+            return HandleLogoutFailure(userId, result.Error);
+
+        LogSuccessfulLogout(userId);
+        return SuccessNoContent();
+    }
+
+    private string? GetCurrentUserId()
+    {
+        return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    private void LogLogoutAttempt(string userId, string clientIpAddress)
+    {
+        _logger.LogInformation("Logout attempt for user {UserId} from IP {IpAddress}", userId, clientIpAddress);
+    }
+
+    private IActionResult HandleLogoutFailure(string userId, string error)
+    {
+        _logger.LogWarning("Logout failed for user {UserId}: {Error}", userId, error);
+        return ValidationError(error);
+    }
+
+    private void LogSuccessfulLogout(string userId)
+    {
         _logger.LogInformation("User {UserId} successfully logged out", userId);
-        return NoContent();
     }
 
     /// <summary>
@@ -232,59 +284,51 @@ public class AuthController : ControllerBase
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Registration attempt for user {UserName} from IP {IpAddress}", 
-            request.UserName, GetClientIpAddress());
+        var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
+        LogRegistrationAttempt(request.UserName, clientIpAddress);
 
         if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+            return ValidationError("Invalid request data");
 
-        var command = new RegisterCommand(
+        var command = CreateRegisterCommand(request, clientIpAddress);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+            return HandleRegistrationFailure(request.UserName, result.Error);
+
+        LogSuccessfulRegistration(request.UserName);
+        return Created(nameof(Register), new { id = result.Value!.Id }, result.Value);
+    }
+
+    private void LogRegistrationAttempt(string userName, string clientIpAddress)
+    {
+        _logger.LogInformation("Registration attempt for user {UserName} from IP {IpAddress}", userName, clientIpAddress);
+    }
+
+    private RegisterCommand CreateRegisterCommand(RegisterRequest request, string clientIpAddress)
+    {
+        return new RegisterCommand(
             request.UserName,
             request.Email,
             request.Password,
             request.ConfirmPassword,
             request.FirstName,
             request.LastName,
-            GetClientIpAddress(),
-            GetDeviceInfo());
-
-        var result = await _mediator.Send(command, cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            _logger.LogWarning("Registration failed for user {UserName}: {Error}", request.UserName, result.Error);
-            
-            var statusCode = result.Error.Contains("already") ? 409 : 400;
-            return StatusCode(statusCode, CreateProblemDetails("Registration failed", result.Error, statusCode));
-        }
-
-        _logger.LogInformation("User {UserName} successfully registered", request.UserName);
-        return CreatedAtAction(nameof(Register), new { id = result.Value!.Id }, result.Value);
+            clientIpAddress,
+            HttpContextInfoService.GetDeviceInfo());
     }
 
-    private string? GetClientIpAddress()
+    private IActionResult HandleRegistrationFailure(string userName, string error)
     {
-        return HttpContext.Connection.RemoteIpAddress?.ToString() ??
-               Request.Headers["X-Forwarded-For"].FirstOrDefault() ??
-               Request.Headers["X-Real-IP"].FirstOrDefault();
+        _logger.LogWarning("Registration failed for user {UserName}: {Error}", userName, error);
+        
+        return error.Contains("already", StringComparison.OrdinalIgnoreCase) 
+            ? Conflict(error) 
+            : ValidationError(error);
     }
 
-    private string? GetDeviceInfo()
+    private void LogSuccessfulRegistration(string userName)
     {
-        return Request.Headers["User-Agent"].FirstOrDefault();
-    }
-
-    private ProblemDetails CreateProblemDetails(string title, string detail, int statusCode)
-    {
-        return new ProblemDetails
-        {
-            Type = $"https://httpstatuses.com/{statusCode}",
-            Title = title,
-            Detail = detail,
-            Status = statusCode,
-            Instance = Request.Path
-        };
+        _logger.LogInformation("User {UserName} successfully registered", userName);
     }
 }
