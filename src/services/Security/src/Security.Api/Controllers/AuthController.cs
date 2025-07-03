@@ -16,6 +16,7 @@ namespace Security.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v1/auth")]
+[Consumes("application/json")]
 [Produces("application/json")]
 public class AuthController : ControllerBase
 {

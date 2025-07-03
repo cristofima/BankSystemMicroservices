@@ -44,14 +44,15 @@ public class RefreshTokenService : IRefreshTokenService
             // Check if user has reached max concurrent sessions
             if (_securityOptions.TokenSecurity.MaxConcurrentSessions > 0)
             {
+                var currentTime = DateTime.UtcNow;
                 var activeTokensCount = await _context.RefreshTokens
-                    .CountAsync(rt => rt.UserId == userId && !rt.IsRevoked && !rt.IsExpired, cancellationToken);
+                    .CountAsync(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime, cancellationToken);
 
                 if (activeTokensCount >= _securityOptions.TokenSecurity.MaxConcurrentSessions)
                 {
                     // Revoke oldest token to make room
                     var oldestToken = await _context.RefreshTokens
-                        .Where(rt => rt.UserId == userId && !rt.IsRevoked && !rt.IsExpired)
+                        .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime)
                         .OrderBy(rt => rt.CreatedAt)
                         .FirstOrDefaultAsync(cancellationToken);
 

@@ -130,9 +130,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
             new(ClaimTypes.Email, user.Email!)
         };
 
-        // Add user roles
-        var roles = await _userManager.GetRolesAsync(user);
-        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        // Add user roles (safely handle case where roles might not be configured)
+        try
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Any())
+            {
+                claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            }
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger.LogWarning("Role store not configured properly: {Error}. Proceeding without role claims.", ex.Message);
+            // Continue without role claims - this allows the system to work even if roles aren't properly configured
+        }
 
         return await _tokenService.CreateAccessTokenAsync(user, claims);
     }

@@ -60,6 +60,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
                 EmailConfirmed = false, // Email verification can be implemented later
                 FirstName = request.FirstName,
                 LastName = request.LastName,
+                ClientId = Guid.NewGuid(), // Generate unique client ID
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
