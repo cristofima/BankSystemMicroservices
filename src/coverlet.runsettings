@@ -5,11 +5,11 @@
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
           <Format>cobertura,opencover</Format>
-          <Include>[Security.*]*,[Account.*]*,[Movement.*]*,[Transaction.*]*</Include>
-          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*</Exclude>
-          <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated,ExcludeFromCodeCoverage</ExcludeByAttribute>
-          <ExcludeByFile>**/Migrations/**/*.cs,**/bin/**/*.cs,**/obj/**/*.cs</ExcludeByFile>
-          <IncludeDirectory>src/</IncludeDirectory>
+          <Include>[Security.Api]*,[Security.Application]*,[Security.Domain]*,[Security.Infrastructure]*,[Account.*]*,[Movement.*]*,[Transaction.*]*</Include>
+          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*,[*Test*]*,[*Mock*]*</Exclude>
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute,DebuggerNonUserCodeAttribute</ExcludeByAttribute>
+          <ExcludeByFile>**/Migrations/**/*.cs,**/bin/**/*.cs,**/obj/**/*.cs,**/*Designer.cs,**/*ModelSnapshot.cs,**/Program.cs</ExcludeByFile>
+          <IncludeDirectory>src/services/</IncludeDirectory>
           <SingleHit>false</SingleHit>
           <UseSourceLink>true</UseSourceLink>
           <IncludeTestAssembly>false</IncludeTestAssembly>

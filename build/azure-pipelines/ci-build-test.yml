@@ -17,7 +17,7 @@ variables:
   buildConfiguration: 'Release'
   solution: 'src/BankSystem.sln'
   testProjectsPattern: 'src/**/tests/**/*.csproj'
-  coverageReportsFolder: '$(Agent.TempDirectory)/CoverageReports'
+  resultsDirectory: '$(Agent.TempDirectory)/TestResults'
 
 stages:
 - stage: BuildAndTest
@@ -44,9 +44,13 @@ stages:
       inputs:
         SonarQube: 'SonarQube'
         organization: '$(SONAR_ORGANIZATION)'
-        scannerMode: 'dotnet'
-        projectKey: '$(SONAR_PROJECT_KEY)'
-        projectName: '$(SONAR_PROJECT_NAME)'
+        scannerMode: 'CLI'
+        configMode: 'file'
+        configFile: 'sonar-project.properties'
+        extraProperties: |
+          sonar.projectKey=$(SONAR_PROJECT_KEY)
+          sonar.projectName=$(SONAR_PROJECT_NAME)
+          sonar.organization=$(SONAR_ORGANIZATION)
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
 
     - task: DotNetCoreCLI@2
@@ -71,8 +75,9 @@ stages:
         arguments: >
           --configuration $(buildConfiguration)
           --no-build
-          --collect:"Code Coverage"
+          --collect:"XPlat Code Coverage"
           --settings $(Build.SourcesDirectory)/src/coverlet.runsettings
+          --results-directory $(resultsDirectory)
           --logger trx
           --logger "console;verbosity=normal"
         publishTestResults: true
@@ -86,19 +91,33 @@ stages:
         arguments: >
           --configuration $(buildConfiguration)
           --no-build
-          --collect:"Code Coverage"
+          --collect:"XPlat Code Coverage"
           --settings $(Build.SourcesDirectory)/src/coverlet.runsettings
+          --results-directory $(resultsDirectory)
           --logger trx
           --logger "console;verbosity=normal"
         publishTestResults: true
       # Note: TestContainers will automatically use Docker on Linux
       continueOnError: true
 
+    - bash: |
+        echo "Listing coverage files in results directory..."
+        find $(resultsDirectory) -name "*.cobertura.xml" -o -name "*.opencover.xml" | head -20
+        echo "All XML files in results directory:"
+        find $(resultsDirectory) -name "*.xml" | head -10
+        echo "Results directory structure:"
+        ls -la $(resultsDirectory)/ || echo "No results directory found"
+      displayName: 'Debug - List Coverage Files'
+
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage to Azure DevOps'
       inputs:
         codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '$(coverageReportsFolder)/**/coverage.cobertura.xml'
+        summaryFileLocation: '$(resultsDirectory)/**/coverage.cobertura.xml'
+        pathToSources: '$(Build.SourcesDirectory)/src'
+        additionalCodeCoverageFiles: '$(resultsDirectory)/**/coverage.opencover.xml'
+        failIfCoverageEmpty: false
+      condition: succeeded()
 
     - task: SonarQubeAnalyze@7
       displayName: 'Run SonarQube Analysis'
