@@ -4,6 +4,8 @@
 
 This document provides comprehensive guidelines for conducting effective code reviews in the Bank System Microservices project. These guidelines ensure code quality, maintainability, security, and adherence to best practices.
 
+**Important**: All code reviews should verify adherence to [Clean Code principles](./clean-code.md). Use the Clean Code checklist as the foundation for all reviews.
+
 ## Code Review Process
 
 ### Pre-Review Checklist
@@ -13,13 +15,58 @@ Before submitting code for review, ensure:
 ```csharp
 // ✅ Self-review completed
 // ✅ All tests pass locally
-// ✅ Code follows naming conventions
+// ✅ Follows Clean Code principles (see clean-code.md)
+// ✅ Functions are small and focused (< 20 lines)
+// ✅ Classes have single responsibility
+// ✅ Names are intention-revealing and searchable
+// ✅ No code smells present
 // ✅ No hardcoded values or secrets
 // ✅ Error handling implemented
 // ✅ Logging added where appropriate
 // ✅ Documentation updated
 // ✅ Performance considerations addressed
 ```
+
+### Clean Code Review Checklist
+
+Use this checklist during every code review:
+
+#### Meaningful Names
+
+- [ ] Class names are nouns (Customer, TransactionProcessor)
+- [ ] Method names are verbs (ProcessTransaction, ValidateAccount)
+- [ ] Names reveal intent without needing comments
+- [ ] No misleading or ambiguous names
+- [ ] Constants are searchable, not magic numbers
+
+#### Functions
+
+- [ ] Functions are small (< 20 lines)
+- [ ] Functions do one thing well
+- [ ] Function arguments are minimal (0-3 parameters)
+- [ ] No side effects beyond the function's stated purpose
+- [ ] Command Query Separation is maintained
+
+#### Classes
+
+- [ ] Single Responsibility Principle followed
+- [ ] High cohesion (methods work with same data)
+- [ ] Low coupling between classes
+- [ ] Open/Closed Principle considered
+
+#### Comments
+
+- [ ] Code is self-documenting
+- [ ] Comments explain "why," not "what"
+- [ ] No commented-out code
+- [ ] No redundant or misleading comments
+
+#### Error Handling
+
+- [ ] Uses Result pattern for business errors
+- [ ] Uses exceptions for system errors
+- [ ] No null returns (use Result pattern instead)
+- [ ] Proper exception context provided
 
 ### Review Categories
 

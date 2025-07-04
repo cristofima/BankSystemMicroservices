@@ -1,0 +1,152 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+  paths:
+    include:
+      - 'src/services/**/src/**'
+      - 'src/services/**/tests/**'
+      - 'build/azure-pipelines/ci-build-test.yml'
+    exclude:
+      - 'src/services/**/*.md'
+      - 'src/services/**/README.md'
+
+variables:
+  buildConfiguration: 'Release'
+  solution: 'src/BankSystem.sln'
+  testProjectsPattern: 'src/**/tests/**/*.csproj'
+  resultsDirectory: '$(Agent.TempDirectory)/TestResults'
+
+stages:
+- stage: BuildAndTest
+  jobs:
+
+  - job: Ubuntu
+    displayName: 'Ubuntu Agent'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET 9 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '9.x'
+
+    # Docker is already installed & running on ubuntu-latest
+    - bash: docker info
+      displayName: "Verify Docker engine"
+
+    - task: SonarQubePrepare@7
+      displayName: 'Prepare SonarQube Analysis'
+      inputs:
+        SonarQube: 'SonarQube'
+        organization: '$(SONAR_ORGANIZATION)'
+        scannerMode: 'CLI'
+        configMode: 'file'
+        configFile: 'sonar-project.properties'
+        extraProperties: |
+          sonar.projectKey=$(SONAR_PROJECT_KEY)
+          sonar.projectName=$(SONAR_PROJECT_NAME)
+          sonar.organization=$(SONAR_ORGANIZATION)
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet packages'
+      inputs:
+        command: 'restore'
+        projects: '$(solution)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Solution'
+      inputs:
+        command: 'build'
+        projects: '$(solution)'
+        arguments: '--configuration $(buildConfiguration)'
+
+    - bash: |
+        echo "Listing test projects..."
+        find $(Build.SourcesDirectory) -name "*UnitTests.csproj" -o -name "*IntegrationTests.csproj"
+        echo "Solution directory structure:"
+        ls -la $(Build.SourcesDirectory)/src/services/
+      displayName: 'Debug - List Test Projects'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests with Code Coverage'
+      inputs:
+        command: 'test'
+        projects: 'src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj'
+        arguments: >
+          --configuration $(buildConfiguration)
+          --no-build
+          --logger trx
+          --logger "console;verbosity=normal"
+        publishTestResults: true
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests with Coverlet Coverage'
+      inputs:
+        command: 'test'
+        projects: 'src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj'
+        arguments: >
+          --configuration $(buildConfiguration)
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --logger "console;verbosity=normal"
+        publishTestResults: false
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Integration Tests with Code Coverage'
+      inputs:
+        command: 'test'
+        projects: 'src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj'
+        arguments: >
+          --configuration $(buildConfiguration)
+          --no-build
+          --logger trx
+          --logger "console;verbosity=normal"
+        publishTestResults: true
+      # Note: TestContainers will automatically use Docker on Linux
+      continueOnError: true
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Integration Tests with Coverlet Coverage'
+      inputs:
+        command: 'test'
+        projects: 'src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj'
+        arguments: >
+          --configuration $(buildConfiguration)
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --logger "console;verbosity=normal"
+        publishTestResults: false
+      continueOnError: true
+
+    - bash: |
+        echo "Listing coverage files in default locations..."
+        find $(Agent.TempDirectory) -name "*.xml" | grep -i coverage | head -10
+        find $(System.DefaultWorkingDirectory) -name "*.xml" | grep -i coverage | head -10
+        echo "TestResults directories:"
+        find $(System.DefaultWorkingDirectory) -name "TestResults" -type d
+        echo "Coverage files in TestResults:"
+        find $(System.DefaultWorkingDirectory) -path "*/TestResults/*" -name "*.xml" | head -10
+      displayName: 'Debug - List Coverage Files'
+
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Code Coverage to Azure DevOps'
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.cobertura.xml'
+        pathToSources: '$(Build.SourcesDirectory)/src'
+        failIfCoverageEmpty: false
+      condition: succeeded()
+
+    - task: SonarQubeAnalyze@7
+      displayName: 'Run SonarQube Analysis'
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+
+    - task: SonarQubePublish@7
+      displayName: 'Publish SonarQube Quality Gate Result'
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))

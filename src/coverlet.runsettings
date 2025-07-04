@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura,opencover</Format>
+          <Include>[Security.Api]*,[Security.Application]*,[Security.Domain]*,[Security.Infrastructure]*,[Account.*]*,[Movement.*]*,[Transaction.*]*</Include>
+          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*,[*Test*]*,[*Mock*]*</Exclude>
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute,DebuggerNonUserCodeAttribute</ExcludeByAttribute>
+          <ExcludeByFile>**/Migrations/**/*.cs,**/bin/**/*.cs,**/obj/**/*.cs,**/*Designer.cs,**/*ModelSnapshot.cs,**/Program.cs</ExcludeByFile>
+          <IncludeDirectory>src/services/</IncludeDirectory>
+          <SingleHit>false</SingleHit>
+          <UseSourceLink>true</UseSourceLink>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+  
+  <!-- Configure test execution -->
+  <RunConfiguration>
+    <ResultsDirectory>./TestResults</ResultsDirectory>
+    <TargetPlatform>x64</TargetPlatform>
+    <TargetFramework>net9.0</TargetFramework>
+    <TestAdaptersPaths>.</TestAdaptersPaths>
+    <MaxCpuCount>0</MaxCpuCount>
+    <BatchSize>10</BatchSize>
+  </RunConfiguration>
+
+  <!-- MSTest specific settings -->
+  <MSTest>
+    <Parallelize>
+      <Workers>0</Workers>
+      <Scope>MethodLevel</Scope>
+    </Parallelize>
+  </MSTest>
+
+  <!-- NUnit specific settings -->
+  <NUnit>
+    <NumberOfTestWorkers>-1</NumberOfTestWorkers>
+  </NUnit>
+</RunSettings>

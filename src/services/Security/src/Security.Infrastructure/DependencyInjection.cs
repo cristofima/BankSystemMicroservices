@@ -53,7 +53,7 @@ public static class DependencyInjection
         });
 
         // Configure Identity with enhanced security
-        services.AddIdentityCore<ApplicationUser>(options =>
+        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
         {
             // Password requirements
             options.Password.RequireDigit = true;
