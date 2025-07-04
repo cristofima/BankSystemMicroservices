@@ -79,22 +79,17 @@ stages:
         find $(Build.SourcesDirectory) -name "*UnitTests.csproj" -o -name "*IntegrationTests.csproj"
         echo "Solution directory structure:"
         ls -la $(Build.SourcesDirectory)/src/services/
-      displayName: 'Debug - List Test Projects'
+        echo "Checking if test projects are built..."
+        ls -la $(Build.SourcesDirectory)/src/services/Security/tests/Security.Application.UnitTests/bin/$(buildConfiguration)/net9.0/ || echo "Unit test build output not found"
+        ls -la $(Build.SourcesDirectory)/src/services/Security/tests/Security.Infrastructure.IntegrationTests/bin/$(buildConfiguration)/net9.0/ || echo "Integration test build output not found"
+      displayName: 'Debug - List Test Projects and Build Output'
 
     - task: DotNetCoreCLI@2
       displayName: 'Run Unit Tests with Code Coverage'
       inputs:
         command: 'test'
         projects: 'src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj'
-        arguments: >
-          --configuration $(buildConfiguration)
-          --no-build
-          --no-restore
-          --logger trx
-          --logger "console;verbosity=normal"
-          --collect:"XPlat Code Coverage"
-          --results-directory $(resultsDirectory)
-          --settings $(Build.SourcesDirectory)/src/coverlet.runsettings
+        arguments: '--configuration $(buildConfiguration) --logger trx --logger "console;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory $(resultsDirectory) --settings $(Build.SourcesDirectory)/src/coverlet.runsettings'
         publishTestResults: true
 
     - task: DotNetCoreCLI@2
@@ -102,15 +97,7 @@ stages:
       inputs:
         command: 'test'
         projects: 'src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj'
-        arguments: >
-          --configuration $(buildConfiguration)
-          --no-build
-          --no-restore
-          --logger trx
-          --logger "console;verbosity=normal"
-          --collect:"XPlat Code Coverage"
-          --results-directory $(resultsDirectory)
-          --settings $(Build.SourcesDirectory)/src/coverlet.runsettings
+        arguments: '--configuration $(buildConfiguration) --logger trx --logger "console;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory $(resultsDirectory) --settings $(Build.SourcesDirectory)/src/coverlet.runsettings'
         publishTestResults: true
       # Note: TestContainers will automatically use Docker on Linux
       continueOnError: true
