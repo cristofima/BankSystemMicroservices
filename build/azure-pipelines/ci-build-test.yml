@@ -45,7 +45,7 @@ stages:
       inputs:
         SonarQube: 'SonarQube'
         organization: '$(SONAR_ORGANIZATION)'
-        scannerMode: 'MSBuild'
+        scannerMode: 'dotnet'
         projectKey: '$(SONAR_PROJECT_KEY)'
         projectName: '$(SONAR_PROJECT_NAME)'
         extraProperties: |
