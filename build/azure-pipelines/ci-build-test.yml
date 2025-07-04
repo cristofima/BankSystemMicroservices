@@ -39,6 +39,13 @@ stages:
     - bash: docker info
       displayName: "Verify Docker engine"
 
+    # Clear SonarQube cache to prevent hanging issues
+    - bash: |
+        rm -rf ~/.sonar/cache || true
+        echo "SonarQube cache cleared"
+      displayName: "Clear SonarQube Cache"
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+
     - task: SonarQubePrepare@7
       displayName: 'Prepare SonarQube Analysis'
       inputs:
@@ -50,7 +57,7 @@ stages:
         extraProperties: |
           sonar.organization=$(SONAR_ORGANIZATION)
           sonar.sources=src/services
-          sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs,**/tests/**/*
+          sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs,**/tests/**/*,**/packages/**/*,**/*.min.js,**/*.min.css
           sonar.tests=src/services/Security/tests,src/services/Account/tests,src/services/Movement/tests,src/services/Transaction/tests
           sonar.test.inclusions=**/*Test*.cs,**/*Tests.cs
           sonar.test.exclusions=**/bin/**/*,**/obj/**/*
@@ -58,7 +65,11 @@ stages:
           sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx,$(resultsDirectory)/**/*.trx
           sonar.coverage.exclusions=**/tests/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs
           sonar.sourceEncoding=UTF-8
+          sonar.scanner.responseTimeout=300
+          sonar.scanner.socketTimeout=300
+          sonar.scanner.javaOpts=-Xmx2g -XX:MaxMetaspaceSize=512m
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+      timeoutInMinutes: 10
 
     - task: DotNetCoreCLI@2
       displayName: 'Restore NuGet packages'
@@ -124,9 +135,17 @@ stages:
         failIfCoverageEmpty: false
       condition: succeeded()
 
+    # Optional: Add delay before SonarQube analysis to help with rate limiting
+    - bash: |
+        echo "Waiting before SonarQube analysis to prevent rate limiting..."
+        sleep 15
+      displayName: "Pre-Analysis Delay"
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+
     - task: SonarQubeAnalyze@7
       displayName: 'Run SonarQube Analysis'
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+      timeoutInMinutes: 15
 
     - task: SonarQubePublish@7
       displayName: 'Publish SonarQube Quality Gate Result'

@@ -236,42 +236,88 @@ Coverage files can be generated in different locations:
 2. Check SonarQube connection configuration
 3. Ensure project key and name are correctly specified
 
-## Verification Checklist
+### SonarQube Scanner Hangs During Plugin Loading
 
-## Troubleshooting
+**Symptoms**:
 
-### SonarQube Analysis Fails with "File already indexed"
+- Scanner starts successfully
+- Hangs at "Load/download plugins" step
+- Pipeline times out or takes extremely long
 
-**Error**: "The file 'DependencyInjection.cs' is already indexed with key..."
+**Common Causes and Solutions**:
 
-**Cause**: Files are being indexed both as source code and test code due to overlapping paths.
+1. **Network/Proxy Issues**
 
-**Solution**: Ensure clear separation between source and test directories:
+   ```yaml
+   # Add timeout and retry settings to SonarQube task
+   - task: SonarQubePrepare@7
+     inputs:
+       # ...existing config...
+       extraProperties: |
+         # ...existing properties...
+         sonar.scanner.responseTimeout=300
+         sonar.scanner.socketTimeout=300
+     continueOnError: false
+     timeoutInMinutes: 10 # Add pipeline timeout
+   ```
 
-```properties
-# ✅ Correct configuration
-sonar.sources=src/services
-sonar.exclusions=**/tests/**/*  # Exclude ALL test directories from sources
+2. **Large Project Size**
 
-sonar.tests=src/services/Security/tests,src/services/Account/tests,src/services/Movement/tests,src/services/Transaction/tests
-```
+   ```yaml
+   # Increase Java heap size for scanner
+   - task: SonarQubePrepare@7
+     inputs:
+       # ...existing config...
+       extraProperties: |
+         # ...existing properties...
+         sonar.scanner.javaOpts=-Xmx2g -XX:MaxMetaspaceSize=512m
+   ```
 
-### No Code Coverage in SonarQube
+3. **Too Many Files Being Analyzed**
 
-**Symptoms**: Tests run successfully, coverage files generated, but SonarQube shows 0% coverage.
+   ```properties
+   # Be more aggressive with exclusions in sonar-project.properties
+   sonar.exclusions=**/bin/**/*,**/obj/**/*,**/node_modules/**/*,**/packages/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs,**/tests/**/*,**/*.min.js,**/*.min.css
+   ```
 
-**Solutions**:
+4. **SonarCloud Rate Limiting** (if using SonarCloud)
 
-1. Verify coverage file paths in logs
-2. Check OpenCover format is generated: `<Format>cobertura,opencover</Format>`
-3. Ensure sonar.cs.opencover.reportsPaths includes all possible locations
-4. Verify coverage exclusions don't exclude too much code
+   ```yaml
+   # Add delay between prepare and analyze steps
+   - task: SonarQubePrepare@7
+     # ...config...
 
-### Pipeline Fails with Duplicate Arguments
+   # Build and test steps...
 
-**Error**: Arguments specified multiple times or conflicting logger settings.
+   - bash: sleep 30
+     displayName: "Wait for SonarCloud rate limiting"
 
-**Solution**: Use only essential arguments, avoid `--logger` and `--results-directory` in pipeline (Azure DevOps auto-injects these).
+   - task: SonarQubeAnalyze@5
+     # ...config...
+   ```
+
+5. **Force Clean Scanner Cache**
+
+   ```yaml
+   # Add step before SonarQube prepare
+   - bash: |
+       rm -rf ~/.sonar/cache
+       echo "SonarQube cache cleared"
+     displayName: "Clear SonarQube Cache"
+     condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+   ```
+
+6. **Use Minimal Scanner Configuration** (Emergency Fallback)
+   ```yaml
+   - task: SonarQubePrepare@7
+     inputs:
+       SonarQube: "SonarQube"
+       scannerMode: "dotnet"
+       projectKey: "$(SONAR_PROJECT_KEY)"
+       projectName: "$(SONAR_PROJECT_NAME)"
+       # Remove all extraProperties temporarily to isolate the issue
+     timeoutInMinutes: 5
+   ```
 
 ## Verification Checklist
 
