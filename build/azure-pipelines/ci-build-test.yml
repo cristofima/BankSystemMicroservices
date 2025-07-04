@@ -50,9 +50,9 @@ stages:
         extraProperties: |
           sonar.organization=$(SONAR_ORGANIZATION)
           sonar.sources=src/services
-          sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs
-          sonar.tests=src/services
-          sonar.test.inclusions=**/tests/**/*Test*.cs,**/tests/**/*Tests.cs
+          sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs,**/tests/**/*
+          sonar.tests=src/services/Security/tests,src/services/Account/tests,src/services/Movement/tests,src/services/Transaction/tests
+          sonar.test.inclusions=**/*Test*.cs,**/*Tests.cs
           sonar.test.exclusions=**/bin/**/*,**/obj/**/*
           sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml,$(resultsDirectory)/**/*.xml
           sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx,$(resultsDirectory)/**/*.trx

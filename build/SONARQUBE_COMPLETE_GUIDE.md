@@ -74,9 +74,10 @@ stages:
               projectName: "$(SONAR_PROJECT_NAME)"
               extraProperties: |
                 sonar.sources=src/services
-                sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs
-                sonar.tests=src/services
-                sonar.test.inclusions=**/tests/**/*Test*.cs,**/tests/**/*Tests.cs
+                sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs,**/tests/**/*
+                sonar.tests=src/services/Security/tests,src/services/Account/tests,src/services/Movement/tests,src/services/Transaction/tests
+                sonar.test.inclusions=**/*Test*.cs,**/*Tests.cs
+                sonar.test.exclusions=**/bin/**/*,**/obj/**/*
                 sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml,$(resultsDirectory)/**/*.xml
                 sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx,$(resultsDirectory)/**/*.trx
                 sonar.coverage.exclusions=**/tests/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs
@@ -142,13 +143,13 @@ sonar.projectKey=bank-system-microservices
 sonar.projectName=Bank System Microservices
 sonar.projectVersion=1.0
 
-# Source code settings
+# Source code settings - exclude test directories
 sonar.sources=src/services
-sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs
+sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs,**/tests/**/*
 
-# Test settings
-sonar.tests=src/services
-sonar.test.inclusions=**/tests/**/*Test*.cs,**/tests/**/*Tests.cs
+# Test settings - only test directories
+sonar.tests=src/services/Security/tests,src/services/Account/tests,src/services/Movement/tests,src/services/Transaction/tests
+sonar.test.inclusions=**/*Test*.cs,**/*Tests.cs
 sonar.test.exclusions=**/bin/**/*,**/obj/**/*
 
 # Coverage settings - Multiple location support
@@ -234,6 +235,43 @@ Coverage files can be generated in different locations:
 1. Verify `scannerMode: 'dotnet'` is set
 2. Check SonarQube connection configuration
 3. Ensure project key and name are correctly specified
+
+## Verification Checklist
+
+## Troubleshooting
+
+### SonarQube Analysis Fails with "File already indexed"
+
+**Error**: "The file 'DependencyInjection.cs' is already indexed with key..."
+
+**Cause**: Files are being indexed both as source code and test code due to overlapping paths.
+
+**Solution**: Ensure clear separation between source and test directories:
+
+```properties
+# ✅ Correct configuration
+sonar.sources=src/services
+sonar.exclusions=**/tests/**/*  # Exclude ALL test directories from sources
+
+sonar.tests=src/services/Security/tests,src/services/Account/tests,src/services/Movement/tests,src/services/Transaction/tests
+```
+
+### No Code Coverage in SonarQube
+
+**Symptoms**: Tests run successfully, coverage files generated, but SonarQube shows 0% coverage.
+
+**Solutions**:
+
+1. Verify coverage file paths in logs
+2. Check OpenCover format is generated: `<Format>cobertura,opencover</Format>`
+3. Ensure sonar.cs.opencover.reportsPaths includes all possible locations
+4. Verify coverage exclusions don't exclude too much code
+
+### Pipeline Fails with Duplicate Arguments
+
+**Error**: Arguments specified multiple times or conflicting logger settings.
+
+**Solution**: Use only essential arguments, avoid `--logger` and `--results-directory` in pipeline (Azure DevOps auto-injects these).
 
 ## Verification Checklist
 
