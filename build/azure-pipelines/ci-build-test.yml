@@ -18,7 +18,6 @@ variables:
   solution: 'src/BankSystem.sln'
   testProjectsPattern: 'src/**/tests/**/*.csproj'
   resultsDirectory: '$(Agent.TempDirectory)/TestResults'
-  coverageDirectory: '$(Build.SourcesDirectory)/coverage'
 
 stages:
 - stage: BuildAndTest
@@ -55,8 +54,8 @@ stages:
           sonar.tests=src/services
           sonar.test.inclusions=**/tests/**/*Test*.cs,**/tests/**/*Tests.cs
           sonar.test.exclusions=**/bin/**/*,**/obj/**/*
-          sonar.cs.opencover.reportsPaths=$(coverageDirectory)/coverage.opencover.xml
-          sonar.cs.vstest.reportsPaths=$(resultsDirectory)/**/*.trx
+          sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml,$(resultsDirectory)/**/*.xml
+          sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx,$(resultsDirectory)/**/*.trx
           sonar.coverage.exclusions=**/tests/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs
           sonar.sourceEncoding=UTF-8
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
@@ -89,7 +88,7 @@ stages:
       inputs:
         command: 'test'
         projects: 'src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj'
-        arguments: '--configuration $(buildConfiguration) --logger "console;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory "$(resultsDirectory)" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
+        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
         publishTestResults: true
 
     - task: DotNetCoreCLI@2
@@ -97,105 +96,40 @@ stages:
       inputs:
         command: 'test'
         projects: 'src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj'
-        arguments: '--configuration $(buildConfiguration) --logger "console;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory "$(resultsDirectory)" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
+        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
         publishTestResults: true
       # Note: TestContainers will automatically use Docker on Linux
       continueOnError: true
 
     - bash: |
-        echo "Listing coverage files in TestResults..."
-        find $(resultsDirectory) -name "*.xml" | grep -i coverage
-        echo "Checking for OpenCover format files..."
-        find $(resultsDirectory) -name "coverage.opencover.xml"
-        echo "Checking for Cobertura format files..."
-        find $(resultsDirectory) -name "coverage.cobertura.xml"
-        echo "All coverage-related files:"
-        find $(resultsDirectory) -name "*coverage*"
-        echo "All XML files in TestResults:"
-        find $(resultsDirectory) -name "*.xml" -type f
-        echo "TestResults directory structure:"
-        find $(resultsDirectory) -type d
-        if [ -d "$(resultsDirectory)" ]; then
-          for dir in $(resultsDirectory)/*/; do
-            if [ -d "$dir" ]; then
-              echo "Directory: $dir"
-              ls -la "$dir"
-            fi
-          done
-        fi
+        echo "Listing coverage files in all possible locations..."
+        echo "=== Azure DevOps temp directory ==="
+        find $(Agent.TempDirectory) -name "*.xml" -type f 2>/dev/null | grep -i coverage || echo "No coverage files in temp directory"
+        echo "=== Custom results directory ==="
+        find $(resultsDirectory) -name "*.xml" -type f 2>/dev/null | grep -i coverage || echo "No coverage files in custom directory"
+        echo "=== All TestResults directories ==="
+        find $(System.DefaultWorkingDirectory) -name "TestResults" -type d 2>/dev/null || echo "No TestResults directories found"
+        echo "=== All coverage files across the build ==="
+        find $(System.DefaultWorkingDirectory) -name "*coverage*.xml" -type f 2>/dev/null || echo "No coverage files found anywhere"
+        echo "=== Azure DevOps temp structure ==="
+        ls -la $(Agent.TempDirectory)/ 2>/dev/null || echo "Cannot list temp directory"
       displayName: 'Debug - List Coverage Files'
 
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage to Azure DevOps'
       inputs:
         codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '$(resultsDirectory)/**/coverage.cobertura.xml'
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
         pathToSources: '$(Build.SourcesDirectory)/src'
         failIfCoverageEmpty: false
       condition: succeeded()
-
-    - bash: |
-        echo "Copying coverage files for SonarQube..."
-        mkdir -p $(coverageDirectory)
-        
-        # Find and copy all OpenCover XML files
-        find $(resultsDirectory) -name "*.xml" -type f | while read file; do
-          echo "Processing file: $file"
-          
-          # Check if file contains OpenCover format indicators
-          if grep -q "opencover" "$file" 2>/dev/null || grep -q "CoverageSession" "$file" 2>/dev/null; then
-            echo "Found OpenCover file: $file"
-            cp "$file" $(coverageDirectory)/coverage.opencover.xml
-          elif grep -q "cobertura" "$file" 2>/dev/null || grep -q "<?xml.*coverage" "$file" 2>/dev/null; then
-            echo "Found Cobertura file: $file"
-            cp "$file" $(coverageDirectory)/coverage.cobertura.xml
-          fi
-        done
-        
-        # If no specific format files found, copy all XML files with coverage in name
-        if [ ! -f "$(coverageDirectory)/coverage.opencover.xml" ]; then
-          echo "No OpenCover file found, looking for any coverage files..."
-          find $(resultsDirectory) -name "*coverage*.xml" -type f | head -1 | xargs -I {} cp {} $(coverageDirectory)/coverage.opencover.xml 2>/dev/null || true
-        fi
-        
-        echo "Final coverage files:"
-        ls -la $(coverageDirectory)/ || echo "No coverage directory created"
-        
-        # Show content of coverage files for debugging
-        for file in $(coverageDirectory)/*.xml; do
-          if [ -f "$file" ]; then
-            echo "Content preview of $file:"
-            head -20 "$file"
-            echo "File size: $(wc -c < "$file") bytes"
-          fi
-        done
-      displayName: 'Copy Coverage Files for SonarQube'
 
     - task: SonarQubeAnalyze@7
       displayName: 'Run SonarQube Analysis'
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
 
-    # Fallback SonarQube analysis using CLI scanner if MSBuild fails
-    - task: SonarQubePrepare@7
-      displayName: 'Prepare SonarQube Analysis (CLI Fallback)'
-      inputs:
-        SonarQube: 'SonarQube'
-        organization: '$(SONAR_ORGANIZATION)'
-        scannerMode: 'CLI'
-        configMode: 'file'
-        configFile: 'sonar-project.properties'
-        extraProperties: |
-          sonar.projectKey=$(SONAR_PROJECT_KEY)
-          sonar.projectName=$(SONAR_PROJECT_NAME)
-          sonar.organization=$(SONAR_ORGANIZATION)
-          sonar.cs.opencover.reportsPaths=$(coverageDirectory)/coverage.opencover.xml
-          sonar.cs.vstest.reportsPaths=$(resultsDirectory)/**/*.trx
-      condition: and(failed(), ne(variables['SONAR_PROJECT_KEY'], ''))
-
-    - task: SonarQubeAnalyze@7
-      displayName: 'Run SonarQube Analysis (CLI Fallback)'
-      condition: and(failed(), ne(variables['SONAR_PROJECT_KEY'], ''))
-
     - task: SonarQubePublish@7
       displayName: 'Publish SonarQube Quality Gate Result'
+      inputs:
+        pollingTimeoutSec: '300'
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))

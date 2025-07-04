@@ -7,13 +7,32 @@ This directory contains all build and CI/CD pipeline configurations for the Bank
 ```
 build/
 ├── azure-pipelines/
-│   ├── ci-build-test.yml          # Main CI pipeline for entire solution
-│   ├── security-service.yml       # [Future] Security service CI/CD
-│   ├── account-service.yml        # [Future] Account service CI/CD
-│   ├── movement-service.yml       # [Future] Movement service CI/CD
-│   └── transaction-service.yml    # [Future] Transaction service CI/CD
-└── README.md                      # This file
+│   └── ci-build-test.yml                    # Main CI pipeline for entire solution
+├── SONARQUBE_COMPLETE_GUIDE.md             # Complete SonarQube integration guide
+├── INTEGRATION_TESTING_COMPLETE_GUIDE.md   # Complete integration testing guide
+└── README.md                                # This file
 ```
+
+## Documentation
+
+### **SonarQube Integration** (`SONARQUBE_COMPLETE_GUIDE.md`)
+
+Complete guide covering:
+
+- SonarQube scanner mode configuration (July 2025 updates)
+- Azure DevOps test argument conflict resolution
+- Coverage file path configuration
+- Pipeline YAML configuration
+- Troubleshooting and verification steps
+
+### **Integration Testing** (`INTEGRATION_TESTING_COMPLETE_GUIDE.md`)
+
+Complete guide covering:
+
+- Testcontainers setup with SQL Server
+- Azure DevOps CI/CD configuration for Docker-based tests
+- Local development setup
+- Performance considerations and best practices
 
 ## Pipeline Overview
 
