@@ -29,6 +29,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
 
     public async Task<Result<UserResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        
         try
         {
             _logger.LogInformation("Processing registration for user {UserName}", request.UserName);

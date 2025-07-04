@@ -41,6 +41,8 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
     public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        
         try
         {
             _logger.LogInformation("Token refresh attempt from IP {IpAddress}", request.IpAddress);
@@ -131,7 +133,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         if (user == null || !user.IsActive)
         {
             _logger.LogWarning("Token refresh failed - user {UserId} not found or inactive", userId);
-            return Result<ApplicationUser>.Failure("User not found or inactive");
+            return Result<ApplicationUser>.Failure("Invalid refresh token");
         }
 
         return Result<ApplicationUser>.Success(user);

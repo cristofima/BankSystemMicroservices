@@ -40,6 +40,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
 
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        
         try
         {
             _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}", 

@@ -26,14 +26,26 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
 
     public async Task<Result> Handle(RevokeTokenCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        
         try
         {
             _logger.LogInformation("Token revocation attempt from IP {IpAddress}", request.IpAddress);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var result = await RevokeTokenAsync(request, cancellationToken);
+            
+            cancellationToken.ThrowIfCancellationRequested();
+            
             await HandleRevocationResultAsync(request, result);
 
             return result;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Token revocation operation was cancelled from IP {IpAddress}", request.IpAddress);
+            throw;
         }
         catch (Exception ex)
         {

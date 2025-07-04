@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Security.Application", "ser
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Security.Api", "services\Security\src\Security.Api\Security.Api.csproj", "{5924F8B2-90D1-4515-B8FE-1AECBD8FAB02}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{52DE3466-E53A-42A9-B192-323E2018023B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Security.Application.UnitTests", "services\Security\tests\Security.Application.UnitTests\Security.Application.UnitTests.csproj", "{4CB49A65-7B62-4557-A5D9-6C9401BD03ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,10 @@ Global
 		{5924F8B2-90D1-4515-B8FE-1AECBD8FAB02}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5924F8B2-90D1-4515-B8FE-1AECBD8FAB02}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5924F8B2-90D1-4515-B8FE-1AECBD8FAB02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CB49A65-7B62-4557-A5D9-6C9401BD03ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CB49A65-7B62-4557-A5D9-6C9401BD03ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CB49A65-7B62-4557-A5D9-6C9401BD03ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CB49A65-7B62-4557-A5D9-6C9401BD03ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,6 +58,8 @@ Global
 		{DFC49231-FE9F-4C3E-8243-4C1C288E99D7} = {F5E44F6E-B0C9-4647-94DA-FA952B334736}
 		{1159E4C8-EC1D-48D7-8660-86D57F95A699} = {F5E44F6E-B0C9-4647-94DA-FA952B334736}
 		{5924F8B2-90D1-4515-B8FE-1AECBD8FAB02} = {F5E44F6E-B0C9-4647-94DA-FA952B334736}
+		{52DE3466-E53A-42A9-B192-323E2018023B} = {386F4BD3-D353-4D55-89A9-64EA65C3AC38}
+		{4CB49A65-7B62-4557-A5D9-6C9401BD03ED} = {52DE3466-E53A-42A9-B192-323E2018023B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7AC226A1-8444-4340-96E8-25D79829A241}

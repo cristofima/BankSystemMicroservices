@@ -26,16 +26,40 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 
     public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         try
         {
             _logger.LogInformation("Processing logout for user {UserId}", request.UserId);
 
-            await RevokeUserTokensAsync(request);
+            // Validate user ID
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                _logger.LogWarning("Logout failed - invalid user ID");
+                return Result.Failure("Invalid user ID");
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var revokeResult = await RevokeUserTokensAsync(request, cancellationToken);
+            if (!revokeResult.IsSuccess)
+            {
+                _logger.LogWarning("Failed to revoke tokens for user {UserId}: {Error}", request.UserId, revokeResult.Error);
+                return revokeResult;
+            }
+            
+            cancellationToken.ThrowIfCancellationRequested();
+            
             await LogUserLogoutAsync(request);
 
             _logger.LogInformation("Successfully processed logout for user {UserId}", request.UserId);
 
             return Result.Success();
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Logout operation was cancelled for user {UserId}", request.UserId);
+            throw;
         }
         catch (Exception ex)
         {
@@ -44,9 +68,9 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
         }
     }
 
-    private async Task RevokeUserTokensAsync(LogoutCommand request)
+    private async Task<Result> RevokeUserTokensAsync(LogoutCommand request, CancellationToken cancellationToken)
     {
-        await _refreshTokenService.RevokeAllUserTokensAsync(request.UserId, request.IpAddress, "User logout");
+        return await _refreshTokenService.RevokeAllUserTokensAsync(request.UserId, request.IpAddress, "User logout", cancellationToken);
     }
 
     private async Task LogUserLogoutAsync(LogoutCommand request)
