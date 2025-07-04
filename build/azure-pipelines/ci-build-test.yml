@@ -1,0 +1,177 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+  paths:
+    include:
+      - 'src/services/**/src/**'
+      - 'src/services/**/tests/**'
+      - 'build/azure-pipelines/ci-build-test.yml'
+    exclude:
+      - 'src/services/**/*.md'
+      - 'src/services/**/README.md'
+
+variables:
+  buildConfiguration: 'Release'
+  solution: 'src/BankSystem.sln'
+  testProjectsPattern: 'src/**/tests/**/*.csproj'
+  coverageReportsFolder: '$(Agent.TempDirectory)/CoverageReports'
+  
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+  - stage: BuildAndTest
+    displayName: 'Build and Test'
+    jobs:
+      - job: BuildAndTest
+        displayName: 'Build Solution and Run Tests'
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Use .NET 9 SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '9.x'
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore NuGet packages'
+            inputs:
+              command: 'restore'
+              projects: '$(solution)'
+              feedsToUse: 'select'
+              verbosityRestore: 'minimal'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build Solution'
+            inputs:
+              command: 'build'
+              projects: '$(solution)'
+              arguments: '--configuration $(buildConfiguration) --no-restore'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Run Tests with Code Coverage'
+            inputs:
+              command: 'test'
+              projects: '$(testProjectsPattern)'
+              arguments: >
+                --configuration $(buildConfiguration)
+                --no-build
+                --collect:"XPlat Code Coverage"
+                --results-directory $(coverageReportsFolder)
+                --logger trx
+                --settings $(Build.SourcesDirectory)/src/coverlet.runsettings
+              publishTestResults: true
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Test Results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '$(coverageReportsFolder)/**/*.trx'
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish Code Coverage Results'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(coverageReportsFolder)/**/coverage.cobertura.xml'
+              pathToSources: '$(Build.SourcesDirectory)/src'
+              failIfCoverageEmpty: false
+
+          # Optional: Create and publish coverage report
+          - task: DotNetCoreCLI@2
+            displayName: 'Install ReportGenerator Tool'
+            inputs:
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'install --global dotnet-reportgenerator-globaltool'
+
+          - task: PowerShell@2
+            displayName: 'Generate Coverage Report'
+            condition: succeededOrFailed()
+            inputs:
+              targetType: 'inline'
+              script: |
+                $coverageFiles = Get-ChildItem -Path "$(coverageReportsFolder)" -Filter "coverage.cobertura.xml" -Recurse
+                if ($coverageFiles.Count -gt 0) {
+                  $reports = ($coverageFiles | ForEach-Object { $_.FullName }) -join ";"
+                  reportgenerator -reports:$reports -targetdir:"$(coverageReportsFolder)/Html" -reporttypes:Html
+                  Write-Host "Coverage report generated successfully"
+                } else {
+                  Write-Host "No coverage files found"
+                }
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Coverage Report'
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: '$(coverageReportsFolder)/Html'
+              artifact: 'CoverageReport'
+              publishLocation: 'pipeline'
+
+  # SonarQube Analysis (Optional - Configure SonarQube service connection to enable)
+  - stage: CodeQuality
+    displayName: 'Code Quality Analysis'
+    dependsOn: BuildAndTest
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: SonarQubeAnalysis
+        displayName: 'SonarQube Analysis'
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Use .NET 9 SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '9.x'
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+
+          - task: SonarQubePrepare@5
+            displayName: 'Prepare SonarQube Analysis'
+            inputs:
+              SonarQube: 'SonarQube'
+              scannerMode: 'MSBuild'
+              projectKey: '$(SONAR_PROJECT_KEY)'
+              projectName: '$(SONAR_PROJECT_NAME)'
+              extraProperties: |
+                sonar.cs.opencover.reportsPaths=$(coverageReportsFolder)/**/coverage.opencover.xml
+                sonar.cs.vstest.reportsPaths=$(coverageReportsFolder)/**/*.trx
+                sonar.exclusions=**/bin/**,**/obj/**,**/*.Tests/**,**/Migrations/**,**/wwwroot/**
+                sonar.coverage.exclusions=**/*.Tests/**,**/Migrations/**,**/Program.cs,**/Startup.cs
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore for SonarQube'
+            inputs:
+              command: 'restore'
+              projects: '$(solution)'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build for SonarQube'
+            inputs:
+              command: 'build'
+              projects: '$(solution)'
+              arguments: '--configuration $(buildConfiguration) --no-restore'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Run Tests for SonarQube'
+            inputs:
+              command: 'test'
+              projects: '$(testProjectsPattern)'
+              arguments: >
+                --configuration $(buildConfiguration)
+                --no-build
+                --collect:"XPlat Code Coverage"
+                --results-directory $(coverageReportsFolder)
+                --logger trx
+                --settings $(Build.SourcesDirectory)/src/coverlet.runsettings
+
+          - task: SonarQubeAnalyze@5
+            displayName: 'Run SonarQube Analysis'
+
+          - task: SonarQubePublish@5
+            displayName: 'Publish SonarQube Results'
+            inputs:
+              pollingTimeoutSec: '300'
