@@ -4,13 +4,49 @@
       "file": "./docs/guidelines/code-generation.md"
     },
     {
+      "file": "./docs/guidelines/clean-code.md"
+    },
+    {
+      "file": "./docs/guidelines/solid-principles.md"
+    },
+    {
+      "file": "./docs/guidelines/naming-conventions.md"
+    },
+    {
+      "file": "./docs/guidelines/documentation-standards.md"
+    },
+    {
+      "file": "./docs/guidelines/domain-driven-design.md"
+    },
+    {
+      "file": "./docs/guidelines/cqrs-implementation.md"
+    },
+    {
+      "file": "./docs/guidelines/error-handling.md"
+    },
+    {
+      "file": "./docs/guidelines/repository-pattern.md"
+    },
+    {
+      "file": "./docs/guidelines/aspnetcore-best-practices.md"
+    },
+    {
       "file": "./docs/guidelines/api-design.md"
+    },
+    {
+      "file": "./docs/guidelines/entity-framework-core.md"
+    },
+    {
+      "file": "./docs/guidelines/async-await-best-practices.md"
     },
     {
       "file": "./docs/guidelines/configuration-management.md"
     },
     {
-      "file": "./docs/guidelines/entity-framework.md"
+      "file": "./docs/guidelines/performance-guidelines.md"
+    },
+    {
+      "file": "./docs/guidelines/static-methods-best-practices.md"
     }
   ],
   "github.copilot.chat.codeReview.instructions": [

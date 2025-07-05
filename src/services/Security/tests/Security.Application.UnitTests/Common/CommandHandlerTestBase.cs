@@ -69,7 +69,7 @@ public abstract class CommandHandlerTestBase : TestBase
     /// <summary>
     /// Creates a mock UserManager with proper setup
     /// </summary>
-    private Mock<UserManager<ApplicationUser>> CreateMockUserManager()
+    private static Mock<UserManager<ApplicationUser>> CreateMockUserManager()
     {
         var store = new Mock<IUserStore<ApplicationUser>>();
         var mgr = new Mock<UserManager<ApplicationUser>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
@@ -81,7 +81,7 @@ public abstract class CommandHandlerTestBase : TestBase
     /// <summary>
     /// Creates a test ApplicationUser with valid properties
     /// </summary>
-    protected ApplicationUser CreateTestUser(
+    protected static ApplicationUser CreateTestUser(
         string? id = null,
         string? userName = "testuser@example.com",
         string? email = "testuser@example.com",

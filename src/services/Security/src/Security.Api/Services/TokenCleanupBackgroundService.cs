@@ -58,7 +58,7 @@ public class TokenCleanupBackgroundService : BackgroundService
                 .Where(rt => rt.ExpiryDate < cutoffDate)
                 .ToListAsync(cancellationToken);
 
-            if (expiredTokens.Any())
+            if (expiredTokens.Count > 0)
             {
                 dbContext.RefreshTokens.RemoveRange(expiredTokens);
                 await dbContext.SaveChangesAsync(cancellationToken);

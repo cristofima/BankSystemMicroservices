@@ -274,7 +274,7 @@ public class RefreshTokenService : IRefreshTokenService
                 .Where(rt => rt.UserId == userId && !rt.IsRevoked)
                 .ToListAsync(cancellationToken);
 
-            if (!activeTokens.Any())
+            if (activeTokens.Count == 0)
             {
                 _logger.LogInformation("No active tokens found for user {UserId}", userId);
                 return Result.Success();
@@ -310,7 +310,7 @@ public class RefreshTokenService : IRefreshTokenService
                            (rt.IsRevoked && rt.RevokedAt < cutoffDate))
                 .ToListAsync(cancellationToken);
 
-            if (expiredTokens.Any())
+            if (expiredTokens.Count > 0)
             {
                 _context.RefreshTokens.RemoveRange(expiredTokens);
                 await _context.SaveChangesAsync(cancellationToken);

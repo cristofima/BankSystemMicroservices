@@ -33,13 +33,13 @@ public class SecurityHeadersMiddleware
 
         // Basic security headers
         if (!headers.ContainsKey("X-Content-Type-Options"))
-            headers["X-Content-Type-Options"] = "nosniff";
+            headers.XContentTypeOptions = "nosniff";
         
         if (!headers.ContainsKey("X-Frame-Options"))
-            headers["X-Frame-Options"] = "DENY";
+            headers.XFrameOptions = "DENY";
         
         if (!headers.ContainsKey("X-XSS-Protection"))
-            headers["X-XSS-Protection"] = "1; mode=block";
+            headers.XXSSProtection = "1; mode=block";
         
         if (!headers.ContainsKey("Referrer-Policy"))
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
@@ -58,7 +58,7 @@ public class SecurityHeadersMiddleware
                 else
                 {
                     // Standard development CSP for API endpoints
-                    headers["Content-Security-Policy"] = 
+                    headers.ContentSecurityPolicy = 
                         "default-src 'self'; " +
                         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
                         "style-src 'self' 'unsafe-inline'; " +
@@ -71,7 +71,7 @@ public class SecurityHeadersMiddleware
             else
             {
                 // Strict CSP for production
-                headers["Content-Security-Policy"] = 
+                headers.ContentSecurityPolicy = 
                     "default-src 'self'; " +
                     "script-src 'self'; " +
                     "style-src 'self' 'unsafe-inline'; " +

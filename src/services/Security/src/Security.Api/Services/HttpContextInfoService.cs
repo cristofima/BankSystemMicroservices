@@ -50,6 +50,6 @@ public class HttpContextInfoService : IHttpContextInfoService
         if (context == null)
             return UnknownValue;
 
-        return context.Request.Headers["User-Agent"].FirstOrDefault() ?? UnknownValue;
+        return context.Request.Headers.UserAgent.FirstOrDefault() ?? UnknownValue;
     }
 }
