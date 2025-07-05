@@ -1229,6 +1229,52 @@ public class IsolatedIntegrationTests : IntegrationTestBase
 - [ ] Memory usage reasonable
 - [ ] Database query performance optimized
 
+## CI/CD Pipeline Integration
+
+### Azure DevOps Pipeline Configuration
+
+Integration tests are automatically executed in the CI pipeline with proper test isolation and reporting:
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "Run Integration Tests with Code Coverage"
+  inputs:
+    command: "test"
+    projects: "src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj"
+    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
+    publishTestResults: true
+  # Note: TestContainers will automatically use Docker on Linux
+  continueOnError: true
+```
+
+### Test Environment Requirements
+
+- **Docker**: Required for TestContainers (automatically available on ubuntu-latest agents)
+- **SQL Server**: Provided via TestContainers
+- **Redis**: Provided via TestContainers
+- **Test Data**: Isolated per test run
+
+### Coverage Integration
+
+Integration tests contribute to overall code coverage metrics:
+
+```xml
+<!-- coverlet.runsettings -->
+<Configuration>
+  <Format>cobertura,opencover</Format>
+  <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*</Exclude>
+  <IncludeTestAssembly>false</IncludeTestAssembly>
+</Configuration>
+```
+
+### CI Pipeline Best Practices
+
+1. **Run After Unit Tests**: Integration tests run after unit tests pass
+2. **Parallel Execution**: Can run in parallel with other services' tests
+3. **Fail Fast**: Stop pipeline if critical integration tests fail
+4. **Continue on Error**: Allow pipeline to continue for non-critical integration tests
+5. **Timeout Management**: Set appropriate timeouts for database operations
+
 ## Summary
 
 1. **Use real infrastructure** - Test against actual databases and services when possible

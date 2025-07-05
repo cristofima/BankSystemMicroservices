@@ -37,7 +37,7 @@ These instructions guide GitHub Copilot in generating Git commit messages that a
         - Reducing memory allocations
         - Improving algorithm efficiency
       - `build`: Changes that affect the build system or external dependencies (e.g., NuGet packages, MSBuild, Docker).
-      - `ci`: Changes to CI/CD configuration files and scripts (e.g., Azure Pipelines, GitHub Actions).
+      - `ci`: Changes to CI/CD configuration files and scripts (e.g., Azure Pipelines, GitHub Actions, YML files).
       - `docs`: Documentation only changes.
       - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semicolons, etc.).
       - `test`: Adding missing tests or correcting existing tests.
