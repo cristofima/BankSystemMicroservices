@@ -1,38 +1,43 @@
 # Build Configuration
 
-This directory contains all build and CI/CD pipeline configurations for the BankSystem Microservices project.
+This directory contains the CI/CD pipeline configurations for the BankSystem Microservices project.
 
 ## Directory Structure
 
 ```
 build/
 ├── azure-pipelines/
-│   └── ci-build-test.yml                    # Main CI pipeline for entire solution
-├── SONARQUBE_COMPLETE_GUIDE.md             # Complete SonarQube integration guide
-├── INTEGRATION_TESTING_COMPLETE_GUIDE.md   # Complete integration testing guide
-└── README.md                                # This file
+│   └── ci-build-test.yml              # Main CI pipeline for entire solution
+└── README.md                          # This file
 ```
 
-## Documentation
+## Pipeline Documentation
 
-### **SonarQube Integration** (`SONARQUBE_COMPLETE_GUIDE.md`)
+The main CI/CD pipeline documentation is located in:
 
-Complete guide covering:
+- **`docs/ci-documentation.md`** - Complete CI/CD pipeline documentation
+- **`docs/sonarqube-integration-guide.md`** - SonarQube integration setup and configuration
+- **`docs/guidelines/integration-testing.md`** - Integration testing guidelines and CI integration
 
-- SonarQube scanner mode configuration (July 2025 updates)
-- Azure DevOps test argument conflict resolution
-- Coverage file path configuration
-- Pipeline YAML configuration
-- Troubleshooting and verification steps
+## Pipeline File
 
-### **Integration Testing** (`INTEGRATION_TESTING_COMPLETE_GUIDE.md`)
+- **`azure-pipelines/ci-build-test.yml`** - Production-ready CI pipeline that:
+  - Builds the entire solution
+  - Runs unit and integration tests with code coverage
+  - Integrates with SonarQube for code quality analysis
+  - Publishes test results and coverage reports
 
-Complete guide covering:
+## Usage
 
-- Testcontainers setup with SQL Server
-- Azure DevOps CI/CD configuration for Docker-based tests
-- Local development setup
-- Performance considerations and best practices
+To use this pipeline in Azure DevOps:
+
+1. Create a new pipeline
+2. Select the repository
+3. Choose "Existing Azure Pipelines YAML file"
+4. Select `build/azure-pipelines/ci-build-test.yml`
+5. Configure required variables (see documentation)
+
+For complete setup instructions, see the documentation files in the `docs/` directory.
 
 ## Pipeline Overview
 
@@ -75,7 +80,8 @@ dotnet test src/**/tests/**/*.csproj --configuration Release --no-build
 For detailed information about CI/CD processes, see:
 
 - [CI Documentation](../docs/ci-documentation.md) - Comprehensive pipeline documentation
-- [Pipeline Analysis](../PIPELINE_ANALYSIS.md) - Technical analysis and troubleshooting
+- [SonarQube Integration Guide](../docs/sonarqube-integration-guide.md) - SonarQube setup and configuration
+- [Integration Testing Guide](../docs/guidelines/integration-testing.md) - Integration testing setup
 
 ## Path References
 

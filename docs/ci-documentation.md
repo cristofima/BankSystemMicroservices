@@ -104,9 +104,11 @@ The pipeline **IGNORES** changes to:
 
 ### **Stage 2: Code Quality Analysis (SonarQube)**
 
+> **📋 Detailed Configuration**: See [SonarQube Integration Guide](./sonarqube-integration-guide.md) for comprehensive setup and troubleshooting.
+
 #### **Conditions:**
 
-- Runs **ONLY** on `main` branch
+- Runs **ONLY** when `SONAR_PROJECT_KEY` variable is set
 - Requires Stage 1 to succeed
 - Requires SonarQube service connection
 
@@ -114,23 +116,21 @@ The pipeline **IGNORES** changes to:
 
 1. **Prepare SonarQube Analysis**
 
-   - Configures SonarQube scanner
-   - Sets project key and name
-   - Configures coverage report paths
+   - Configures SonarQube scanner in `dotnet` mode
+   - Sets project key and organization
+   - Configures auto-discovery with minimal exclusions
+   - Excludes auto-generated files (migrations, designer files)
 
-2. **Build for Analysis**
+2. **Analyze Code Quality**
 
-   - Clean build for SonarQube analysis
-   - Includes all source code
-
-3. **Run Tests for Analysis**
-
-   - Executes tests again for SonarQube
-   - Generates coverage data in required formats
-
-4. **Analyze and Publish**
    - Performs static code analysis
+   - Uses coverage data from previous test runs
+   - Analyzes code duplication, maintainability, reliability, security
+
+3. **Publish Quality Gate**
    - Publishes results to SonarQube server
+   - Enforces quality gate policies
+   - Provides detailed code quality metrics
 
 ## Variables Configuration
 
@@ -145,10 +145,13 @@ The pipeline **IGNORES** changes to:
 
 ### **SonarQube Variables (Required for Code Quality stage)**
 
+> **📋 Complete Setup**: See [SonarQube Integration Guide](./sonarqube-integration-guide.md) for detailed configuration instructions.
+
 | Variable             | Description                  | Example                     |
 | -------------------- | ---------------------------- | --------------------------- |
-| `SONAR_PROJECT_KEY`  | SonarQube project identifier | `banksystem-microservices`  |
+| `SONAR_PROJECT_KEY`  | SonarQube project identifier | `bank-system-microservices` |
 | `SONAR_PROJECT_NAME` | Display name in SonarQube    | `Bank System Microservices` |
+| `SONAR_ORGANIZATION` | SonarCloud organization      | `your-org-name`             |
 
 ## Code Coverage Configuration
 

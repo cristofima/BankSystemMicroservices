@@ -56,18 +56,11 @@ stages:
         projectName: '$(SONAR_PROJECT_NAME)'
         extraProperties: |
           sonar.organization=$(SONAR_ORGANIZATION)
-          sonar.sources=src/services/Security/src,src/services/Account/src,src/services/Movement/src,src/services/Transaction/src
-          sonar.tests=src/services/Security/tests,src/services/Account/tests,src/services/Movement/tests,src/services/Transaction/tests
-          sonar.exclusions=**/bin/**/*,**/obj/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs,**/packages/**/*,**/*.min.js,**/*.min.css
-          sonar.test.inclusions=**/*Test*.cs,**/*Tests.cs
-          sonar.test.exclusions=**/bin/**/*,**/obj/**/*
-          sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml,$(resultsDirectory)/**/*.xml
-          sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx,$(resultsDirectory)/**/*.trx
-          sonar.coverage.exclusions=**/tests/**/*,**/Migrations/**/*,**/*.Designer.cs,**/ModelSnapshot.cs,**/Program.cs
+          sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs
+          sonar.test.exclusions=**/bin/**,**/obj/**
+          sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml
+          sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx
           sonar.sourceEncoding=UTF-8
-          sonar.scanner.responseTimeout=300
-          sonar.scanner.socketTimeout=300
-          sonar.scanner.javaOpts=-Xmx2g -XX:MaxMetaspaceSize=512m
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
       timeoutInMinutes: 10
 
@@ -99,7 +92,7 @@ stages:
       inputs:
         command: 'test'
         projects: 'src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj'
-        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
+        arguments: '--configuration $(buildConfiguration) --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
         publishTestResults: true
 
     - task: DotNetCoreCLI@2
@@ -107,7 +100,7 @@ stages:
       inputs:
         command: 'test'
         projects: 'src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj'
-        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
+        arguments: '--configuration $(buildConfiguration) --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
         publishTestResults: true
       # Note: TestContainers will automatically use Docker on Linux
       continueOnError: true
