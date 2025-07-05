@@ -306,8 +306,10 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Act
         var result = await _handler.Handle(command, CreateCancellationToken());
 
-        // Assert - this might depend on UserManager validation, but we'll test our logic
-        // The actual validation might happen in UserManager.CreateAsync
+        // Assert 
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error, Is.Not.Empty);
         SetupUserManagerCreateUser(IdentityResult.Failed(
             new IdentityError { Description = "Username cannot be empty" }));
     }

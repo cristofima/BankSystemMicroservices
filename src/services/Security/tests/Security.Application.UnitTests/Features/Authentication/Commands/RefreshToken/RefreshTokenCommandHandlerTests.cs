@@ -27,8 +27,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             MockTokenService.Object,
             MockRefreshTokenService.Object,
             MockAuditService.Object,
-            _mockLogger.Object,
-            CreateSecurityOptions());
+            _mockLogger.Object);
     }
 
     [Test]

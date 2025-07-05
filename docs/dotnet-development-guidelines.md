@@ -938,3 +938,284 @@ public class TransactionControllerTests : IClassFixture<WebApplicationFactory<Pr
 ```
 
 Remember to always follow these patterns and principles when developing the Bank System Microservices. Each microservice should be a cohesive, independently deployable unit that follows these architectural guidelines.
+
+## SonarQube Code Quality Standards
+
+### Mandatory Rules Compliance
+
+All code must comply with SonarQube rules to maintain high code quality standards. Below are key rules and their implementations:
+
+#### S3903: All types must be in named namespaces
+
+**Rule**: Move types into named namespaces instead of the global namespace.
+
+```csharp
+// ❌ Bad: No namespace
+public record ForgotPasswordDto(string Email);
+
+// ✅ Good: Proper namespace
+namespace Security.Application.Dtos;
+
+/// <summary>
+/// Request model for initiating password reset
+/// </summary>
+public record ForgotPasswordDto
+{
+    [Required(ErrorMessage = "Email is required")]
+    [EmailAddress(ErrorMessage = "Invalid email address format")]
+    public string Email { get; init; } = string.Empty;
+}
+```
+
+#### S4487: Remove unused private fields
+
+**Rule**: Remove unread private fields or refactor code to use their values.
+
+```csharp
+// ❌ Bad: Unused field
+public class RefreshTokenCommandHandler
+{
+    private readonly SecurityOptions _securityOptions; // Not used anywhere
+
+    public RefreshTokenCommandHandler(IOptions<SecurityOptions> securityOptions)
+    {
+        _securityOptions = securityOptions?.Value; // Assigned but never used
+    }
+}
+
+// ✅ Good: Remove unused field
+public class RefreshTokenCommandHandler
+{
+    public RefreshTokenCommandHandler(
+        UserManager<ApplicationUser> userManager,
+        ITokenService tokenService)
+    {
+        // Only inject what you actually use
+    }
+}
+```
+
+#### S6667: Pass caught exception as parameter when logging
+
+**Rule**: Logging in catch clauses should pass the caught exception as a parameter.
+
+```csharp
+// ❌ Bad: Exception not passed to logger
+catch (Exception ex)
+{
+    _logger.LogError("Error during operation");
+    return Result.Failure("An error occurred");
+}
+
+// ✅ Good: Exception passed to logger
+catch (Exception ex)
+{
+    _logger.LogError(ex, "Error during operation from IP {IpAddress}", request.IpAddress);
+    return Result.Failure("An error occurred");
+}
+```
+
+#### S1192: Define constants for repeated string literals
+
+**Rule**: Define constants instead of using string literals multiple times.
+
+```csharp
+// ❌ Bad: Repeated string literals
+public class SecurityAuditService
+{
+    public void LogAuth(string ip)
+    {
+        _logger.LogInfo("User from {IP}", ip ?? "unknown");
+    }
+
+    public void LogPermission(string ip)
+    {
+        _logger.LogInfo("Permission change from {IP}", ip ?? "unknown");
+    }
+}
+
+// ✅ Good: Define constant
+public class SecurityAuditService
+{
+    private const string UnknownValue = "unknown";
+
+    public void LogAuth(string ip)
+    {
+        _logger.LogInfo("User from {IP}", ip ?? UnknownValue);
+    }
+
+    public void LogPermission(string ip)
+    {
+        _logger.LogInfo("Permission change from {IP}", ip ?? UnknownValue);
+    }
+}
+```
+
+#### S1481: Remove unused local variables
+
+**Rule**: Remove unused local variables or use discard pattern.
+
+```csharp
+// ❌ Bad: Unused variable
+var principal = _tokenHandler.ValidateToken(token, parameters, out var securityToken);
+return principal; // securityToken is never used
+
+// ✅ Good: Use discard pattern
+var principal = _tokenHandler.ValidateToken(token, parameters, out _);
+return principal;
+```
+
+#### S1118: Add protected constructor or static keyword
+
+**Rule**: Utility classes should be static or have protected constructors.
+
+```csharp
+// ❌ Bad: Public class with only static usage
+public partial class Program
+{ }
+
+// ✅ Good: Static class
+public static partial class Program
+{ }
+```
+
+#### S2325: Make methods static when possible
+
+**Rule**: Make private methods static when they don't use instance members.
+
+```csharp
+// ❌ Bad: Instance method not using instance members
+private TokenResponse CreateTokenResponse(dynamic tokenData)
+{
+    return new TokenResponse(
+        tokenData.AccessToken,
+        tokenData.RefreshToken,
+        tokenData.AccessTokenExpiry,
+        tokenData.RefreshTokenExpiry);
+}
+
+// ✅ Good: Static method
+private static TokenResponse CreateTokenResponse(dynamic tokenData)
+{
+    return new TokenResponse(
+        tokenData.AccessToken,
+        tokenData.RefreshToken,
+        tokenData.AccessTokenExpiry,
+        tokenData.RefreshTokenExpiry);
+}
+```
+
+#### S6966: Use RunAsync instead of Run
+
+**Rule**: Use `RunAsync()` instead of `Run()` for async applications.
+
+```csharp
+// ❌ Bad: Synchronous Run
+app.Run();
+
+// ✅ Good: Asynchronous RunAsync
+await app.RunAsync();
+```
+
+#### S1066: Merge nested if statements
+
+**Rule**: Merge if statements when possible to reduce complexity.
+
+```csharp
+// ❌ Bad: Nested if statements
+if (context.User.Identity?.IsAuthenticated == true)
+{
+    var jwtId = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+    if (!string.IsNullOrEmpty(jwtId))
+    {
+        if (_memoryCache.TryGetValue($"revoked_token_{jwtId}", out _))
+        {
+            // Handle revoked token
+        }
+    }
+}
+
+// ✅ Good: Merged conditions
+if (context.User.Identity?.IsAuthenticated == true)
+{
+    var jwtId = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+    if (!string.IsNullOrEmpty(jwtId) && _memoryCache.TryGetValue($"revoked_token_{jwtId}", out _))
+    {
+        // Handle revoked token
+    }
+}
+```
+
+#### S2699: Add assertions to test cases
+
+**Rule**: Test methods must have at least one assertion.
+
+```csharp
+// ❌ Bad: Test without assertions
+[Test]
+public async Task Handle_EmptyUserName_ShouldReturnFailure()
+{
+    var command = new RegisterCommand("", "email@test.com", "pass", "pass");
+    var result = await _handler.Handle(command, CancellationToken.None);
+    // No assertions!
+}
+
+// ✅ Good: Test with proper assertions
+[Test]
+public async Task Handle_EmptyUserName_ShouldReturnFailure()
+{
+    var command = new RegisterCommand("", "email@test.com", "pass", "pass");
+    var result = await _handler.Handle(command, CancellationToken.None);
+
+    Assert.That(result, Is.Not.Null);
+    Assert.That(result.IsFailure, Is.True);
+    Assert.That(result.Error, Is.Not.Empty);
+}
+```
+
+### Code Quality Checklist
+
+Before committing code, ensure:
+
+- [ ] All types are in named namespaces
+- [ ] No unused private fields or variables
+- [ ] Exception logging includes exception parameter
+- [ ] Repeated string literals are defined as constants
+- [ ] Utility classes are static or have protected constructors
+- [ ] Private methods are static when possible
+- [ ] Async applications use `RunAsync()`
+- [ ] Nested if statements are merged where appropriate
+- [ ] All test methods have assertions
+- [ ] SonarQube quality gate passes
+
+### Migration File Constants
+
+For Entity Framework migrations, define constants for repeated strings:
+
+```csharp
+public partial class InitialCreate : Migration
+{
+    private const string AspNetRolesTable = "AspNetRoles";
+    private const string AspNetUsersTable = "AspNetUsers";
+    private const string RefreshTokensTable = "RefreshTokens";
+    private const string NVarChar450Type = "nvarchar(450)";
+    private const string NVarChar256Type = "nvarchar(256)";
+    private const string NVarCharMaxType = "nvarchar(max)";
+    private const string DateTime2Type = "datetime2";
+    private const string UserIdColumn = "UserId";
+
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.CreateTable(
+            name: AspNetRolesTable,
+            columns: table => new
+            {
+                Id = table.Column<string>(type: NVarChar450Type, nullable: false),
+                Name = table.Column<string>(type: NVarChar256Type, nullable: true),
+                // Use constants instead of magic strings
+            });
+    }
+}
+```

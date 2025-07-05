@@ -74,7 +74,7 @@ public class TokenService : ITokenService
 
         try
         {
-            var principal = _tokenHandler.ValidateToken(accessToken, validationParameters, out var securityToken);
+            var principal = _tokenHandler.ValidateToken(accessToken, validationParameters, out _);
             
             if (!IsJwtWithValidSecurityAlgorithm(accessToken))
                 return null;

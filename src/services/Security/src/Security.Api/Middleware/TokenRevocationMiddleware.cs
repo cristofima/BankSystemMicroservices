@@ -34,23 +34,19 @@ public class TokenRevocationMiddleware
             return;
         }
 
-        // Only check authenticated requests
+        // Only check authenticated requests with valid JWT ID
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var jwtId = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
             
-            if (!string.IsNullOrEmpty(jwtId))
+            if (!string.IsNullOrEmpty(jwtId) && _memoryCache.TryGetValue($"revoked_token_{jwtId}", out _))
             {
-                // Check if this token has been revoked
-                if (_memoryCache.TryGetValue($"revoked_token_{jwtId}", out _))
-                {
-                    _logger.LogWarning("Blocked request with revoked token {JwtId} from IP {IpAddress}", 
-                        jwtId, GetClientIpAddress(context));
-                    
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("Token has been revoked");
-                    return;
-                }
+                _logger.LogWarning("Blocked request with revoked token {JwtId} from IP {IpAddress}", 
+                    jwtId, GetClientIpAddress(context));
+                
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Token has been revoked");
+                return;
             }
         }
 
