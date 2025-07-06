@@ -57,15 +57,18 @@ public class SecurityHeadersMiddleware
                 }
                 else
                 {
-                    // Standard development CSP for API endpoints
+                    // Secure development CSP for API endpoints - removed unsafe directives
                     headers.ContentSecurityPolicy = 
                         "default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                        "style-src 'self' 'unsafe-inline'; " +
-                        "img-src 'self' data: https:; " +
-                        "font-src 'self' https:; " +
-                        "connect-src 'self' https: wss:; " +
-                        "frame-src 'self'";
+                        "script-src 'self'; " +
+                        "style-src 'self'; " +
+                        "img-src 'self' data:; " +
+                        "font-src 'self'; " +
+                        "connect-src 'self' https:; " +
+                        "frame-src 'none'; " +
+                        "object-src 'none'; " +
+                        "base-uri 'self'; " +
+                        "form-action 'self'";
                 }
             }
             else
@@ -74,11 +77,15 @@ public class SecurityHeadersMiddleware
                 headers.ContentSecurityPolicy = 
                     "default-src 'self'; " +
                     "script-src 'self'; " +
-                    "style-src 'self' 'unsafe-inline'; " +
+                    "style-src 'self'; " +
                     "img-src 'self' data:; " +
                     "font-src 'self'; " +
                     "connect-src 'self'; " +
-                    "frame-src 'none'";
+                    "frame-src 'none'; " +
+                    "object-src 'none'; " +
+                    "base-uri 'self'; " +
+                    "form-action 'self'; " +
+                    "upgrade-insecure-requests";
             }
         }
 
