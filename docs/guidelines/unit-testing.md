@@ -1,8 +1,6 @@
 # Unit Testing Guidelines
 
-## Overview
-
-This document provides comprehensive guidelines for writing effective unit tests in the Bank System Microservices project. These guidelines focus on testing domain logic, application services, and API controllers using modern .NET testing frameworks.
+This project uses **xUnit** as the standard test framework for all unit tests. xUnit is compatible with FluentAssertions, Moq, and AutoFixture.
 
 ## Testing Framework Setup
 
@@ -21,13 +19,12 @@ This document provides comprehensive guidelines for writing effective unit tests
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="4.0.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
     <PackageReference Include="Moq" Version="4.20.69" />
     <PackageReference Include="FluentAssertions" Version="6.12.0" />
     <PackageReference Include="AutoFixture" Version="4.18.1" />
-    <PackageReference Include="AutoFixture.NUnit3" Version="4.18.1" />
+    <PackageReference Include="AutoFixture.Xunit2" Version="4.18.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
   </ItemGroup>
 
@@ -102,10 +99,9 @@ public abstract class DomainTestBase : TestBase
 
 ```csharp
 // ✅ Good: Comprehensive value object tests
-[TestFixture]
 public class MoneyTests : DomainTestBase
 {
-    [Test]
+    [Fact]
     public void Constructor_ValidAmount_ShouldCreateMoney()
     {
         // Arrange
@@ -120,7 +116,7 @@ public class MoneyTests : DomainTestBase
         money.Currency.Should().Be(currency);
     }
 
-    [Test]
+    [Fact]
     public void Constructor_NegativeAmount_ShouldThrowException()
     {
         // Arrange
@@ -133,7 +129,7 @@ public class MoneyTests : DomainTestBase
             .WithMessage("*cannot be negative*");
     }
 
-    [Test]
+    [Fact]
     public void Add_SameCurrency_ShouldReturnCorrectSum()
     {
         // Arrange
@@ -148,7 +144,7 @@ public class MoneyTests : DomainTestBase
         result.Currency.Should().Be(Currency.USD);
     }
 
-    [Test]
+    [Fact]
     public void Add_DifferentCurrency_ShouldThrowException()
     {
         // Arrange
@@ -161,9 +157,10 @@ public class MoneyTests : DomainTestBase
             .WithMessage("*Cannot add EUR to USD*");
     }
 
-    [TestCase(100, 50, true)]
-    [TestCase(50, 100, false)]
-    [TestCase(100, 100, false)]
+    [Theory]
+    [InlineData(100, 50, true)]
+    [InlineData(50, 100, false)]
+    [InlineData(100, 100, false)]
     public void GreaterThan_DifferentAmounts_ShouldReturnExpectedResult(
         decimal amount1, decimal amount2, bool expected)
     {
@@ -178,7 +175,7 @@ public class MoneyTests : DomainTestBase
         result.Should().Be(expected);
     }
 
-    [Test]
+    [Fact]
     public void Equals_SameAmountAndCurrency_ShouldBeEqual()
     {
         // Arrange
@@ -193,10 +190,9 @@ public class MoneyTests : DomainTestBase
 }
 
 // ❌ Bad: Insufficient value object tests
-[TestFixture]
 public class MoneyTestsBad
 {
-    [Test]
+    [Fact]
     public void Constructor_ShouldWork()
     {
         var money = new Money(100, Currency.USD);
@@ -209,7 +205,6 @@ public class MoneyTestsBad
 
 ```csharp
 // ✅ Good: Comprehensive entity tests
-[TestFixture]
 public class AccountTests : DomainTestBase
 {
     private Account _account;
@@ -221,7 +216,7 @@ public class AccountTests : DomainTestBase
         _account = CreateTestAccount();
     }
 
-    [Test]
+    [Fact]
     public void CreateNew_ValidParameters_ShouldCreateAccount()
     {
         // Arrange
@@ -242,7 +237,7 @@ public class AccountTests : DomainTestBase
             .Which.Should().BeOfType<AccountCreatedEvent>();
     }
 
-    [Test]
+    [Fact]
     public void Deposit_ValidAmount_ShouldIncreaseBalance()
     {
         // Arrange
@@ -263,7 +258,7 @@ public class AccountTests : DomainTestBase
         _account.DomainEvents.Should().Contain(e => e is MoneyDepositedEvent);
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_SufficientFunds_ShouldDecreaseBalance()
     {
         // Arrange
@@ -283,7 +278,7 @@ public class AccountTests : DomainTestBase
         _account.DomainEvents.Should().Contain(e => e is MoneyWithdrawnEvent);
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_InsufficientFunds_ShouldFail()
     {
         // Arrange
@@ -302,7 +297,7 @@ public class AccountTests : DomainTestBase
         _account.DomainEvents.Should().BeEmpty(); // No events published
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_InactiveAccount_ShouldFail()
     {
         // Arrange
@@ -318,8 +313,9 @@ public class AccountTests : DomainTestBase
         result.Error.Should().Contain("Account is not active");
     }
 
-    [TestCase(0)]
-    [TestCase(-100)]
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-100)]
     public void Withdraw_InvalidAmount_ShouldFail(decimal amount)
     {
         // Arrange
@@ -333,7 +329,7 @@ public class AccountTests : DomainTestBase
         result.Error.Should().Contain("Amount must be positive");
     }
 
-    [Test]
+    [Fact]
     public void Freeze_ActiveAccount_ShouldChangeStatusAndPublishEvent()
     {
         // Arrange
@@ -350,7 +346,7 @@ public class AccountTests : DomainTestBase
             .Which.Reason.Should().Be(reason);
     }
 
-    [Test]
+    [Fact]
     public void Freeze_AlreadyFrozenAccount_ShouldFail()
     {
         // Arrange
@@ -368,10 +364,9 @@ public class AccountTests : DomainTestBase
 }
 
 // ❌ Bad: Insufficient entity tests
-[TestFixture]
 public class AccountTestsBad
 {
-    [Test]
+    [Fact]
     public void Deposit_ShouldWork()
     {
         var account = new Account();
@@ -387,7 +382,6 @@ public class AccountTestsBad
 
 ```csharp
 // ✅ Good: Comprehensive command handler tests
-[TestFixture]
 public class CreateAccountCommandHandlerTests : TestBase
 {
     private CreateAccountCommandHandler _handler;
@@ -413,7 +407,7 @@ public class CreateAccountCommandHandlerTests : TestBase
             _mockLogger.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidCommand_ShouldCreateAccountSuccessfully()
     {
         // Arrange
@@ -474,7 +468,7 @@ public class CreateAccountCommandHandlerTests : TestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_RepositoryThrowsException_ShouldReturnFailureResult()
     {
         // Arrange
@@ -509,7 +503,7 @@ public class CreateAccountCommandHandlerTests : TestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_CancellationRequested_ShouldRespectCancellation()
     {
         // Arrange
@@ -532,10 +526,9 @@ public class CreateAccountCommandHandlerTests : TestBase
 }
 
 // ❌ Bad: Insufficient command handler tests
-[TestFixture]
 public class CreateAccountCommandHandlerTestsBad
 {
-    [Test]
+    [Fact]
     public async Task Handle_ShouldCreateAccount()
     {
         var handler = new CreateAccountCommandHandler(null, null, null, null); // Nulls everywhere
@@ -553,7 +546,6 @@ public class CreateAccountCommandHandlerTestsBad
 
 ```csharp
 // ✅ Good: Comprehensive query handler tests
-[TestFixture]
 public class GetAccountByIdQueryHandlerTests : TestBase
 {
     private GetAccountByIdQueryHandler _handler;
@@ -579,7 +571,7 @@ public class GetAccountByIdQueryHandlerTests : TestBase
             _mockLogger.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ExistingAccountId_ShouldReturnAccountDto()
     {
         // Arrange
@@ -591,7 +583,8 @@ public class GetAccountByIdQueryHandlerTests : TestBase
         {
             Id = account.Id,
             AccountNumber = account.AccountNumber,
-            Balance = account.Balance.Amount
+            Balance = account.Balance.Amount,
+            Currency = account.Balance.Currency.Code
         };
 
         _mockRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
@@ -619,7 +612,7 @@ public class GetAccountByIdQueryHandlerTests : TestBase
         _mockMapper.Verify(m => m.Map<AccountDto>(account), Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_NonExistentAccountId_ShouldReturnFailure()
     {
         // Arrange
@@ -645,7 +638,7 @@ public class GetAccountByIdQueryHandlerTests : TestBase
         _mockMapper.Verify(m => m.Map<AccountDto>(It.IsAny<Account>()), Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_CachedAccount_ShouldReturnFromCacheWithoutRepositoryCall()
     {
         // Arrange
@@ -681,7 +674,6 @@ public class GetAccountByIdQueryHandlerTests : TestBase
 
 ```csharp
 // ✅ Good: Comprehensive validator tests
-[TestFixture]
 public class CreateAccountCommandValidatorTests : TestBase
 {
     private CreateAccountCommandValidator _validator;
@@ -693,7 +685,7 @@ public class CreateAccountCommandValidatorTests : TestBase
         _validator = new CreateAccountCommandValidator();
     }
 
-    [Test]
+    [Fact]
     public void Validate_ValidCommand_ShouldPassValidation()
     {
         // Arrange
@@ -711,7 +703,7 @@ public class CreateAccountCommandValidatorTests : TestBase
         result.Errors.Should().BeEmpty();
     }
 
-    [Test]
+    [Fact]
     public void Validate_EmptyCustomerId_ShouldFailValidation()
     {
         // Arrange
@@ -731,9 +723,10 @@ public class CreateAccountCommandValidatorTests : TestBase
             e.ErrorMessage.Contains("Customer ID is required"));
     }
 
-    [TestCase(0)]
-    [TestCase(-100)]
-    [TestCase(-0.01)]
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-100)]
+    [InlineData(-0.01)]
     public void Validate_InvalidInitialDeposit_ShouldFailValidation(decimal initialDeposit)
     {
         // Arrange
@@ -753,12 +746,13 @@ public class CreateAccountCommandValidatorTests : TestBase
             e.ErrorMessage.Contains("must be positive"));
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase(null)]
-    [TestCase("INVALID")]
-    [TestCase("us")]
-    [TestCase("USDD")]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
+    [InlineData("INVALID")]
+    [InlineData("us")]
+    [InlineData("USDD")]
     public void Validate_InvalidCurrency_ShouldFailValidation(string? currency)
     {
         // Arrange
@@ -777,7 +771,7 @@ public class CreateAccountCommandValidatorTests : TestBase
             e.PropertyName == nameof(CreateAccountCommand.Currency));
     }
 
-    [Test]
+    [Fact]
     public void Validate_ExcessiveInitialDeposit_ShouldFailValidation()
     {
         // Arrange
@@ -805,7 +799,6 @@ public class CreateAccountCommandValidatorTests : TestBase
 
 ```csharp
 // ✅ Good: Comprehensive controller tests
-[TestFixture]
 public class AccountControllerTests : TestBase
 {
     private AccountController _controller;
@@ -829,7 +822,7 @@ public class AccountControllerTests : TestBase
         };
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccount_ExistingAccount_ShouldReturnOkWithAccountDto()
     {
         // Arrange
@@ -860,7 +853,7 @@ public class AccountControllerTests : TestBase
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccount_NonExistentAccount_ShouldReturnNotFound()
     {
         // Arrange
@@ -878,7 +871,7 @@ public class AccountControllerTests : TestBase
         actionResult.Result.Should().BeOfType<NotFoundResult>();
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_ValidRequest_ShouldReturnCreatedAtAction()
     {
         // Arrange
@@ -918,7 +911,7 @@ public class AccountControllerTests : TestBase
         returnedDto.Should().BeEquivalentTo(createdAccount);
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_InvalidRequest_ShouldReturnBadRequest()
     {
         // Arrange
@@ -943,7 +936,7 @@ public class AccountControllerTests : TestBase
         badRequestResult.Value.Should().Be("Invalid currency code");
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_ModelValidationFails_ShouldReturnBadRequest()
     {
         // Arrange
@@ -1109,10 +1102,9 @@ public class TransactionBuilder
 }
 
 // Usage in tests
-[TestFixture]
 public class AccountBuilderUsageTests : DomainTestBase
 {
-    [Test]
+    [Fact]
     public void AccountBuilder_Usage_Example()
     {
         // Arrange
@@ -1149,28 +1141,27 @@ public class AccountBuilderUsageTests : DomainTestBase
 
 ```csharp
 // ✅ Good: Descriptive test names following pattern: MethodName_Scenario_ExpectedBehavior
-[TestFixture]
 public class AccountTests
 {
-    [Test]
+    [Fact]
     public void Withdraw_SufficientFunds_ShouldDecreaseBalanceAndCreateTransaction()
     {
         // Test implementation
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_InsufficientFunds_ShouldReturnFailureAndNotChangeBalance()
     {
         // Test implementation
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_FrozenAccount_ShouldReturnFailureWithAppropriateMessage()
     {
         // Test implementation
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_ZeroAmount_ShouldReturnFailureWithValidationMessage()
     {
         // Test implementation
@@ -1178,16 +1169,15 @@ public class AccountTests
 }
 
 // ❌ Bad: Unclear test names
-[TestFixture]
 public class AccountTestsBad
 {
-    [Test]
+    [Fact]
     public void TestWithdraw() { } // What scenario? What's expected?
 
-    [Test]
+    [Fact]
     public void Test1() { } // Completely unclear
 
-    [Test]
+    [Fact]
     public void WithdrawTest() { } // Better but still vague
 }
 ```
@@ -1293,10 +1283,9 @@ public class MoneyPerformanceBenchmarks
 }
 
 // Memory allocation tests
-[TestFixture]
 public class MemoryTests
 {
-    [Test]
+    [Fact]
     public void CreateManyAccounts_ShouldNotExceedMemoryThreshold()
     {
         // Arrange

@@ -121,7 +121,7 @@ Microservices communicate through domain events:
 
 ### Testing Frameworks
 
-- **NUnit**: Unit testing framework
+- **xUnit**: Unit testing framework
 - **Moq**: Mocking framework
 - **FluentAssertions**: Assertion library
 - **Testcontainers**: Integration testing with containers

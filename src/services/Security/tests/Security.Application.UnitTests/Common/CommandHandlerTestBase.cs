@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using NUnit.Framework;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Entities;
@@ -19,11 +18,8 @@ public abstract class CommandHandlerTestBase : TestBase
     protected Mock<ISecurityAuditService> MockAuditService { get; private set; } = null!;
     protected SecurityOptions SecurityOptions { get; private set; } = null!;
 
-    [SetUp]
-    public override void SetUp()
+    protected CommandHandlerTestBase()
     {
-        base.SetUp();
-        
         SetupMocks();
         SetupSecurityOptions();
     }

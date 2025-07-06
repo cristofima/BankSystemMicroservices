@@ -1,7 +1,6 @@
 using AutoFixture;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 
 namespace Security.Application.UnitTests.Common;
 
@@ -12,8 +11,7 @@ public abstract class TestBase
 {
     protected IFixture Fixture { get; private set; } = null!;
 
-    [SetUp]
-    public virtual void SetUp()
+    protected TestBase()
     {
         Fixture = new Fixture();
         Fixture.Behaviors.Remove(new ThrowingRecursionBehavior());
