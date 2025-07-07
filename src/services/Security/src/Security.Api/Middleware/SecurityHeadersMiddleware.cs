@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Security.Api.Middleware;
 
 /// <summary>
 /// Middleware for setting security headers with appropriate CSP for development tools
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SecurityHeadersMiddleware
 {
     private readonly RequestDelegate _next;
