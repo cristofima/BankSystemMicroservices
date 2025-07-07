@@ -278,23 +278,25 @@ dotnet restore src/BankSystem.sln
 # 2. Build solution (shows standard build warnings)
 dotnet build src/BankSystem.sln --configuration Release --no-restore --verbosity normal
 
-# 3. Run unit tests with coverage
-dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj `
+# 3. Run all unit tests with coverage
+dotnet test src/BankSystem.sln `
   --configuration Release `
   --no-build `
   --collect:"XPlat Code Coverage" `
   --results-directory ./TestResults `
   --logger trx `
-  --settings src/coverlet.runsettings
+  --settings src/coverlet.runsettings `
+  --filter "FullyQualifiedName~UnitTests"
 
 # 4. Run integration tests with coverage
-dotnet test src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj `
+dotnet test src/BankSystem.sln `
   --configuration Release `
   --no-build `
   --collect:"XPlat Code Coverage" `
   --results-directory ./TestResults `
   --logger trx `
-  --settings src/coverlet.runsettings
+  --settings src/coverlet.runsettings `
+  --filter "FullyQualifiedName~IntegrationTests"
 
 # 5. Generate HTML report
 reportgenerator `
@@ -309,8 +311,13 @@ Start-Process ./CoverageReport/index.html
 ### **Running Specific Test Projects**
 
 ```powershell
-# Run only unit tests
+# Run all unit tests (recommended)
+.\scripts\run-unit-tests.ps1
+
+# Or run individual unit test projects:
 dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj `
+  --configuration Release --collect:"XPlat Code Coverage" --settings src/coverlet.runsettings
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj `
   --configuration Release --collect:"XPlat Code Coverage" --settings src/coverlet.runsettings
 
 # Run only integration tests
@@ -383,6 +390,7 @@ testProjectsPattern: '**/*.UnitTests.csproj'
 ```powershell
 # For local development on Windows, use specific paths:
 dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj
 dotnet test src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj
 
 # Or use the provided build scripts that handle this automatically
@@ -427,8 +435,12 @@ Get-ChildItem -Path ./TestResults -Recurse -Filter "*.cobertura.xml"
 # ❌ Don't use (fails on Windows PowerShell)
 dotnet test src/**/tests/**/*.csproj
 
-# ✅ Use specific paths
+# ✅ Use specific paths or run all unit tests with the script
+.\scripts\run-unit-tests.ps1
+
+# ✅ Or run individual test projects
 dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj
 
 # ✅ Or use the provided build scripts
 .\scripts\build-quick.ps1
@@ -445,10 +457,11 @@ dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.
 
 ```powershell
 # Run only unit tests for faster feedback
-.\scripts\build-quick.ps1 -TestsOnly  # Still runs all tests
+.\scripts\run-unit-tests.ps1  # Runs all unit tests with coverage
 
-# Or manually run specific tests
+# Or manually run specific unit test projects
 dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj
 
 # Ensure Docker Desktop is running for integration tests
 docker info

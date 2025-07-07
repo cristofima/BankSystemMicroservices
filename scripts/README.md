@@ -32,6 +32,24 @@ Fast and focused build script for everyday development.
 - ✅ Automatic browser opening for results
 - ✅ Clean output formatting
 
+### `run-unit-tests.ps1` (Unit Tests Only)
+
+Focused script for running unit tests with code coverage.
+
+**Usage:**
+
+```powershell
+# Run all unit tests with coverage
+.\scripts\run-unit-tests.ps1
+```
+
+**Features:**
+
+- ✅ Runs all unit test projects (\*UnitTests.csproj)
+- ✅ Code coverage collection with coverlet
+- ✅ TRX and coverage reports
+- ✅ Fast execution (unit tests only, no integration tests)
+
 ### `build-local.ps1` (Advanced)
 
 Comprehensive build script with more configuration options.

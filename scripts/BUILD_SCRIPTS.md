@@ -100,7 +100,7 @@ build-local.bat Debug               # Debug configuration
 4. **🧪 Run Tests**
 
    - Automatically discover test projects
-   - Run unit tests: `Security.Application.UnitTests`
+   - Run unit tests: `Security.Application.UnitTests`, `Security.Domain.UnitTests`
    - Run integration tests: `Security.Infrastructure.IntegrationTests`
    - Collect code coverage in Cobertura format
 
@@ -216,8 +216,12 @@ dotnet restore src/BankSystem.sln
 # 2. Build with warnings
 dotnet build src/BankSystem.sln --configuration Release --verbosity normal
 
-# 3. Test individual projects
+# 3. Test all unit test projects (recommended)
+.\scripts\run-unit-tests.ps1
+
+# OR test individual projects
 dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj --collect:"XPlat Code Coverage"
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj --collect:"XPlat Code Coverage"
 
 # 4. Generate report
 reportgenerator -reports:./TestResults/**/coverage.cobertura.xml -targetdir:./CoverageReport -reporttypes:Html

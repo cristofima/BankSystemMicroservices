@@ -5,7 +5,7 @@ namespace Security.Application.Dtos;
 /// <summary>
 /// Request model for user registration
 /// </summary>
-public record RegisterRequest
+public record RegisterDto
 {
     /// <summary>
     /// Unique username for the account
@@ -57,12 +57,3 @@ public record RegisterRequest
     [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
     public string ConfirmPassword { get; init; } = string.Empty;
 }
-
-/// <summary>
-/// Response model for successful user registration
-/// </summary>
-public record RegisterResponse(
-    string UserId,
-    string UserName,
-    string Email,
-    DateTime CreatedAt);

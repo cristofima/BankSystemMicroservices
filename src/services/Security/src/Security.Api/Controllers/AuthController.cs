@@ -53,7 +53,7 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
     public async Task<IActionResult> Login(
-        [FromBody] LoginRequest request,
+        [FromBody] LoginDto request,
         CancellationToken cancellationToken)
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
@@ -75,7 +75,7 @@ public class AuthController : BaseController
         return Success(response);
     }
 
-    private LoginCommand CreateLoginCommand(LoginRequest request, string clientIpAddress)
+    private LoginCommand CreateLoginCommand(LoginDto request, string clientIpAddress)
     {
         return new LoginCommand(
             request.UserName,
@@ -283,7 +283,7 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
     public async Task<IActionResult> Register(
-        [FromBody] RegisterRequest request,
+        [FromBody] RegisterDto request,
         CancellationToken cancellationToken)
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
@@ -307,7 +307,7 @@ public class AuthController : BaseController
         _logger.LogInformation("Registration attempt for user {UserName} from IP {IpAddress}", userName, clientIpAddress);
     }
 
-    private RegisterCommand CreateRegisterCommand(RegisterRequest request, string clientIpAddress)
+    private RegisterCommand CreateRegisterCommand(RegisterDto request, string clientIpAddress)
     {
         return new RegisterCommand(
             request.UserName,

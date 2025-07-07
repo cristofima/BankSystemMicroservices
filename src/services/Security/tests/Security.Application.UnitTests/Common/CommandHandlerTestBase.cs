@@ -103,7 +103,7 @@ public abstract class CommandHandlerTestBase : TestBase
     /// <summary>
     /// Creates a test RefreshToken with valid properties
     /// </summary>
-    protected RefreshToken CreateTestRefreshToken(
+    protected static RefreshToken CreateTestRefreshToken(
         string? userId = null,
         string? token = null,
         string? jwtId = null,

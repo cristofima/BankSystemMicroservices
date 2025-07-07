@@ -201,8 +201,30 @@ Each microservice exposes its own OpenAPI/Swagger documentation:
 
 ### Run Unit Tests
 
+**Basic unit test execution:**
+
 ```bash
 dotnet test
+```
+
+**Run unit tests with code coverage (recommended):**
+
+```powershell
+# Use the provided PowerShell script
+./scripts/run-unit-tests.ps1
+```
+
+This will:
+
+- Run all unit test projects in the solution
+- Generate code coverage reports in multiple formats (HTML, Cobertura, JSON)
+- Open the HTML coverage report automatically
+- Results are saved to `TestResults/` directory
+
+**Manual coverage command:**
+
+```bash
+dotnet test --configuration Debug --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory TestResults /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=TestResults/coverage.cobertura.xml
 ```
 
 ### Run Integration Tests
@@ -217,6 +239,10 @@ dotnet test --configuration Release --filter Category=Integration
 # Using k6 or Azure Load Testing
 k6 run tests/load/transaction-load-test.js
 ```
+
+### Available Test Scripts
+
+See [scripts/README.md](scripts/README.md) for detailed information about available build and test scripts.
 
 ## 🚀 Deployment
 

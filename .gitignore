@@ -49,10 +49,5 @@ CoverageReport/
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 
-# NUnit
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
-
 # Visual Code
 .vs
