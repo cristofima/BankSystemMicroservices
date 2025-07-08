@@ -21,7 +21,7 @@ public class TokenService : ITokenService
     public TokenService(IOptions<JwtOptions> jwtOptions)
     {
         _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
-        
+
         if (string.IsNullOrWhiteSpace(_jwtOptions.Key))
             throw new ArgumentException("JWT key cannot be null or empty", nameof(jwtOptions));
 
@@ -30,12 +30,9 @@ public class TokenService : ITokenService
     }
 
     public Task<(string Token, string JwtId, DateTime Expiry)> CreateAccessTokenAsync(
-        ApplicationUser user, 
+        ApplicationUser user,
         IEnumerable<Claim> claims)
     {
-        if (string.IsNullOrWhiteSpace(user?.Id))
-            throw new ArgumentException("User ID cannot be null or empty", nameof(user));
-
         var jwtId = Guid.NewGuid().ToString();
         var expiry = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpiryInMinutes);
 
@@ -87,7 +84,7 @@ public class TokenService : ITokenService
         try
         {
             var principal = _tokenHandler.ValidateToken(accessToken, validationParameters, out _);
-            
+
             if (!IsJwtWithValidSecurityAlgorithm(accessToken))
                 return null;
 

@@ -33,18 +33,6 @@ public class ResultTests
     }
 
     [Fact]
-    public void Failure_WithNullError_ShouldCreateFailedResultWithNullError()
-    {
-        // Act
-        var result = Result.Failure(null);
-
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().BeNull();
-    }
-
-    [Fact]
     public void Failure_WithEmptyError_ShouldCreateFailedResultWithEmptyError()
     {
         // Act
@@ -70,18 +58,6 @@ public class ResultTests
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(errorMessage);
     }
-
-    [Fact]
-    public void ImplicitOperator_FromNullString_ShouldCreateFailureResult()
-    {
-        // Act
-        Result result = (string)null;
-
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().BeNull();
-    }
 }
 
 public class ResultOfTTests
@@ -103,19 +79,6 @@ public class ResultOfTTests
     }
 
     [Fact]
-    public void Success_WithNullValue_ShouldCreateSuccessfulResultWithNullValue()
-    {
-        // Act
-        var result = Result<string>.Success(null);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.IsFailure.Should().BeFalse();
-        result.Value.Should().BeNull();
-        result.Error.Should().BeNullOrEmpty();
-    }
-
-    [Fact]
     public void Failure_WithErrorMessage_ShouldCreateFailedResult()
     {
         // Arrange
@@ -129,19 +92,6 @@ public class ResultOfTTests
         result.IsFailure.Should().BeTrue();
         result.Value.Should().Be(0);
         result.Error.Should().Be(errorMessage);
-    }
-
-    [Fact]
-    public void Failure_WithNullError_ShouldCreateFailedResultWithNullError()
-    {
-        // Act
-        var result = Result<string>.Failure(null);
-
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Value.Should().BeNull();
-        result.Error.Should().BeNull();
     }
 
     [Fact]

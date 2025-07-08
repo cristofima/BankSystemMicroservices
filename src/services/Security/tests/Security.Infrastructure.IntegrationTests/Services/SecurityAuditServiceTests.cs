@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Security.Application.Configuration;
-using Security.Application.Interfaces;
 using Security.Infrastructure.Services;
 
 namespace Security.Infrastructure.IntegrationTests.Services;
@@ -15,7 +14,7 @@ public class SecurityAuditServiceTests : IAsyncLifetime
 {
     private Mock<ILogger<SecurityAuditService>> _mockLogger = null!;
     private SecurityOptions _securityOptions = null!;
-    private ISecurityAuditService _auditService = null!;
+    private SecurityAuditService _auditService = null!;
 
     public Task InitializeAsync()
     {
@@ -52,9 +51,9 @@ public class SecurityAuditServiceTests : IAsyncLifetime
     {
         // Arrange
         EnsureAuditServiceInitialized();
-        var token = "test-user-123";
-        var ipAddress = "RefreshToken";
-        var reason = "User logout";
+        const string token = "test-user-123";
+        const string ipAddress = "RefreshToken";
+        const string reason = "User logout";
 
         // Enable both audit logging and token operations
         _securityOptions.Audit.EnableAuditLogging = true;
@@ -79,9 +78,9 @@ public class SecurityAuditServiceTests : IAsyncLifetime
     {
         // Arrange
         EnsureAuditServiceInitialized();
-        var token = "test-user-123";
-        var ipAddress = "RefreshToken";
-        var reason = "User logout";
+        const string token = "test-user-123";
+        const string ipAddress = "RefreshToken";
+        const string reason = "User logout";
 
         // Disable both audit logging and token operations
         _securityOptions.Audit.EnableAuditLogging = false;
@@ -184,9 +183,9 @@ public class SecurityAuditServiceTests : IAsyncLifetime
     {
         // Arrange
         EnsureAuditServiceInitialized();
-        var userId = "perm-user";
-        var action = "GrantAdmin";
-        var ipAddress = "1.2.3.4";
+        const string userId = "perm-user";
+        const string action = "GrantAdmin";
+        const string ipAddress = "1.2.3.4";
 
         // Act
         await _auditService.LogPermissionChangeAsync(userId, action, ipAddress);
@@ -202,9 +201,9 @@ public class SecurityAuditServiceTests : IAsyncLifetime
     {
         // Arrange
         EnsureAuditServiceInitialized();
-        var userId = "violator";
-        var violation = "Attempted privilege escalation";
-        var ipAddress = "5.6.7.8";
+        const string userId = "violator";
+        const string violation = "Attempted privilege escalation";
+        const string ipAddress = "5.6.7.8";
 
         // Act
         await _auditService.LogSecurityViolationAsync(userId, violation, ipAddress);
@@ -222,9 +221,9 @@ public class SecurityAuditServiceTests : IAsyncLifetime
         EnsureAuditServiceInitialized();
         _securityOptions.Audit.EnableAuditLogging = true;
         _securityOptions.Audit.LogTokenOperations = true;
-        var shortToken = "short";
-        var ipAddress = "ip";
-        var reason = "test";
+        const string shortToken = "short";
+        const string ipAddress = "ip";
+        const string reason = "test";
 
         // Act
         await _auditService.LogTokenRevocationAsync(shortToken, ipAddress, reason);
@@ -241,9 +240,9 @@ public class SecurityAuditServiceTests : IAsyncLifetime
         EnsureAuditServiceInitialized();
         _securityOptions.Audit.EnableAuditLogging = true;
         _securityOptions.Audit.LogTokenOperations = true;
-        var longToken = "123456789abcdefgh";
-        var ipAddress = "ip";
-        var reason = "test";
+        const string longToken = "123456789abcdefgh";
+        const string ipAddress = "ip";
+        const string reason = "test";
 
         // Act
         await _auditService.LogTokenRevocationAsync(longToken, ipAddress, reason);
@@ -251,6 +250,118 @@ public class SecurityAuditServiceTests : IAsyncLifetime
         // Assert
         VerifyLogCalled(LogLevel.Information, "Token revocation", Times.Once());
         VerifyLogContains(longToken[..8]);
+    }
+
+    [Fact]
+    public async Task LogSuccessfulAuthenticationAsync_ShouldLogUserData()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        _securityOptions.Audit.LogSuccessfulAuthentication = true;
+        const string userId = "test-user";
+        const string ipAddress = "ip";
+
+        _auditService = new SecurityAuditService(
+            _mockLogger.Object,
+            Options.Create(_securityOptions));
+
+        // Act
+        await _auditService.LogSuccessfulAuthenticationAsync(userId, ipAddress);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Information, "Successful authentication for user", Times.Once());
+        VerifyLogContains(userId);
+        VerifyLogContains(ipAddress);
+    }
+
+    [Fact]
+    public async Task LogFailedAuthenticationAsync_ShouldLogUserData()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        _securityOptions.Audit.LogFailedAuthentication = true;
+        const string userId = "test-user";
+        const string ipAddress = "ip";
+        const string reason = "reason";
+
+        _auditService = new SecurityAuditService(
+            _mockLogger.Object,
+            Options.Create(_securityOptions));
+
+        // Act
+        await _auditService.LogFailedAuthenticationAsync(userId, ipAddress, reason);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Warning, "Failed authentication attempt for user", Times.Once());
+        VerifyLogContains(userId);
+        VerifyLogContains(ipAddress);
+        VerifyLogContains(reason);
+    }
+
+    [Fact]
+    public async Task LogTokenRefreshAsync_ShouldLogUserData()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        _securityOptions.Audit.LogTokenOperations = true;
+        const string userId = "test-user";
+        const string ipAddress = "ip";
+
+        _auditService = new SecurityAuditService(
+            _mockLogger.Object,
+            Options.Create(_securityOptions));
+
+        // Act
+        await _auditService.LogTokenRefreshAsync(userId, ipAddress);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Information, "Token refresh for user", Times.Once());
+        VerifyLogContains(userId);
+        VerifyLogContains(ipAddress);
+    }
+
+    [Fact]
+    public async Task LogUserRegistrationAsync_ShouldLogUserData()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        _securityOptions.Audit.LogUserOperations = true;
+        const string userId = "test-user";
+        const string ipAddress = "ip";
+
+        _auditService = new SecurityAuditService(
+            _mockLogger.Object,
+            Options.Create(_securityOptions));
+
+        // Act
+        await _auditService.LogUserRegistrationAsync(userId, ipAddress);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Information, "User registration for user", Times.Once());
+        VerifyLogContains(userId);
+        VerifyLogContains(ipAddress);
+    }
+
+    [Fact]
+    public async Task LogUserLogoutAsync_ShouldLogUserData()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        _securityOptions.Audit.LogUserOperations = true;
+        const string userId = "test-user";
+        const string ipAddress = "ip";
+
+        _auditService = new SecurityAuditService(
+            _mockLogger.Object,
+            Options.Create(_securityOptions));
+
+        // Act
+        await _auditService.LogUserLogoutAsync(userId, ipAddress);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Information, "User logout for user", Times.Once());
+        VerifyLogContains(userId);
+        VerifyLogContains(ipAddress);
     }
 
     #endregion
@@ -267,21 +378,6 @@ public class SecurityAuditServiceTests : IAsyncLifetime
                 level,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(messageContains)),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            times);
-    }
-
-    /// <summary>
-    /// Verifies that a log was called with specific level (any number of times)
-    /// </summary>
-    private void VerifyLogCalled(LogLevel level, Times times)
-    {
-        _mockLogger.Verify(
-            x => x.Log(
-                level,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times);

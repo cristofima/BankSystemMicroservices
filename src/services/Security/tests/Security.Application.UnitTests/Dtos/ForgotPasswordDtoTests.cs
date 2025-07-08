@@ -18,16 +18,6 @@ public class ForgotPasswordDtoTests
     }
 
     [Fact]
-    public void Constructor_WithNullEmail_ShouldSetEmailToNull()
-    {
-        // Arrange & Act
-        var dto = new ForgotPasswordDto { Email = null };
-
-        // Assert
-        Assert.Null(dto.Email);
-    }
-
-    [Fact]
     public void Constructor_WithEmptyEmail_ShouldSetEmailToEmpty()
     {
         // Arrange

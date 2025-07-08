@@ -27,6 +27,7 @@
     <PackageReference Include="Testcontainers" Version="4.6.0" />
     <PackageReference Include="Testcontainers.MsSql" Version="4.6.0" />
     <PackageReference Include="Bogus" Version="35.6.3" />
+    <PackageReference Include="Xunit.SkippableFact" Version="1.5.23" />
   </ItemGroup>
 
   <ItemGroup>

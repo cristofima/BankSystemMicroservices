@@ -141,4 +141,49 @@ public class TokenServiceTests : BaseSecurityInfrastructureTest
         // Assert
         Assert.False(result);
     }
+
+    [Fact]
+    public void Constructor_ShouldThrowArgumentException_WhenJwtKeyIsNullOrEmpty()
+    {
+        // Arrange
+        var options = Options.Create(new JwtOptions
+        {
+            Key = "", // Empty key
+            Issuer = "issuer",
+            Audience = "audience",
+            AccessTokenExpiryInMinutes = 5,
+            ValidateIssuerSigningKey = true,
+            ValidateIssuer = true,
+            ValidateAudience = true
+        });
+
+        // Act & Assert
+        var ex = Assert.Throws<ArgumentException>(() => new TokenService(options));
+        Assert.Contains("JWT key cannot be null or empty", ex.Message);
+    }
+
+    [Fact]
+    public async Task GetPrincipalFromExpiredToken_ShouldReturnNull_WhenTokenHasInvalidAlgorithm()
+    {
+        // Arrange
+        var user = await CreateTestUserAsync();
+        var tokenService = CreateTokenService();
+
+        // Create a token with a different algorithm (e.g., none)
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
+            issuer: "issuer",
+            audience: "audience",
+            claims: [new Claim(JwtRegisteredClaimNames.Sub, user.Id)],
+            expires: DateTime.UtcNow.AddMinutes(5),
+            signingCredentials: null // No signature, alg=none
+        );
+        var token = handler.WriteToken(jwt);
+
+        // Act
+        var principal = tokenService.GetPrincipalFromExpiredToken(token);
+
+        // Assert
+        Assert.Null(principal);
+    }
 }

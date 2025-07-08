@@ -38,9 +38,9 @@ public class RefreshTokenTests
         var refreshToken = CreateRefreshToken(expiryDate);
 
         // Assert
-        refreshToken.Token.Should().Be(refreshToken.Token);
-        refreshToken.JwtId.Should().Be(refreshToken.JwtId);
-        refreshToken.UserId.Should().Be(refreshToken.UserId);
+        refreshToken.Token.Should().Be("test-token");
+        refreshToken.JwtId.Should().NotBeNull();
+        refreshToken.UserId.Should().Be("test-user-id");
         refreshToken.ExpiryDate.Should().Be(expiryDate);
         refreshToken.IsRevoked.Should().BeFalse();
         refreshToken.ReplacedByToken.Should().BeNull();
@@ -139,10 +139,10 @@ public class RefreshTokenTests
         refreshToken.ReplaceWith(replacedByToken);
 
         // Act & Assert
-        refreshToken.Token.Should().Be(refreshToken.Token);
-        refreshToken.JwtId.Should().Be(refreshToken.JwtId);
-        refreshToken.UserId.Should().Be(refreshToken.UserId);
-        refreshToken.ExpiryDate.Should().Be(refreshToken.ExpiryDate);
+        refreshToken.Token.Should().Be("test-token");
+        refreshToken.JwtId.Should().NotBeNull();
+        refreshToken.UserId.Should().Be("test-user-id");
+        refreshToken.ExpiryDate.Should().BeCloseTo(DateTime.UtcNow.AddDays(7), TimeSpan.FromSeconds(1));
         refreshToken.ReplacedByToken.Should().Be(replacedByToken);
         refreshToken.IsRevoked.Should().BeTrue();
     }
