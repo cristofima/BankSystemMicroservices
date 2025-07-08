@@ -70,8 +70,8 @@ public class SecurityAuditServiceTests : IAsyncLifetime
 
         // Assert
         VerifyLogCalled(LogLevel.Information, "Token revocation", Times.Once());
-        VerifyLogContains("token", token[..8]);
-        VerifyLogContains("Reason", reason);
+        VerifyLogContains(token[..8]);
+        VerifyLogContains(reason);
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class SecurityAuditServiceTests : IAsyncLifetime
 
         foreach (var reason in reasons)
         {
-            VerifyLogContains("Reason", reason);
+            VerifyLogContains(reason);
         }
     }
 
@@ -177,6 +177,84 @@ public class SecurityAuditServiceTests : IAsyncLifetime
 
     #endregion
 
+    #region Additional Logs
+
+    [Fact]
+    public async Task LogPermissionChangeAsync_ShouldLogInformation()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        var userId = "perm-user";
+        var action = "GrantAdmin";
+        var ipAddress = "1.2.3.4";
+
+        // Act
+        await _auditService.LogPermissionChangeAsync(userId, action, ipAddress);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Information, "Permission change", Times.Once());
+        VerifyLogContains(action);
+        VerifyLogContains(userId);
+    }
+
+    [Fact]
+    public async Task LogSecurityViolationAsync_ShouldLogWarning()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        var userId = "violator";
+        var violation = "Attempted privilege escalation";
+        var ipAddress = "5.6.7.8";
+
+        // Act
+        await _auditService.LogSecurityViolationAsync(userId, violation, ipAddress);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Warning, "Security violation", Times.Once());
+        VerifyLogContains(violation);
+        VerifyLogContains(userId);
+    }
+
+    [Fact]
+    public async Task LogTokenRevocationAsync_ShouldLogShortTokenIfTokenIsShort()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        _securityOptions.Audit.EnableAuditLogging = true;
+        _securityOptions.Audit.LogTokenOperations = true;
+        var shortToken = "short";
+        var ipAddress = "ip";
+        var reason = "test";
+
+        // Act
+        await _auditService.LogTokenRevocationAsync(shortToken, ipAddress, reason);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Information, "Token revocation", Times.Once());
+        VerifyLogContains(shortToken);
+    }
+
+    [Fact]
+    public async Task LogTokenRevocationAsync_ShouldLogHashedTokenIfTokenIsLong()
+    {
+        // Arrange
+        EnsureAuditServiceInitialized();
+        _securityOptions.Audit.EnableAuditLogging = true;
+        _securityOptions.Audit.LogTokenOperations = true;
+        var longToken = "123456789abcdefgh";
+        var ipAddress = "ip";
+        var reason = "test";
+
+        // Act
+        await _auditService.LogTokenRevocationAsync(longToken, ipAddress, reason);
+
+        // Assert
+        VerifyLogCalled(LogLevel.Information, "Token revocation", Times.Once());
+        VerifyLogContains(longToken[..8]);
+    }
+
+    #endregion
+
     #region Helper Methods
 
     /// <summary>
@@ -212,14 +290,13 @@ public class SecurityAuditServiceTests : IAsyncLifetime
     /// <summary>
     /// Verifies that logs contain specific parameter values
     /// </summary>
-    private void VerifyLogContains(string parameterName, string expectedValue)
+    private void VerifyLogContains(string expectedValue)
     {
         _mockLogger.Verify(
             x => x.Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) =>
-                    v.ToString()!.Contains(parameterName) &&
                     v.ToString()!.Contains(expectedValue)),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),

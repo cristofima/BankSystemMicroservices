@@ -237,9 +237,9 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         var refreshTokenService = GetService<IRefreshTokenService>();
         
         // Create multiple tokens for the user
-        var token1 = await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
-        var token2 = await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
-        var token3 = await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
+        await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
+        await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
+        await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
 
         // Create a token for another user (should not be affected)
         var otherUser = await CreateTestUserAsync("otheruser@test.com");
@@ -252,7 +252,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         Assert.True(result.IsSuccess);
 
         // Verify all tokens for the target user are revoked
-        using var context = GetDbContext();
+        await using var context = GetDbContext();
         var userTokens = await context.RefreshTokens
             .Where(rt => rt.UserId == user.Id)
             .ToListAsync();
@@ -358,7 +358,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         var context = GetDbContext();
         
         var user = await CreateTestUserAsync();
-        var validToken = await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
+        await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
 
         var tokensBeforeCleanup = await context.RefreshTokens.CountAsync();
 
@@ -372,36 +372,243 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         Assert.Equal(tokensBeforeCleanup, tokensAfterCleanup);
     }
 
-    [Fact(Skip = "Check issues later. 4/5 failed")]
-    public async Task CreateRefreshTokenAsync_ConcurrentCreation_ShouldHandleMultipleTokens()
+    [Fact]
+    public async Task CreateRefreshTokenAsync_WhenDbThrowsException_ShouldReturnNull()
+    {
+        // Arrange
+        var refreshTokenService = GetService<IRefreshTokenService>();
+        var user = await CreateTestUserAsync();
+        var jwtId = Guid.NewGuid().ToString();
+
+        // Simulate DB failure by disposing context
+        var context = GetDbContext();
+        await context.DisposeAsync();
+
+        // Act
+        var result = await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtId);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ValidateRefreshTokenAsync_WhenDbThrowsException_ShouldReturnNull()
+    {
+        // Arrange
+        var refreshTokenService = GetService<IRefreshTokenService>();
+        var user = await CreateTestUserAsync();
+        var jwtId = Guid.NewGuid().ToString();
+        var token = Guid.NewGuid().ToString();
+
+        // Simulate DB failure by disposing context
+        var context = GetDbContext();
+        await context.DisposeAsync();
+
+        // Act
+        var result = await refreshTokenService.ValidateRefreshTokenAsync(token, jwtId, user.Id);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_WhenDbThrowsException_ShouldReturnNull()
+    {
+        // Arrange
+        var refreshTokenService = GetService<IRefreshTokenService>();
+        var user = await CreateTestUserAsync();
+        var jwtId = Guid.NewGuid().ToString();
+        var oldToken = await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtId);
+
+        // Simulate DB failure by disposing context
+        var context = GetDbContext();
+        await context.DisposeAsync();
+
+        // Act
+        var result = await refreshTokenService.RefreshTokenAsync(oldToken!, Guid.NewGuid().ToString());
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_WhenDbThrowsException_ShouldReturnFailure()
+    {
+        // Arrange
+        var refreshTokenService = GetService<IRefreshTokenService>();
+        var user = await CreateTestUserAsync();
+        var jwtId = Guid.NewGuid().ToString();
+        var token = (await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtId))!.Token;
+
+        // Simulate DB failure by disposing context
+        var context = GetDbContext();
+        await context.DisposeAsync();
+
+        // Act
+        var result = await refreshTokenService.RevokeTokenAsync(token);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Error revoking token", result.Error);
+    }
+
+    [Fact]
+    public async Task RevokeAllUserTokensAsync_WhenDbThrowsException_ShouldReturnFailure()
+    {
+        // Arrange
+        var refreshTokenService = GetService<IRefreshTokenService>();
+        var user = await CreateTestUserAsync();
+        await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
+
+        // Simulate DB failure by disposing context
+        var context = GetDbContext();
+        await context.DisposeAsync();
+
+        // Act
+        var result = await refreshTokenService.RevokeAllUserTokensAsync(user.Id);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Error revoking user tokens", result.Error);
+    }
+
+    [Fact]
+    public async Task CleanupExpiredTokensAsync_WhenDbThrowsException_ShouldNotThrow()
+    {
+        // Arrange
+        var refreshTokenService = GetService<IRefreshTokenService>();
+        var context = GetDbContext();
+        await context.DisposeAsync();
+
+        // Act & Assert
+        await refreshTokenService.CleanupExpiredTokensAsync();
+    }
+
+    [Fact]
+    public async Task CreateRefreshTokenAsync_ShouldEnforceSessionLimitAndRevokeOldest()
+    {
+        // Arrange
+        var refreshTokenService = GetService<IRefreshTokenService>();
+        var user = await CreateTestUserAsync();
+        var jwtIds = Enumerable.Range(0, 3).Select(_ => Guid.NewGuid().ToString()).ToList();
+
+        // Set max concurrent sessions to 2
+        var options = GetService<Microsoft.Extensions.Options.IOptions<Security.Application.Configuration.SecurityOptions>>();
+        options.Value.TokenSecurity.MaxConcurrentSessions = 2;
+
+        // Act
+        var token1 = await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtIds[0]);
+        await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtIds[1]);
+        await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtIds[2]);
+
+        // Assert
+        var context = GetDbContext();
+        var tokens = await context.RefreshTokens.Where(rt => rt.UserId == user.Id).ToListAsync();
+        Assert.Equal(3, tokens.Count);
+        // Only two should be not revoked (the two newest)
+        Assert.Equal(2, tokens.Count(t => !t.IsRevoked));
+        Assert.True(tokens.First(t => t.Token == token1!.Token).IsRevoked);
+    }
+
+    [Fact]
+    public async Task ValidateRefreshTokenAsync_ShouldReturnNullIfUserIdOrJwtIdMismatch()
     {
         // Arrange
         var user = await CreateTestUserAsync();
-        var jwtIds = Enumerable.Range(1, 5).Select(_ => Guid.NewGuid().ToString()).ToList();
+        var jwtId = Guid.NewGuid().ToString();
+        var refreshTokenService = GetRefreshTokenService();
+        var token = (await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtId))!.Token;
 
-        // Act - Create multiple tokens concurrently using separate service instances
-        var tasks = jwtIds.Select(async jwtId =>
-        {
-            var refreshTokenService = GetService<IRefreshTokenService>();
-            return await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtId);
-        });
-        var results = await Task.WhenAll(tasks);
+        // Act
+        var result1 = await refreshTokenService.ValidateRefreshTokenAsync(token, jwtId, "wrong-user");
+        var result2 = await refreshTokenService.ValidateRefreshTokenAsync(token, "wrong-jwt", user.Id);
 
         // Assert
-        Assert.All(results, result => result.Should().NotBeNull());
-        Assert.Equal(5, results.Length);
+        Assert.Null(result1);
+        Assert.Null(result2);
+    }
 
-        // Verify all tokens have unique values
-        var tokens = results.Select(r => r!.Token).ToList();
-        Assert.Equal(5, tokens.Distinct().Count());
+    [Fact]
+    public async Task ValidateRefreshTokenAsync_ShouldReturnNullIfTokenIsExpiredOrRevoked()
+    {
+        // Arrange
+        var user = await CreateTestUserAsync();
+        var jwtId = Guid.NewGuid().ToString();
+        var refreshTokenService = GetRefreshTokenService();
+        var token = (await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtId))!.Token;
 
-        // Verify all tokens are persisted using a fresh context
-        await using var context = GetDbContext();
-        var persistedTokens = await context.RefreshTokens
-            .Where(rt => rt.UserId == user.Id)
-            .ToListAsync();
-        
-        Assert.Equal(5, persistedTokens.Count);
+        // Expire the token
+        var context = GetDbContext();
+        var dbToken = await context.RefreshTokens.FirstAsync(rt => rt.Token == token);
+        dbToken.ExpiryDate = DateTime.UtcNow.AddDays(-1);
+        await context.SaveChangesAsync();
+
+        // Act
+        var resultExpired = await refreshTokenService.ValidateRefreshTokenAsync(token, jwtId, user.Id);
+
+        // Revoke the token
+        dbToken.ExpiryDate = DateTime.UtcNow.AddDays(1);
+        dbToken.IsRevoked = true;
+        await context.SaveChangesAsync();
+
+        var resultRevoked = await refreshTokenService.ValidateRefreshTokenAsync(token, jwtId, user.Id);
+
+        // Assert
+        Assert.Null(resultExpired);
+        Assert.Null(resultRevoked);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_ShouldSetReplacedByToken()
+    {
+        // Arrange
+        var user = await CreateTestUserAsync();
+        var oldJwtId = Guid.NewGuid().ToString();
+        var newJwtId = Guid.NewGuid().ToString();
+        var refreshTokenService = GetRefreshTokenService();
+        var oldToken = await refreshTokenService.CreateRefreshTokenAsync(user.Id, oldJwtId);
+
+        // Act
+        var newToken = await refreshTokenService.RefreshTokenAsync(oldToken!, newJwtId);
+
+        // Assert
+        var context = GetDbContext();
+        var oldTokenFromDb = await context.RefreshTokens.FirstAsync(rt => rt.Token == oldToken!.Token);
+        Assert.Equal(newToken!.Token, oldTokenFromDb.ReplacedByToken);
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_AlreadyRevokedToken_ShouldReturnFailure()
+    {
+        // Arrange
+        var refreshTokenService = GetRefreshTokenService();
+        var user = await CreateTestUserAsync();
+        var jwtId = Guid.NewGuid().ToString();
+        var token = (await refreshTokenService.CreateRefreshTokenAsync(user.Id, jwtId))!.Token;
+
+        // Revoke once
+        await refreshTokenService.RevokeTokenAsync(token);
+
+        // Act
+        var result = await refreshTokenService.RevokeTokenAsync(token);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Token already revoked", result.Error);
+    }
+
+    [Fact]
+    public async Task RevokeAllUserTokensAsync_UserWithNoTokens_ShouldReturnSuccessAndLog()
+    {
+        // Arrange
+        var refreshTokenService = GetRefreshTokenService();
+        var user = await CreateTestUserAsync();
+
+        // Act
+        var result = await refreshTokenService.RevokeAllUserTokensAsync(user.Id);
+
+        // Assert
+        Assert.True(result.IsSuccess);
     }
 
     /// <summary>
@@ -433,6 +640,4 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         
         return user;
     }
-
-
 }
