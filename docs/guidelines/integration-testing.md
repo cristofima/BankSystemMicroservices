@@ -1,5 +1,7 @@
 # Integration Testing Guidelines
 
+This project uses **xUnit** as the standard test framework for all integration tests. xUnit is compatible with Testcontainers, FluentAssertions, Moq, and other modern .NET testing libraries.
+
 ## Overview
 
 This document provides comprehensive guidelines for writing effective integration tests in the Bank System Microservices project. Integration tests verify that different components work correctly together, including API endpoints, database operations, external services, and message handling.
@@ -21,8 +23,8 @@ This document provides comprehensive guidelines for writing effective integratio
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="4.0.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
@@ -1249,9 +1251,9 @@ Integration tests are automatically executed in the CI pipeline with proper test
 
 ### Test Environment Requirements
 
-- **Docker**: Required for TestContainers (automatically available on ubuntu-latest agents)
-- **SQL Server**: Provided via TestContainers
-- **Redis**: Provided via TestContainers
+- **Docker**: Required for Testcontainers (automatically available on ubuntu-latest agents)
+- **SQL Server**: Provided via Testcontainers
+- **Redis**: Provided via Testcontainers
 - **Test Data**: Isolated per test run
 
 ### Coverage Integration
@@ -1287,3 +1289,95 @@ Integration tests contribute to overall code coverage metrics:
 8. **Clean up properly** - Remove test data to prevent interference
 9. **Use test containers** - Leverage Docker for consistent test environments
 10. **Automate in CI/CD** - Run integration tests as part of build pipeline
+
+## Example Integration Test (xUnit)
+
+```csharp
+public class AccountApiTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly HttpClient _client;
+
+    public AccountApiTests(WebApplicationFactory<Program> factory)
+    {
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task CreateAccount_ShouldReturnCreated()
+    {
+        // Arrange
+        var request = new CreateAccountRequest { /* ... */ };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/accounts", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+}
+```
+
+## Testcontainers with xUnit
+
+xUnit integrates smoothly with Testcontainers. Use the constructor or IAsyncLifetime for setup/teardown.
+
+```csharp
+public class DatabaseFixture : IAsyncLifetime
+{
+    private readonly SqlServerContainer _sqlServerContainer;
+
+    public DatabaseFixture()
+    {
+        _sqlServerContainer = new SqlServerBuilder()
+            .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+            .WithPassword("Test@123456")
+            .Build();
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _sqlServerContainer.StartAsync();
+
+        // Run migrations or setup database state
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _sqlServerContainer.DisposeAsync();
+    }
+
+    public string ConnectionString => _sqlServerContainer.GetConnectionString();
+}
+
+public class AccountRepositoryTests : IClassFixture<DatabaseFixture>
+{
+    private readonly DatabaseFixture _fixture;
+
+    public AccountRepositoryTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    [Fact]
+    public async Task AddAccount_ShouldPersistToDatabase()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<BankDbContext>()
+            .UseSqlServer(_fixture.ConnectionString)
+            .Options;
+
+        using var context = new BankDbContext(options);
+        var repository = new AccountRepository(context);
+
+        var account = new Account { /* ... */ };
+
+        // Act
+        await repository.AddAsync(account);
+        await context.SaveChangesAsync();
+
+        // Assert
+        var savedAccount = await context.Accounts.FindAsync(account.Id);
+        savedAccount.Should().NotBeNull();
+    }
+}
+```

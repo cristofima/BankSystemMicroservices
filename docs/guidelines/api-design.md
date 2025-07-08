@@ -546,20 +546,15 @@ builder.Services.AddRateLimiter(options =>
 
 ## Documentation
 
-### OpenAPI/Swagger Configuration
+### OpenAPI/Scalar Configuration
 
 ```csharp
 [HttpPost]
 [ProducesResponseType(typeof(AccountDto), StatusCodes.Status201Created)]
 [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-[SwaggerOperation(
-    Summary = "Create a new account",
-    Description = "Creates a new customer account with the specified details",
-    OperationId = "CreateAccount",
-    Tags = new[] { "Accounts" })]
 public async Task<ActionResult<AccountDto>> CreateAccount(
-    [FromBody, SwaggerRequestBody("Account creation details")] CreateAccountCommand command)
+    [FromBody] CreateAccountCommand command)
 {
     // Implementation
 }
@@ -1010,7 +1005,7 @@ public class AccountController : ControllerBase
 7. **Follow OWASP security guidelines** for input validation, error handling, and security headers
 8. **Implement rate limiting** to prevent abuse and ensure fair usage
 9. **Use HTTPS exclusively** for all endpoints in production
-10. **Document your APIs** thoroughly with OpenAPI/Swagger
+10. **Document your APIs** thoroughly with OpenAPI/Scalar
 11. **Optimize for performance** with async operations and caching
 12. **Monitor and log** API activity for troubleshooting and analytics
 13. **Handle errors gracefully** with meaningful error responses

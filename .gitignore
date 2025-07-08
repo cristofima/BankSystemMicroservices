@@ -40,6 +40,7 @@ ScaffoldingReadMe.txt
 ~$*
 *~
 CodeCoverage/
+CoverageReport/
 
 # MSBuild Binary and Structured Log
 *.binlog
@@ -47,11 +48,6 @@ CodeCoverage/
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
-
-# NUnit
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
 
 # Visual Code
 .vs

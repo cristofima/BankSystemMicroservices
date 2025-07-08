@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using NUnit.Framework;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Entities;
@@ -19,11 +18,8 @@ public abstract class CommandHandlerTestBase : TestBase
     protected Mock<ISecurityAuditService> MockAuditService { get; private set; } = null!;
     protected SecurityOptions SecurityOptions { get; private set; } = null!;
 
-    [SetUp]
-    public override void SetUp()
+    protected CommandHandlerTestBase()
     {
-        base.SetUp();
-        
         SetupMocks();
         SetupSecurityOptions();
     }
@@ -69,7 +65,7 @@ public abstract class CommandHandlerTestBase : TestBase
     /// <summary>
     /// Creates a mock UserManager with proper setup
     /// </summary>
-    private Mock<UserManager<ApplicationUser>> CreateMockUserManager()
+    private static Mock<UserManager<ApplicationUser>> CreateMockUserManager()
     {
         var store = new Mock<IUserStore<ApplicationUser>>();
         var mgr = new Mock<UserManager<ApplicationUser>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
@@ -81,7 +77,7 @@ public abstract class CommandHandlerTestBase : TestBase
     /// <summary>
     /// Creates a test ApplicationUser with valid properties
     /// </summary>
-    protected ApplicationUser CreateTestUser(
+    protected static ApplicationUser CreateTestUser(
         string? id = null,
         string? userName = "testuser@example.com",
         string? email = "testuser@example.com",
@@ -107,7 +103,7 @@ public abstract class CommandHandlerTestBase : TestBase
     /// <summary>
     /// Creates a test RefreshToken with valid properties
     /// </summary>
-    protected RefreshToken CreateTestRefreshToken(
+    protected static RefreshToken CreateTestRefreshToken(
         string? userId = null,
         string? token = null,
         string? jwtId = null,

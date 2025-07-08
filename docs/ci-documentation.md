@@ -208,11 +208,65 @@ arguments: >
 # Install .NET 9 SDK
 winget install Microsoft.DotNet.SDK.9
 
-# Install ReportGenerator (optional)
+# Install ReportGenerator (optional - scripts will auto-install)
 dotnet tool install --global dotnet-reportgenerator-globaltool
 ```
 
-### **Run Pipeline Steps Locally**
+### **Quick Start - Build Scripts**
+
+Three build scripts are provided for different preferences and use cases:
+
+#### **PowerShell Script (Recommended)**
+
+```powershell
+# Full build, test, and coverage generation
+.\scripts\build-quick.ps1
+
+# Build only
+.\scripts\build-quick.ps1 -BuildOnly
+
+# Tests only (skip build)
+.\scripts\build-quick.ps1 -TestsOnly
+
+# Debug configuration
+.\scripts\build-quick.ps1 -Configuration Debug
+```
+
+#### **Advanced PowerShell Script**
+
+```powershell
+# Full pipeline with all options
+.\scripts\build-local.ps1
+
+# Clean build first
+.\scripts\build-local.ps1 -CleanFirst
+
+# Skip tests and coverage
+.\scripts\build-local.ps1 -SkipTests
+
+# Custom output directory
+.\scripts\build-local.ps1 -OutputPath "./MyTestResults"
+```
+
+#### **Batch Script (Windows CMD)**
+
+```batch
+# Full build and test
+.\scripts\build-local.bat
+
+# Build only
+.\scripts\build-local.bat Release BuildOnly
+
+# Tests only
+.\scripts\build-local.bat Release TestsOnly
+
+# Debug build
+.\scripts\build-local.bat Debug
+```
+
+### **Manual Pipeline Steps**
+
+If you prefer to run individual commands (useful for troubleshooting):
 
 ```powershell
 # Navigate to repository root
@@ -221,26 +275,57 @@ cd c:\Framework_Projects\NET\BankSystemMicroservices
 # 1. Restore packages
 dotnet restore src/BankSystem.sln
 
-# 2. Build solution
-dotnet build src/BankSystem.sln --configuration Release --no-restore
+# 2. Build solution (shows standard build warnings)
+dotnet build src/BankSystem.sln --configuration Release --no-restore --verbosity normal
 
-# 3. Run tests with coverage
-dotnet test src/**/tests/**/*.csproj `
+# 3. Run all unit tests with coverage
+dotnet test src/BankSystem.sln `
   --configuration Release `
   --no-build `
   --collect:"XPlat Code Coverage" `
   --results-directory ./TestResults `
   --logger trx `
-  --settings src/coverlet.runsettings
+  --settings src/coverlet.runsettings `
+  --filter "FullyQualifiedName~UnitTests"
 
-# 4. Generate HTML report (optional)
+# 4. Run integration tests with coverage
+dotnet test src/BankSystem.sln `
+  --configuration Release `
+  --no-build `
+  --collect:"XPlat Code Coverage" `
+  --results-directory ./TestResults `
+  --logger trx `
+  --settings src/coverlet.runsettings `
+  --filter "FullyQualifiedName~IntegrationTests"
+
+# 5. Generate HTML report
 reportgenerator `
   -reports:./TestResults/**/coverage.cobertura.xml `
   -targetdir:./CoverageReport `
   -reporttypes:Html
 
-# 5. View results
-start ./CoverageReport/index.html
+# 6. View results
+Start-Process ./CoverageReport/index.html
+```
+
+### **Running Specific Test Projects**
+
+```powershell
+# Run all unit tests (recommended)
+.\scripts\run-unit-tests.ps1
+
+# Or run individual unit test projects:
+dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj `
+  --configuration Release --collect:"XPlat Code Coverage" --settings src/coverlet.runsettings
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj `
+  --configuration Release --collect:"XPlat Code Coverage" --settings src/coverlet.runsettings
+
+# Run only integration tests
+dotnet test src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj `
+  --configuration Release --collect:"XPlat Code Coverage" --settings src/coverlet.runsettings
+
+# Note: On Windows PowerShell, wildcard patterns like src/**/tests/**/*.csproj don't work
+# Use specific project paths or the provided build scripts
 ```
 
 ## Pipeline Setup in Azure DevOps
@@ -289,6 +374,7 @@ For SonarQube integration:
 
 - Test projects not following naming convention
 - Test pattern not matching actual test projects
+- PowerShell wildcard patterns not working on Windows
 
 **Solutions:**
 
@@ -296,9 +382,19 @@ For SonarQube integration:
 # Check test project paths
 testProjectsPattern: 'src/**/tests/**/*.csproj'
 
-# Alternative patterns
+# Alternative patterns for Azure DevOps
 testProjectsPattern: '**/*Tests*.csproj'
 testProjectsPattern: '**/*.UnitTests.csproj'
+```
+
+```powershell
+# For local development on Windows, use specific paths:
+dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj
+dotnet test src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj
+
+# Or use the provided build scripts that handle this automatically
+.\scripts\build-quick.ps1
 ```
 
 #### **Issue**: "Code coverage files not found"
@@ -307,6 +403,7 @@ testProjectsPattern: '**/*.UnitTests.csproj'
 
 - Missing `coverlet.collector` NuGet package
 - Incorrect coverage settings
+- Coverage files generated in unexpected locations
 
 **Solutions:**
 
@@ -316,6 +413,58 @@ testProjectsPattern: '**/*.UnitTests.csproj'
   <PrivateAssets>all</PrivateAssets>
   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 </PackageReference>
+```
+
+```powershell
+# Check where coverage files are generated
+Get-ChildItem -Path ./TestResults -Recurse -Filter "*.cobertura.xml"
+
+# Ensure you're using the correct settings file
+--settings src/coverlet.runsettings
+```
+
+#### **Issue**: "PowerShell wildcard patterns don't work"
+
+**Cause:**
+
+- Windows PowerShell doesn't expand `src/**/tests/**/*.csproj` patterns like bash
+
+**Solution:**
+
+```powershell
+# ❌ Don't use (fails on Windows PowerShell)
+dotnet test src/**/tests/**/*.csproj
+
+# ✅ Use specific paths or run all unit tests with the script
+.\scripts\run-unit-tests.ps1
+
+# ✅ Or run individual test projects
+dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj
+
+# ✅ Or use the provided build scripts
+.\scripts\build-quick.ps1
+```
+
+#### **Issue**: "Integration tests taking too long"
+
+**Cause:**
+
+- TestContainers spinning up Docker containers
+- Database initialization
+
+**Solutions:**
+
+```powershell
+# Run only unit tests for faster feedback
+.\scripts\run-unit-tests.ps1  # Runs all unit tests with coverage
+
+# Or manually run specific unit test projects
+dotnet test src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj
+dotnet test src/services/Security/tests/Security.Domain.UnitTests/Security.Domain.UnitTests.csproj
+
+# Ensure Docker Desktop is running for integration tests
+docker info
 ```
 
 #### **Issue**: "SonarQube analysis fails"

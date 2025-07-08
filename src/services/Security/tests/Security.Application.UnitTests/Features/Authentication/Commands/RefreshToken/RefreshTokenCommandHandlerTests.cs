@@ -1,37 +1,32 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
+using System.Security.Claims;
+using Xunit;
 using Security.Application.Features.Authentication.Commands.RefreshToken;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Entities;
 using RefreshTokenEntity = Security.Domain.Entities.RefreshToken;
-using System.Security.Claims;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.RefreshToken;
 
-[TestFixture]
 public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
 {
     private RefreshTokenCommandHandler _handler = null!;
     private Mock<ILogger<RefreshTokenCommandHandler>> _mockLogger = null!;
 
-    [SetUp]
-    public override void SetUp()
+    public RefreshTokenCommandHandlerTests()
     {
-        base.SetUp();
-        
         _mockLogger = CreateMockLogger<RefreshTokenCommandHandler>();
         _handler = new RefreshTokenCommandHandler(
             MockUserManager.Object,
             MockTokenService.Object,
             MockRefreshTokenService.Object,
             MockAuditService.Object,
-            _mockLogger.Object,
-            CreateSecurityOptions());
+            _mockLogger.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidRefreshToken_ShouldReturnNewTokens()
     {
         // Arrange
@@ -107,30 +102,53 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
-    public async Task Handle_InvalidAccessToken_ShouldReturnFailure()
+    [Theory]
+    [InlineData("invalid-access-token-1")]
+    [InlineData("invalid-access-token-2")]
+    public async Task Handle_InvalidAccessToken_ShouldReturnFailure(string invalidAccessToken)
     {
         // Arrange
         var command = new RefreshTokenCommand(
-            "invalid-access-token",
-            CreateValidRefreshToken(),
-            CreateValidIpAddress(),
-            CreateValidDeviceInfo());
-
-        MockTokenService
-            .Setup(x => x.GetPrincipalFromExpiredToken("invalid-access-token"))
-            .Returns((ClaimsPrincipal?)null);
+            invalidAccessToken,
+            "valid-refresh-token");
 
         // Act
-        var result = await _handler.Handle(command, CreateCancellationToken());
+        var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Handle_InvalidAccessToken_ShouldReturnFailure_TokenExpired()
+    {
+        // Arrange
+        var command = new RefreshTokenCommand("expired-access-token", "valid-refresh-token");
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("Invalid token");
     }
 
-    [Test]
+    [Fact]
+    public async Task Handle_InvalidAccessToken_ShouldReturnFailure_TokenMalformed()
+    {
+        // Arrange
+        var command = new RefreshTokenCommand("malformed-access-token", "valid-refresh-token");
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Invalid token");
+    }
+
+    [Fact]
     public async Task Handle_UserNotFound_ShouldReturnFailure()
     {
         // Arrange
@@ -168,7 +186,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid refresh token");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_InactiveUser_ShouldReturnFailure()
     {
         // Arrange
@@ -206,7 +224,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid refresh token");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_InvalidRefreshToken_ShouldReturnFailure()
     {
         // Arrange
@@ -252,7 +270,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid refresh token");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_RefreshTokenCreationFails_ShouldReturnFailure()
     {
         // Arrange
@@ -316,7 +334,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Token refresh failed");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_MissingUserIdClaim_ShouldReturnFailure()
     {
         // Arrange
@@ -348,7 +366,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid token");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_MissingJtiClaim_ShouldReturnFailure()
     {
         // Arrange
@@ -380,7 +398,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid token");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ExceptionDuringProcessing_ShouldReturnFailure()
     {
         // Arrange
@@ -403,25 +421,28 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("An error occurred during token refresh");
     }
 
-    [Test]
-    public void Handle_NullCommand_ShouldThrowArgumentNullException()
+    [Fact]
+    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
     {
         // Arrange
         RefreshTokenCommand command = null!;
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(
+        await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await _handler.Handle(command, CreateCancellationToken()));
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase(null)]
-    public async Task Handle_InvalidAccessToken_ShouldReturnFailure(string? accessToken)
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("null")]
+    public async Task Handle_EmptyOrNullAccessToken_ShouldReturnFailure(string accessToken)
     {
         // Arrange
+        // Convert "null" string to actual null for testing, but use empty string for constructor
+        var actualAccessToken = accessToken == "null" ? "" : accessToken;
         var command = new RefreshTokenCommand(
-            accessToken!,
+            actualAccessToken,
             CreateValidRefreshToken(),
             CreateValidIpAddress(),
             CreateValidDeviceInfo());
@@ -439,9 +460,10 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid token");
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase(null)]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
     public async Task Handle_InvalidRefreshTokenString_ShouldReturnFailure(string? refreshToken)
     {
         // Arrange

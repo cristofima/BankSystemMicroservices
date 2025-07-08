@@ -1,5 +1,24 @@
 # Bank System Microservices
 
+<!-- Sonar Qube Badges -->
+<table>
+  <tr>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=alert_status" alt="Quality Gate Status"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=bugs" alt="Bugs"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=code_smells" alt="Code Smells"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=coverage" alt="Coverage"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=duplicated_lines_density" alt="Duplicated Lines (%)"/></a></td>
+  </tr>
+  <tr>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=ncloc" alt="Lines of Code"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=reliability_rating" alt="Reliability Rating"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=security_rating" alt="Security Rating"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=sqale_index" alt="Technical Debt"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=sqale_rating" alt="Maintainability Rating"/></a></td>
+    <td><a href="https://sonarcloud.io/summary/new_code?id=cristofima_BankSystemMicroservices"><img src="https://sonarcloud.io/api/project_badges/measure?project=cristofima_BankSystemMicroservices&metric=vulnerabilities" alt="Vulnerabilities"/></a></td>
+  </tr>
+</table>
+
 A modern, cloud-native banking system built with .NET 9 microservices architecture, designed for Azure deployment with Clean Architecture, CQRS, and Event-Driven Architecture patterns.
 
 ## 🏗️ Architecture Overview
@@ -190,19 +209,41 @@ JWT__AUDIENCE="bank-system-api"
 
 ## 📊 API Documentation
 
-Each microservice exposes its own OpenAPI/Swagger documentation:
+Each microservice exposes its own OpenAPI/Scalar documentation:
 
-- **Security API**: `https://localhost:5001/swagger`
-- **Account API**: `https://localhost:5002/swagger`
-- **Transaction API**: `https://localhost:5003/swagger`
-- **Movement API**: `https://localhost:5004/swagger`
+- **Security API**: `https://localhost:5001/scalar`
+- **Account API**: `https://localhost:5002/scalar`
+- **Transaction API**: `https://localhost:5003/scalar`
+- **Movement API**: `https://localhost:5004/scalar`
 
 ## 🧪 Testing
 
 ### Run Unit Tests
 
+**Basic unit test execution:**
+
 ```bash
 dotnet test
+```
+
+**Run unit tests with code coverage (recommended):**
+
+```powershell
+# Use the provided PowerShell script
+./scripts/run-unit-tests.ps1
+```
+
+This will:
+
+- Run all unit test projects in the solution
+- Generate code coverage reports in multiple formats (HTML, Cobertura, JSON)
+- Open the HTML coverage report automatically
+- Results are saved to `TestResults/` directory
+
+**Manual coverage command:**
+
+```bash
+dotnet test --configuration Debug --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory TestResults /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=TestResults/coverage.cobertura.xml
 ```
 
 ### Run Integration Tests
@@ -217,6 +258,10 @@ dotnet test --configuration Release --filter Category=Integration
 # Using k6 or Azure Load Testing
 k6 run tests/load/transaction-load-test.js
 ```
+
+### Available Test Scripts
+
+See [scripts/README.md](scripts/README.md) for detailed information about available build and test scripts.
 
 ## 🚀 Deployment
 

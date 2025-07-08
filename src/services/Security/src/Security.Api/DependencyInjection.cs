@@ -1,7 +1,6 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.RateLimiting;
 using Security.Api.Filters;
-using Security.Api.Middleware;
 using Security.Api.Services;
 using Security.Infrastructure.Data;
 using System.Diagnostics.CodeAnalysis;
@@ -38,7 +37,7 @@ public static class DependencyInjection
             setup.SubstituteApiVersionInUrl = true;
         });
 
-        // Configure OpenAPI/Swagger
+        // Configure OpenAPI/Scalar
         services.AddOpenApi();
 
         // Add memory cache for token revocation

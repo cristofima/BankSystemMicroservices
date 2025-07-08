@@ -2,24 +2,22 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 using Security.Application.Features.Authentication.Commands.Register;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Entities;
+using System;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.Register;
 
-[TestFixture]
 public class RegisterCommandHandlerTests : CommandHandlerTestBase
 {
     private RegisterCommandHandler _handler = null!;
     private Mock<ILogger<RegisterCommandHandler>> _mockLogger = null!;
 
-    [SetUp]
-    public override void SetUp()
+    public RegisterCommandHandlerTests()
     {
-        base.SetUp();
-        
         _mockLogger = CreateMockLogger<RegisterCommandHandler>();
         _handler = new RegisterCommandHandler(
             MockUserManager.Object,
@@ -27,7 +25,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             _mockLogger.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidRegistration_ShouldReturnSuccessWithUserResponse()
     {
         // Arrange
@@ -78,7 +76,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_PasswordsDoNotMatch_ShouldReturnFailure()
     {
         // Arrange
@@ -106,7 +104,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_UserNameAlreadyExists_ShouldReturnFailure()
     {
         // Arrange
@@ -137,7 +135,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_EmailAlreadyExists_ShouldReturnFailure()
     {
         // Arrange
@@ -169,7 +167,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_UserCreationFails_ShouldReturnFailureWithErrors()
     {
         // Arrange
@@ -210,7 +208,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ExceptionDuringProcessing_ShouldReturnFailureAndLogError()
     {
         // Arrange
@@ -237,7 +235,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("An error occurred during registration");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidRegistrationWithoutOptionalFields_ShouldReturnSuccess()
     {
         // Arrange
@@ -275,19 +273,20 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
-    public void Handle_NullCommand_ShouldThrowArgumentNullException()
+    [Fact]
+    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
     {
         // Arrange
         RegisterCommand command = null!;
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(
+        await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await _handler.Handle(command, CreateCancellationToken()));
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
     public async Task Handle_EmptyUserName_ShouldReturnFailure(string userName)
     {
         // Arrange
@@ -306,14 +305,17 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Act
         var result = await _handler.Handle(command, CreateCancellationToken());
 
-        // Assert - this might depend on UserManager validation, but we'll test our logic
-        // The actual validation might happen in UserManager.CreateAsync
+        // Assert 
+        Assert.NotNull(result);
+        Assert.True(result.IsFailure);
+        Assert.NotEmpty(result.Error);
         SetupUserManagerCreateUser(IdentityResult.Failed(
             new IdentityError { Description = "Username cannot be empty" }));
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
     public async Task Handle_EmptyEmail_ShouldReturnFailure(string email)
     {
         // Arrange
@@ -341,7 +343,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Contain("Email cannot be empty");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidRegistration_ShouldSetCorrectUserProperties()
     {
         // Arrange

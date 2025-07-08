@@ -479,7 +479,7 @@ spec:
    ```bash
    dotnet run --project Security.Api
    ```
-4. **Access Swagger UI**: `https://localhost:5001/swagger`
+4. **Access Scalar UI**: `https://localhost:5001/scalar`
 
 ### Database Migrations
 

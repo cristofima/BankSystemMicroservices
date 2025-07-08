@@ -10,10 +10,31 @@ The documentation is organized into modular, focused guideline files that serve 
 
 ### Code Generation Guidelines
 
-- **[Code Generation](code-generation.md)** - Comprehensive .NET 9 code generation standards
-- **[API Design](api-design.md)** - RESTful API design best practices
+- **[Code Generation](code-generation.md)** - Master reference for .NET 9 code generation standards
+- **[Clean Code](clean-code.md)** - Fundamental principles for readable, maintainable code
+- **[SOLID Principles](solid-principles.md)** - Object-oriented design principles implementation
+- **[Naming Conventions](naming-conventions.md)** - Comprehensive naming standards and code organization
+- **[Documentation Standards](documentation-standards.md)** - XML documentation, comments, and API documentation
+
+### Architecture and Design Patterns
+
+- **[Domain-Driven Design](domain-driven-design.md)** - DDD patterns and practices
+- **[CQRS Implementation](cqrs-implementation.md)** - Command Query Responsibility Segregation patterns
+- **[Error Handling](error-handling.md)** - Result patterns and exception handling strategies
+- **[Repository Pattern](repository-pattern.md)** - Data access abstraction patterns
+
+### Technology-Specific Guidelines
+
+- **[ASP.NET Core Best Practices](aspnetcore-best-practices.md)** - Performance, security, and maintainability practices
+- **[API Design](api-design.md)** - RESTful API design and security practices
+- **[Entity Framework Core](entity-framework-core.md)** - EF Core migrations, DbContext, and performance guidelines
+- **[Async/Await Best Practices](async-await-best-practices.md)** - Asynchronous programming guidelines
 - **[Configuration Management](configuration-management.md)** - IOptions pattern and configuration best practices
-- **[Entity Framework](entity-framework.md)** - Entity Framework Core migrations and best practices
+
+### Performance and Quality
+
+- **[Performance Guidelines](performance-guidelines.md)** - Memory management, database optimization, and scalability
+- **[Static Methods Best Practices](static-methods-best-practices.md)** - CA1822 guidance and static method patterns
 
 ### Code Review Guidelines
 
@@ -100,7 +121,7 @@ Microservices communicate through domain events:
 
 ### Testing Frameworks
 
-- **NUnit**: Unit testing framework
+- **xUnit**: Unit testing framework
 - **Moq**: Mocking framework
 - **FluentAssertions**: Assertion library
 - **Testcontainers**: Integration testing with containers
@@ -218,7 +239,7 @@ dotnet ef database update --project Security.Infrastructure --startup-project Se
 - **XML Comments**: Document public APIs
 - **README Files**: Project setup and usage instructions
 - **Architecture Decisions**: Document major design decisions
-- **API Documentation**: OpenAPI/Swagger specifications
+- **API Documentation**: OpenAPI/Scalar specifications
 
 ### Process Documentation
 
