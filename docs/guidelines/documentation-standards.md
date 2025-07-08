@@ -650,7 +650,7 @@ This project is licensed under the MIT License - see [LICENSE](../LICENSE) for d
 
 ### API Documentation
 
-1. **Use OpenAPI/Swagger** - Generate interactive API documentation
+1. **Use OpenAPI/Scalar** - Generate interactive API documentation
 2. **Include request/response examples** - Show realistic data
 3. **Document error responses** - Include all possible HTTP status codes
 4. **Explain authentication** - Document required headers and tokens

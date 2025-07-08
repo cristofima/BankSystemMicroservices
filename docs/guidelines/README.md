@@ -239,7 +239,7 @@ dotnet ef database update --project Security.Infrastructure --startup-project Se
 - **XML Comments**: Document public APIs
 - **README Files**: Project setup and usage instructions
 - **Architecture Decisions**: Document major design decisions
-- **API Documentation**: OpenAPI/Swagger specifications
+- **API Documentation**: OpenAPI/Scalar specifications
 
 ### Process Documentation
 

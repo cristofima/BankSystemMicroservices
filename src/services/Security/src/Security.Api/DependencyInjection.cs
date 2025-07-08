@@ -37,7 +37,7 @@ public static class DependencyInjection
             setup.SubstituteApiVersionInUrl = true;
         });
 
-        // Configure OpenAPI/Swagger
+        // Configure OpenAPI/Scalar
         services.AddOpenApi();
 
         // Add memory cache for token revocation

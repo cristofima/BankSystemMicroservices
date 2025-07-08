@@ -190,12 +190,12 @@ JWT__AUDIENCE="bank-system-api"
 
 ## 📊 API Documentation
 
-Each microservice exposes its own OpenAPI/Swagger documentation:
+Each microservice exposes its own OpenAPI/Scalar documentation:
 
-- **Security API**: `https://localhost:5001/swagger`
-- **Account API**: `https://localhost:5002/swagger`
-- **Transaction API**: `https://localhost:5003/swagger`
-- **Movement API**: `https://localhost:5004/swagger`
+- **Security API**: `https://localhost:5001/scalar`
+- **Account API**: `https://localhost:5002/scalar`
+- **Transaction API**: `https://localhost:5003/scalar`
+- **Movement API**: `https://localhost:5004/scalar`
 
 ## 🧪 Testing
 

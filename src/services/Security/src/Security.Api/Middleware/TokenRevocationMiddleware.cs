@@ -61,7 +61,6 @@ public class TokenRevocationMiddleware
             "/api/v1/auth/refresh",
             "/api/v1/auth/register",
             "/health",
-            "/swagger",
             "/scalar"
         };
 

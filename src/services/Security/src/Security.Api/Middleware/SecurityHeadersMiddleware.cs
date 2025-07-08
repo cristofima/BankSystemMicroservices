@@ -53,7 +53,7 @@ public class SecurityHeadersMiddleware
             if (_environment.IsDevelopment())
             {
                 // Check if this is a documentation endpoint - skip CSP entirely
-                if (path.Contains("/scalar") || path.Contains("/openapi") || path.Contains("/swagger"))
+                if (path.Contains("/scalar") || path.Contains("/openapi"))
                 {
                     // Don't set CSP for documentation endpoints to avoid conflicts
                     // Scalar will work better without CSP restrictions
