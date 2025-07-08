@@ -1,7 +1,6 @@
 using AutoFixture;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 
 namespace Security.Application.UnitTests.Common;
 
@@ -12,8 +11,7 @@ public abstract class TestBase
 {
     protected IFixture Fixture { get; private set; } = null!;
 
-    [SetUp]
-    public virtual void SetUp()
+    protected TestBase()
     {
         Fixture = new Fixture();
         Fixture.Behaviors.Remove(new ThrowingRecursionBehavior());
@@ -26,7 +24,7 @@ public abstract class TestBase
     /// <summary>
     /// Creates a mock logger for the specified type
     /// </summary>
-    protected Mock<ILogger<T>> CreateMockLogger<T>()
+    protected static Mock<ILogger<T>> CreateMockLogger<T>()
     {
         return new Mock<ILogger<T>>();
     }
@@ -50,7 +48,7 @@ public abstract class TestBase
     /// <summary>
     /// Creates a CancellationToken that is not cancelled
     /// </summary>
-    protected CancellationToken CreateCancellationToken()
+    protected static CancellationToken CreateCancellationToken()
     {
         return CancellationToken.None;
     }
@@ -58,7 +56,7 @@ public abstract class TestBase
     /// <summary>
     /// Creates a valid IP address string for testing
     /// </summary>
-    protected string CreateValidIpAddress()
+    protected static string CreateValidIpAddress()
     {
         return "192.168.1.1";
     }
@@ -66,7 +64,7 @@ public abstract class TestBase
     /// <summary>
     /// Creates a valid device info string for testing
     /// </summary>
-    protected string CreateValidDeviceInfo()
+    protected static string CreateValidDeviceInfo()
     {
         return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
     }
@@ -74,7 +72,7 @@ public abstract class TestBase
     /// <summary>
     /// Creates a valid JWT token for testing purposes
     /// </summary>
-    protected string CreateValidJwtToken()
+    protected static string CreateValidJwtToken()
     {
         return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
     }
@@ -82,7 +80,7 @@ public abstract class TestBase
     /// <summary>
     /// Creates a valid refresh token for testing purposes
     /// </summary>
-    protected string CreateValidRefreshToken()
+    protected static string CreateValidRefreshToken()
     {
         return Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
     }

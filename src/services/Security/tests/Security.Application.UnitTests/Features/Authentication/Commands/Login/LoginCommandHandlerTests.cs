@@ -2,24 +2,20 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 using Security.Application.Features.Authentication.Commands.Login;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Entities;
+using Xunit;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.Login;
 
-[TestFixture]
 public class LoginCommandHandlerTests : CommandHandlerTestBase
 {
     private LoginCommandHandler _handler = null!;
     private Mock<ILogger<LoginCommandHandler>> _mockLogger = null!;
 
-    [SetUp]
-    public override void SetUp()
+    public LoginCommandHandlerTests()
     {
-        base.SetUp();
-        
         _mockLogger = CreateMockLogger<LoginCommandHandler>();
         _handler = new LoginCommandHandler(
             MockUserManager.Object,
@@ -30,7 +26,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             CreateSecurityOptions());
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidCredentials_ShouldReturnSuccessWithTokens()
     {
         // Arrange
@@ -80,7 +76,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_UserNotFound_ShouldReturnFailure()
     {
         // Arrange
@@ -106,7 +102,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_InactiveUser_ShouldReturnFailure()
     {
         // Arrange
@@ -133,7 +129,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_LockedOutUser_ShouldReturnFailure()
     {
         // Arrange
@@ -162,7 +158,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_InvalidPassword_ShouldReturnFailureAndIncrementFailedAttempts()
     {
         // Arrange
@@ -196,7 +192,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_RefreshTokenCreationFails_ShouldReturnFailure()
     {
         // Arrange
@@ -227,7 +223,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Authentication failed");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidCommand_ShouldGenerateTokenWithCorrectClaims()
     {
         // Arrange
@@ -268,18 +264,18 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
-    public void Handle_NullCommand_ShouldThrowArgumentNullException()
+    [Fact]
+    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
     {
         // Arrange
         LoginCommand command = null!;
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(
+        await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await _handler.Handle(command, CreateCancellationToken()));
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ExceptionDuringProcessing_ShouldReturnFailureAndLogError()
     {
         // Arrange
@@ -302,9 +298,10 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("An error occurred during authentication");
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase(null)]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
     public async Task Handle_InvalidUserName_ShouldReturnFailure(string? userName)
     {
         // Arrange
@@ -325,9 +322,10 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid username or password");
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase(null)]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
     public async Task Handle_InvalidPassword_ShouldReturnFailure(string? password)
     {
         // Arrange

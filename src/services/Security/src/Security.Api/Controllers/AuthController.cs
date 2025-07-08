@@ -20,6 +20,8 @@ namespace Security.Api.Controllers;
 [Produces("application/json")]
 public class AuthController : BaseController
 {
+    private const string InvalidRequestDataMessage = "Invalid request data";
+    
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
 
@@ -51,7 +53,7 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
     public async Task<IActionResult> Login(
-        [FromBody] LoginRequest request,
+        [FromBody] LoginDto request,
         CancellationToken cancellationToken)
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
@@ -59,7 +61,7 @@ public class AuthController : BaseController
             request.UserName, clientIpAddress);
 
         if (!ModelState.IsValid)
-            return ValidationError("Invalid request data");
+            return ValidationError(InvalidRequestDataMessage);
 
         var command = CreateLoginCommand(request, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
@@ -73,7 +75,7 @@ public class AuthController : BaseController
         return Success(response);
     }
 
-    private LoginCommand CreateLoginCommand(LoginRequest request, string clientIpAddress)
+    private LoginCommand CreateLoginCommand(LoginDto request, string clientIpAddress)
     {
         return new LoginCommand(
             request.UserName,
@@ -88,7 +90,7 @@ public class AuthController : BaseController
         return AuthenticationFailed(error);
     }
 
-    private TokenResponse CreateTokenResponse(dynamic tokenData)
+    private static TokenResponse CreateTokenResponse(dynamic tokenData)
     {
         return new TokenResponse(
             tokenData.AccessToken,
@@ -124,7 +126,7 @@ public class AuthController : BaseController
         _logger.LogInformation("Token refresh attempt from IP {IpAddress}", clientIpAddress);
 
         if (!ModelState.IsValid)
-            return ValidationError("Invalid request data");
+            return ValidationError(InvalidRequestDataMessage);
 
         var command = CreateRefreshTokenCommand(request, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
@@ -182,7 +184,7 @@ public class AuthController : BaseController
         _logger.LogInformation("Token revocation attempt from IP {IpAddress}", clientIpAddress);
 
         if (!ModelState.IsValid)
-            return ValidationError("Invalid request data");
+            return ValidationError(InvalidRequestDataMessage);
 
         var command = CreateRevokeTokenCommand(request, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
@@ -194,7 +196,7 @@ public class AuthController : BaseController
         return SuccessNoContent();
     }
 
-    private RevokeTokenCommand CreateRevokeTokenCommand(RevokeTokenRequest request, string clientIpAddress)
+    private static RevokeTokenCommand CreateRevokeTokenCommand(RevokeTokenRequest request, string clientIpAddress)
     {
         return new RevokeTokenCommand(
             request.Token,
@@ -281,14 +283,14 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
     public async Task<IActionResult> Register(
-        [FromBody] RegisterRequest request,
+        [FromBody] RegisterDto request,
         CancellationToken cancellationToken)
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
         LogRegistrationAttempt(request.UserName, clientIpAddress);
 
         if (!ModelState.IsValid)
-            return ValidationError("Invalid request data");
+            return ValidationError(InvalidRequestDataMessage);
 
         var command = CreateRegisterCommand(request, clientIpAddress);
         var result = await _mediator.Send(command, cancellationToken);
@@ -305,7 +307,7 @@ public class AuthController : BaseController
         _logger.LogInformation("Registration attempt for user {UserName} from IP {IpAddress}", userName, clientIpAddress);
     }
 
-    private RegisterCommand CreateRegisterCommand(RegisterRequest request, string clientIpAddress)
+    private RegisterCommand CreateRegisterCommand(RegisterDto request, string clientIpAddress)
     {
         return new RegisterCommand(
             request.UserName,

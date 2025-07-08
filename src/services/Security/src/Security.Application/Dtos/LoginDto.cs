@@ -5,7 +5,7 @@ namespace Security.Application.Dtos;
 /// <summary>
 /// Request model for user login
 /// </summary>
-public record LoginRequest
+public record LoginDto
 {
     /// <summary>
     /// Username for authentication

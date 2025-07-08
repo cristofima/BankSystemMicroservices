@@ -10,6 +10,8 @@ namespace Security.Infrastructure.Services;
 /// </summary>
 public class SecurityAuditService : ISecurityAuditService
 {
+    private const string UnknownValue = "unknown";
+    
     private readonly ILogger<SecurityAuditService> _logger;
     private readonly SecurityOptions _securityOptions;
 
@@ -26,7 +28,7 @@ public class SecurityAuditService : ISecurityAuditService
         if (_securityOptions.Audit.LogSuccessfulAuthentication)
         {
             _logger.LogInformation("SECURITY_AUDIT: Successful authentication for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? "unknown", DateTime.UtcNow);
+                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
         }
 
         return Task.CompletedTask;
@@ -37,7 +39,7 @@ public class SecurityAuditService : ISecurityAuditService
         if (_securityOptions.Audit.LogFailedAuthentication)
         {
             _logger.LogWarning("SECURITY_AUDIT: Failed authentication attempt for user {UserIdentifier} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
-                userIdentifier, ipAddress ?? "unknown", DateTime.UtcNow, reason);
+                userIdentifier, ipAddress ?? UnknownValue, DateTime.UtcNow, reason);
         }
 
         return Task.CompletedTask;
@@ -48,7 +50,7 @@ public class SecurityAuditService : ISecurityAuditService
         if (_securityOptions.Audit.LogTokenOperations)
         {
             _logger.LogInformation("SECURITY_AUDIT: Token refresh for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? "unknown", DateTime.UtcNow);
+                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
         }
 
         return Task.CompletedTask;
@@ -59,7 +61,7 @@ public class SecurityAuditService : ISecurityAuditService
         if (_securityOptions.Audit.LogTokenOperations)
         {
             _logger.LogInformation("SECURITY_AUDIT: Token revocation for token {TokenHash} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
-                HashToken(token), ipAddress ?? "unknown", DateTime.UtcNow, reason ?? "not specified");
+                HashToken(token), ipAddress ?? UnknownValue, DateTime.UtcNow, reason ?? "not specified");
         }
 
         return Task.CompletedTask;
@@ -68,7 +70,7 @@ public class SecurityAuditService : ISecurityAuditService
     public Task LogPermissionChangeAsync(string userId, string action, string? ipAddress)
     {
         _logger.LogInformation("SECURITY_AUDIT: Permission change for user {UserId} from IP {IpAddress} at {Timestamp}. Action: {Action}",
-            userId, ipAddress ?? "unknown", DateTime.UtcNow, action);
+            userId, ipAddress ?? UnknownValue, DateTime.UtcNow, action);
 
         return Task.CompletedTask;
     }
@@ -76,7 +78,7 @@ public class SecurityAuditService : ISecurityAuditService
     public Task LogSecurityViolationAsync(string userId, string violation, string? ipAddress)
     {
         _logger.LogWarning("SECURITY_AUDIT: Security violation by user {UserId} from IP {IpAddress} at {Timestamp}. Violation: {Violation}",
-            userId, ipAddress ?? "unknown", DateTime.UtcNow, violation);
+            userId, ipAddress ?? UnknownValue, DateTime.UtcNow, violation);
 
         return Task.CompletedTask;
     }
@@ -86,7 +88,7 @@ public class SecurityAuditService : ISecurityAuditService
         if (_securityOptions.Audit.LogUserOperations)
         {
             _logger.LogInformation("SECURITY_AUDIT: User registration for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? "unknown", DateTime.UtcNow);
+                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
         }
 
         return Task.CompletedTask;
@@ -97,7 +99,7 @@ public class SecurityAuditService : ISecurityAuditService
         if (_securityOptions.Audit.LogUserOperations)
         {
             _logger.LogInformation("SECURITY_AUDIT: User logout for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? "unknown", DateTime.UtcNow);
+                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
         }
 
         return Task.CompletedTask;

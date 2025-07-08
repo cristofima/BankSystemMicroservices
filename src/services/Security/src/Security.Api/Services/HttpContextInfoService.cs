@@ -23,6 +23,8 @@ public interface IHttpContextInfoService
 /// </summary>
 public class HttpContextInfoService : IHttpContextInfoService
 {
+    private const string UnknownValue = "unknown";
+    
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public HttpContextInfoService(IHttpContextAccessor httpContextAccessor)
@@ -34,20 +36,20 @@ public class HttpContextInfoService : IHttpContextInfoService
     {
         var context = _httpContextAccessor.HttpContext;
         if (context == null)
-            return "unknown";
+            return UnknownValue;
 
         return context.Connection.RemoteIpAddress?.ToString() ??
                context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ??
                context.Request.Headers["X-Real-IP"].FirstOrDefault() ??
-               "unknown";
+               UnknownValue;
     }
 
     public string GetDeviceInfo()
     {
         var context = _httpContextAccessor.HttpContext;
         if (context == null)
-            return "unknown";
+            return UnknownValue;
 
-        return context.Request.Headers["User-Agent"].FirstOrDefault() ?? "unknown";
+        return context.Request.Headers.UserAgent.FirstOrDefault() ?? UnknownValue;
     }
 }

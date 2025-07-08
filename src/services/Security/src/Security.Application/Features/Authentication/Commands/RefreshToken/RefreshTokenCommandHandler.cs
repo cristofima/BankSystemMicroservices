@@ -1,8 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Common;
 using Security.Domain.Entities;
@@ -21,22 +19,19 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ISecurityAuditService _auditService;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
-    private readonly SecurityOptions _securityOptions;
 
     public RefreshTokenCommandHandler(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService,
         ISecurityAuditService auditService,
-        ILogger<RefreshTokenCommandHandler> logger,
-        IOptions<SecurityOptions> securityOptions)
+        ILogger<RefreshTokenCommandHandler> logger)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
         _refreshTokenService = refreshTokenService ?? throw new ArgumentNullException(nameof(refreshTokenService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _securityOptions = securityOptions?.Value ?? throw new ArgumentNullException(nameof(securityOptions));
     }
 
     public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)

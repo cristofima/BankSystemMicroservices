@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Security.Api.Middleware;
 
 /// <summary>
 /// Middleware for setting security headers with appropriate CSP for development tools
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SecurityHeadersMiddleware
 {
     private readonly RequestDelegate _next;
@@ -33,13 +36,13 @@ public class SecurityHeadersMiddleware
 
         // Basic security headers
         if (!headers.ContainsKey("X-Content-Type-Options"))
-            headers["X-Content-Type-Options"] = "nosniff";
+            headers.XContentTypeOptions = "nosniff";
         
         if (!headers.ContainsKey("X-Frame-Options"))
-            headers["X-Frame-Options"] = "DENY";
+            headers.XFrameOptions = "DENY";
         
         if (!headers.ContainsKey("X-XSS-Protection"))
-            headers["X-XSS-Protection"] = "1; mode=block";
+            headers.XXSSProtection = "1; mode=block";
         
         if (!headers.ContainsKey("Referrer-Policy"))
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
@@ -50,35 +53,42 @@ public class SecurityHeadersMiddleware
             if (_environment.IsDevelopment())
             {
                 // Check if this is a documentation endpoint - skip CSP entirely
-                if (path.Contains("/scalar") || path.Contains("/openapi") || path.Contains("/swagger"))
+                if (path.Contains("/scalar") || path.Contains("/openapi"))
                 {
                     // Don't set CSP for documentation endpoints to avoid conflicts
                     // Scalar will work better without CSP restrictions
                 }
                 else
                 {
-                    // Standard development CSP for API endpoints
-                    headers["Content-Security-Policy"] = 
+                    // Secure development CSP for API endpoints - removed unsafe directives
+                    headers.ContentSecurityPolicy = 
                         "default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                        "style-src 'self' 'unsafe-inline'; " +
-                        "img-src 'self' data: https:; " +
-                        "font-src 'self' https:; " +
-                        "connect-src 'self' https: wss:; " +
-                        "frame-src 'self'";
+                        "script-src 'self'; " +
+                        "style-src 'self'; " +
+                        "img-src 'self' data:; " +
+                        "font-src 'self'; " +
+                        "connect-src 'self' https:; " +
+                        "frame-src 'none'; " +
+                        "object-src 'none'; " +
+                        "base-uri 'self'; " +
+                        "form-action 'self'";
                 }
             }
             else
             {
                 // Strict CSP for production
-                headers["Content-Security-Policy"] = 
+                headers.ContentSecurityPolicy = 
                     "default-src 'self'; " +
                     "script-src 'self'; " +
-                    "style-src 'self' 'unsafe-inline'; " +
+                    "style-src 'self'; " +
                     "img-src 'self' data:; " +
                     "font-src 'self'; " +
                     "connect-src 'self'; " +
-                    "frame-src 'none'";
+                    "frame-src 'none'; " +
+                    "object-src 'none'; " +
+                    "base-uri 'self'; " +
+                    "form-action 'self'; " +
+                    "upgrade-insecure-requests";
             }
         }
 

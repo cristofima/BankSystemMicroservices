@@ -75,8 +75,8 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 // Map controllers
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
 
 [ExcludeFromCodeCoverage]
-public partial class Program
+public static partial class Program
 { }

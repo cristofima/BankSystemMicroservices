@@ -1,0 +1,7 @@
+{
+  "parallelizeTestCollections": false,
+  "maxParallelThreads": 1,
+  "methodDisplay": "method",
+  "diagnosticMessages": true,
+  "preEnumerateTheories": true
+}

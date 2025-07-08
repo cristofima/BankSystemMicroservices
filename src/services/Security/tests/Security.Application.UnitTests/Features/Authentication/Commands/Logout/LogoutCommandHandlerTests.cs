@@ -1,24 +1,20 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 using Security.Application.Features.Authentication.Commands.Logout;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Common;
+using Xunit;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.Logout;
 
-[TestFixture]
 public class LogoutCommandHandlerTests : CommandHandlerTestBase
 {
-    private LogoutCommandHandler _handler = null!;
-    private Mock<ILogger<LogoutCommandHandler>> _mockLogger = null!;
+    private readonly LogoutCommandHandler _handler;
+    private readonly Mock<ILogger<LogoutCommandHandler>> _mockLogger;
 
-    [SetUp]
-    public override void SetUp()
+    public LogoutCommandHandlerTests()
     {
-        base.SetUp();
-        
         _mockLogger = CreateMockLogger<LogoutCommandHandler>();
         _handler = new LogoutCommandHandler(
             MockRefreshTokenService.Object,
@@ -26,7 +22,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
             _mockLogger.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidLogout_ShouldReturnSuccessAndRevokeAllTokens()
     {
         // Arrange
@@ -65,7 +61,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_TokenRevocationFails_ShouldReturnFailure()
     {
         // Arrange
@@ -96,7 +92,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
             Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ExceptionDuringProcessing_ShouldReturnFailure()
     {
         // Arrange
@@ -122,20 +118,21 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("An error occurred during logout");
     }
 
-    [Test]
-    public void Handle_NullCommand_ShouldThrowArgumentNullException()
+    [Fact]
+    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
     {
         // Arrange
         LogoutCommand command = null!;
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(
+        await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await _handler.Handle(command, CreateCancellationToken()));
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase(null)]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
     public async Task Handle_InvalidUserId_ShouldReturnFailure(string? userId)
     {
         // Arrange
@@ -161,7 +158,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid user ID");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidLogoutWithNullIpAddress_ShouldStillSucceed()
     {
         // Arrange
@@ -191,7 +188,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidLogout_ShouldLogInformation()
     {
         // Arrange
@@ -219,7 +216,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         // but we can verify the handler completes successfully
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_CancellationRequested_ShouldPropagateCancellation()
     {
         // Arrange
@@ -245,7 +242,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_MultipleTokensRevocationPartialFailure_ShouldReturnFailure()
     {
         // Arrange

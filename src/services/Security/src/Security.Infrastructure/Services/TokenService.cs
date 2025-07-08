@@ -21,7 +21,7 @@ public class TokenService : ITokenService
     public TokenService(IOptions<JwtOptions> jwtOptions)
     {
         _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
-        
+
         if (string.IsNullOrWhiteSpace(_jwtOptions.Key))
             throw new ArgumentException("JWT key cannot be null or empty", nameof(jwtOptions));
 
@@ -30,18 +30,27 @@ public class TokenService : ITokenService
     }
 
     public Task<(string Token, string JwtId, DateTime Expiry)> CreateAccessTokenAsync(
-        ApplicationUser user, 
+        ApplicationUser user,
         IEnumerable<Claim> claims)
     {
         var jwtId = Guid.NewGuid().ToString();
         var expiry = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpiryInMinutes);
 
-        var allClaims = new List<Claim>(claims)
+        // Always ensure both sub and name identifier are present and set to user.Id
+        var allClaims = new List<Claim>
         {
+            new(JwtRegisteredClaimNames.Sub, user.Id),
+            new(ClaimTypes.NameIdentifier, user.Id),
             new(JwtRegisteredClaimNames.Jti, jwtId),
-            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
-            new(JwtRegisteredClaimNames.Sub, user.Id)
+            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
+
+        // Add all other claims except sub and name identifier to avoid duplicates/overwrites
+        allClaims.AddRange(
+            claims.Where(claim =>
+                claim.Type != JwtRegisteredClaimNames.Sub &&
+                claim.Type != ClaimTypes.NameIdentifier)
+        );
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -74,8 +83,8 @@ public class TokenService : ITokenService
 
         try
         {
-            var principal = _tokenHandler.ValidateToken(accessToken, validationParameters, out var securityToken);
-            
+            var principal = _tokenHandler.ValidateToken(accessToken, validationParameters, out _);
+
             if (!IsJwtWithValidSecurityAlgorithm(accessToken))
                 return null;
 

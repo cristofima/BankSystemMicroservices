@@ -115,18 +115,18 @@ sonar.sourceEncoding=UTF-8
 
 ```yaml
 - task: DotNetCoreCLI@2
-  displayName: "Run Unit Tests with Code Coverage"
+  displayName: "Run All Unit Tests with Code Coverage"
   inputs:
     command: "test"
-    projects: "src/services/Security/tests/Security.Application.UnitTests/Security.Application.UnitTests.csproj"
+    projects: "src/services/**/tests/**/*UnitTests.csproj"
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
     publishTestResults: true
 
 - task: DotNetCoreCLI@2
-  displayName: "Run Integration Tests with Code Coverage"
+  displayName: "Run All Integration Tests with Code Coverage"
   inputs:
     command: "test"
-    projects: "src/services/Security/tests/Security.Infrastructure.IntegrationTests/Security.Infrastructure.IntegrationTests.csproj"
+    projects: "src/services/**/tests/**/*IntegrationTests.csproj"
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
     publishTestResults: true
   continueOnError: true

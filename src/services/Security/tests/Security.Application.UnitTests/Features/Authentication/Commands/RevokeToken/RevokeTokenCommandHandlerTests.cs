@@ -1,24 +1,20 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using Security.Application.Features.Authentication.Commands.RevokeToken;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Common;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.RevokeToken;
 
-[TestFixture]
 public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
 {
     private RevokeTokenCommandHandler _handler = null!;
     private Mock<ILogger<RevokeTokenCommandHandler>> _mockLogger = null!;
 
-    [SetUp]
-    public override void SetUp()
+    public RevokeTokenCommandHandlerTests()
     {
-        base.SetUp();
-        
         _mockLogger = CreateMockLogger<RevokeTokenCommandHandler>();
         _handler = new RevokeTokenCommandHandler(
             MockRefreshTokenService.Object,
@@ -26,7 +22,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
             _mockLogger.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidTokenRevocation_ShouldReturnSuccess()
     {
         // Arrange
@@ -66,7 +62,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_TokenRevocationFails_ShouldReturnFailure()
     {
         // Arrange
@@ -98,7 +94,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
             Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ExceptionDuringProcessing_ShouldReturnFailure()
     {
         // Arrange
@@ -125,20 +121,21 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("An error occurred during token revocation");
     }
 
-    [Test]
-    public void Handle_NullCommand_ShouldThrowArgumentNullException()
+    [Fact]
+    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
     {
         // Arrange
         RevokeTokenCommand command = null!;
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(
+        await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await _handler.Handle(command, CreateCancellationToken()));
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase(null)]
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
     public async Task Handle_InvalidToken_ShouldReturnFailure(string? token)
     {
         // Arrange
@@ -164,7 +161,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Invalid token");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidTokenRevocationWithNullReason_ShouldReturnSuccess()
     {
         // Arrange
@@ -195,7 +192,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidTokenRevocationWithNullIpAddress_ShouldReturnSuccess()
     {
         // Arrange
@@ -226,7 +223,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_AlreadyRevokedToken_ShouldReturnFailure()
     {
         // Arrange
@@ -253,7 +250,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("Token is already revoked");
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_CancellationRequested_ShouldPropagateCancellation()
     {
         // Arrange
@@ -280,7 +277,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_TokenNotFound_ShouldReturnFailure()
     {
         // Arrange
@@ -312,7 +309,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
             Times.Never);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidRevocationWithLongReason_ShouldReturnSuccess()
     {
         // Arrange
@@ -344,7 +341,7 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
             Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_SecurityAuditServiceThrows_ShouldStillReturnSuccess()
     {
         // Arrange

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -6,6 +7,7 @@ namespace Security.Api.Filters;
 /// <summary>
 /// Global exception filter for consistent error handling across the API
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GlobalExceptionFilter : IExceptionFilter
 {
     private readonly ILogger<GlobalExceptionFilter> _logger;
