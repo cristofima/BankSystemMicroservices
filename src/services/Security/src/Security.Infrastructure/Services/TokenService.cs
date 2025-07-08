@@ -33,15 +33,27 @@ public class TokenService : ITokenService
         ApplicationUser user, 
         IEnumerable<Claim> claims)
     {
+        if (string.IsNullOrWhiteSpace(user?.Id))
+            throw new ArgumentException("User ID cannot be null or empty", nameof(user));
+
         var jwtId = Guid.NewGuid().ToString();
         var expiry = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpiryInMinutes);
 
-        var allClaims = new List<Claim>(claims)
+        // Always ensure both sub and name identifier are present and set to user.Id
+        var allClaims = new List<Claim>
         {
+            new(JwtRegisteredClaimNames.Sub, user.Id),
+            new(ClaimTypes.NameIdentifier, user.Id),
             new(JwtRegisteredClaimNames.Jti, jwtId),
-            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
-            new(JwtRegisteredClaimNames.Sub, user.Id)
+            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
+
+        // Add all other claims except sub and name identifier to avoid duplicates/overwrites
+        allClaims.AddRange(
+            claims.Where(claim =>
+                claim.Type != JwtRegisteredClaimNames.Sub &&
+                claim.Type != ClaimTypes.NameIdentifier)
+        );
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
