@@ -127,25 +127,19 @@ public static class DependencyInjection
             };
         });
 
-        // Configure Authorization policies
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy("RequireAuthenticatedUser", policy =>
-                policy.RequireAuthenticatedUser());
-
-            options.AddPolicy("RequireAdminRole", policy =>
-                policy.RequireRole("Admin"));
-
-            options.AddPolicy("RequireManagerRole", policy =>
+        // Configure Authorization policies using AddAuthorizationBuilder
+        services.AddAuthorizationBuilder()
+            .AddPolicy("RequireAuthenticatedUser", policy =>
+                policy.RequireAuthenticatedUser())
+            .AddPolicy("RequireAdminRole", policy =>
+                policy.RequireRole("Admin"))
+            .AddPolicy("RequireManagerRole", policy =>
                 policy.RequireRole("Manager", "Admin"));
-        });
 
         // Register application services
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ISecurityAuditService, SecurityAuditService>();
-
-        // Remove the old IUserService registration as we're using MediatR now
 
         return services;
     }
