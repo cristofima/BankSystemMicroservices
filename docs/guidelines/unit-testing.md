@@ -1,6 +1,15 @@
 # Unit Testing Guidelines
 
-This project uses **xUnit** as the standard test framework for all unit tests. xUnit is compatible with FluentAssertions, Moq, and AutoFixture.
+This project uses **xUnit** as the standard test framework for **all tests** (both unit tests and integration tests). xUnit is compatible with FluentAssertions, Moq, and AutoFixture.
+
+## Test Framework Standard
+
+**Important**: All test projects in this solution must use xUnit. Do not use NUnit, MSTest, or any other testing framework. This ensures:
+
+- Consistent test execution across all projects
+- Compatibility with our CI/CD pipeline
+- Unified test reporting and metrics
+- Consistent developer experience
 
 ## Testing Framework Setup
 

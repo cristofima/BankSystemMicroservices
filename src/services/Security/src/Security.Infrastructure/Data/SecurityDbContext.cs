@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Security.Domain.Entities;
 
@@ -7,6 +8,7 @@ namespace Security.Infrastructure.Data;
 /// <summary>
 /// Database context for the Security microservice using Entity Framework Identity
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SecurityDbContext : IdentityDbContext<ApplicationUser>
 {
     public SecurityDbContext(DbContextOptions<SecurityDbContext> options) : base(options)

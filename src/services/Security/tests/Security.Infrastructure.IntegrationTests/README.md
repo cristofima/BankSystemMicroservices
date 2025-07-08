@@ -55,7 +55,7 @@ The base class provides:
 
 The project uses the following key packages:
 
-- **NUnit**: Testing framework
+- **xUnit**: Testing framework
 - **FluentAssertions**: Assertion library
 - **Testcontainers.MsSql**: SQL Server container for tests
 - **Microsoft.EntityFrameworkCore**: Database access
@@ -63,22 +63,10 @@ The project uses the following key packages:
 
 ## Running Tests
 
-### Prerequisites
+You can run the integration tests using the following command:
 
-- Docker Desktop (for SQL Server container)
-- .NET 9.0 SDK
-
-### Command Line
-
-```bash
-# From the test project directory
+```
 dotnet test
-
-# With detailed output
-dotnet test --logger "console;verbosity=detailed"
-
-# Run specific test
-dotnet test --filter "TestMethodName"
 ```
 
 ### Visual Studio
@@ -111,7 +99,7 @@ Tests include console logging for debugging:
 ### Basic Test Pattern
 
 ```csharp
-[Test]
+[Fact]
 public async Task YourTest_ShouldDoSomething_WhenConditionMet()
 {
     // Arrange

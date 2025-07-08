@@ -5,7 +5,7 @@ namespace Security.Domain.UnitTests.Entities;
 
 public class RefreshTokenTests
 {
-    private ApplicationUser CreateTestUser()
+    private static ApplicationUser CreateTestUser()
     {
         return new ApplicationUser
         {
@@ -15,7 +15,7 @@ public class RefreshTokenTests
         };
     }
 
-    private RefreshToken CreateRefreshToken(DateTime expiryDate)
+    private static RefreshToken CreateRefreshToken(DateTime expiryDate)
     {
         var user = CreateTestUser();
 
