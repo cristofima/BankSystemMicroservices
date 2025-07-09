@@ -46,7 +46,6 @@ variables:
     projectKey: "$(SONAR_PROJECT_KEY)"
     projectName: "$(SONAR_PROJECT_NAME)"
     extraProperties: |
-      sonar.organization=$(SONAR_ORGANIZATION)
       sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs
       sonar.test.exclusions=**/bin/**,**/obj/**
       sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml
@@ -69,28 +68,7 @@ variables:
   condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
 ```
 
-### 2. SonarQube Properties (`sonar-project.properties`)
-
-```properties
-# SonarQube Project Configuration
-sonar.projectKey=bank-system-microservices
-sonar.projectName=Bank System Microservices
-sonar.projectVersion=1.0
-
-# Let SonarQube auto-discover sources and tests from MSBuild projects
-# Exclude build artifacts and auto-generated code from analysis
-sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs
-sonar.test.exclusions=**/bin/**,**/obj/**
-
-# Coverage settings
-sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml
-sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx
-
-# Language settings
-sonar.sourceEncoding=UTF-8
-```
-
-### 3. Code Coverage Configuration (`coverlet.runsettings`)
+### 2. Code Coverage Configuration (`coverlet.runsettings`)
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
