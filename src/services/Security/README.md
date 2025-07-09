@@ -1,10 +1,54 @@
 # Security Service
 
-The Security Service is responsible for authentication, authorization, and user management within the Bank System Microservices architecture. It provides JWT-based authentication and implements secure user registration, login, and password management functionality.
+## Overview
 
-## 🎯 Service Overview
+The Security Service is responsible for authentication, authorization, and security management in the Bank System Microservices architecture. It acts as the central security authority, managing user identities, JWT tokens, role-based permissions, and security policies across all microservices.
 
-### Responsibilities
+## Primary Responsibilities
+
+### What This Service DOES:
+
+- **User Authentication**: Login, logout, token validation, password management
+- **Authorization Management**: Role-based access control (RBAC), permission management
+- **JWT Token Management**: Token generation, validation, refresh, revocation
+- **User Identity Management**: User registration, profile management, account status
+- **Security Policies**: Password policies, account lockout, session management
+- **Audit Logging**: Security events, login attempts, permission changes
+- **Multi-Factor Authentication (MFA)**: Setup and validation of 2FA/MFA
+- **Security Monitoring**: Failed login detection, suspicious activity alerts
+
+### What This Service DOES NOT DO:
+
+- **Business Logic**: Does not handle account balances, transactions, or financial operations
+- **Data Storage**: Does not store business data (accounts, transactions, movements)
+- **Notifications**: Does not send emails/SMS (delegates to Notification service)
+- **Reporting**: Does not generate business reports (delegates to Reporting service)
+- **Direct Database Access**: Does not access other services' databases directly
+
+## Service Communication
+
+### Publishes Events:
+
+- `UserAuthenticated` - When user successfully logs in
+- `UserRegistered` - When new user is created
+- `UserLocked` - When account is locked due to security violations
+- `PasswordChanged` - When user changes password
+- `SecurityAlert` - For suspicious activities or security violations
+
+### Subscribes to Events:
+
+- `AccountCreated` (from Account service) - To link user identity with accounts
+- `TransactionAttempt` (from Transaction service) - For fraud detection
+- `MovementCreated` (from Movement service) - For security monitoring
+
+### Synchronous Communication:
+
+- **Incoming**: All other services call Security for token validation
+- **Outgoing**: Calls Notification service for sending security alerts and confirmations
+
+## 🎯 Service Architecture
+
+### Clean Architecture Layers
 
 - **User Authentication**: Secure login with JWT token generation
 - **User Registration**: New user account creation with validation
@@ -307,35 +351,83 @@ public class TokenService : ITokenService
 ### Unit Tests
 
 ```csharp
-[TestFixture]
-public class LoginCommandHandlerTests
+public class AuthServiceTests
 {
-    [Test]
-    public async Task Handle_ValidCredentials_ShouldReturnToken()
+    private readonly AuthService _authService;
+    private readonly Mock<IUserRepository> _mockUserRepository;
+    private readonly Mock<IJwtTokenService> _mockTokenService;
+
+    public AuthServiceTests()
     {
-        // Arrange
-        var command = new LoginCommand("user@test.com", "Password123!");
-        var handler = CreateHandler();
-
-        // Act
-        var result = await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Token, Is.Not.Empty);
-        Assert.That(result.User.Email, Is.EqualTo("user@test.com"));
+        _mockUserRepository = new Mock<IUserRepository>();
+        _mockTokenService = new Mock<IJwtTokenService>();
+        _authService = new AuthService(_mockUserRepository.Object, _mockTokenService.Object);
     }
 
-    [Test]
-    public void Handle_InvalidCredentials_ShouldThrowException()
+    [Fact]
+    public async Task AuthenticateAsync_ValidCredentials_ShouldReturnToken()
     {
         // Arrange
-        var command = new LoginCommand("user@test.com", "WrongPassword");
-        var handler = CreateHandler();
+        var email = "test@example.com";
+        var password = "ValidPassword123!";
+        var user = new ApplicationUser { Email = email, PasswordHash = BCrypt.Net.BCrypt.HashPassword(password) };
 
-        // Act & Assert
-        Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => handler.Handle(command, CancellationToken.None));
+        _mockUserRepository.Setup(r => r.GetByEmailAsync(email))
+            .ReturnsAsync(user);
+        _mockTokenService.Setup(t => t.GenerateTokenAsync(user))
+            .ReturnsAsync("valid-jwt-token");
+
+        // Act
+        var result = await _authService.AuthenticateAsync(email, password);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.AccessToken);
+    }
+
+    [Fact]
+    public async Task AuthenticateAsync_InvalidCredentials_ShouldReturnFailure()
+    {
+        // Arrange
+        var email = "test@example.com";
+        var password = "WrongPassword";
+
+        _mockUserRepository.Setup(r => r.GetByEmailAsync(email))
+            .ReturnsAsync((ApplicationUser)null);
+
+        // Act
+        var result = await _authService.AuthenticateAsync(email, password);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid credentials", result.Error);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("weak")]
+    [InlineData("NoNumbers!")]
+    [InlineData("nonumbers123")]
+    public void ValidatePassword_WeakPasswords_ShouldReturnFalse(string password)
+    {
+        // Act
+        var result = _authService.ValidatePassword(password);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void ValidatePassword_StrongPassword_ShouldReturnTrue()
+    {
+        // Arrange
+        var password = "StrongPassword123!";
+
+        // Act
+        var result = _authService.ValidatePassword(password);
+
+        // Assert
+        Assert.True(result);
     }
 }
 ```
@@ -343,26 +435,101 @@ public class LoginCommandHandlerTests
 ### Integration Tests
 
 ```csharp
-[TestFixture]
-public class AuthControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
 {
-    [Test]
-    public async Task Register_ValidRequest_ShouldReturnCreated()
+    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
+
+    public AuthControllerIntegrationTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = _factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Login_ValidCredentials_ShouldReturnOkWithToken()
     {
         // Arrange
-        var request = new RegisterDto
+        var loginRequest = new LoginRequest
         {
-            Email = "newuser@test.com",
-            Password = "Password123!",
+            Email = "test@example.com",
+            Password = "TestPassword123!"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<LoginResponse>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.AccessToken);
+    }
+
+    [Fact]
+    public async Task Register_ValidUser_ShouldReturnCreated()
+    {
+        // Arrange
+        var registerRequest = new RegisterRequest
+        {
+            Email = "newuser@example.com",
+            Password = "NewPassword123!",
             FirstName = "Test",
             LastName = "User"
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/register", request);
+        var response = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
 
         // Assert
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetProfile_WithValidToken_ShouldReturnUserProfile()
+    {
+        // Arrange
+        var token = await GetValidTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response = await _client.GetAsync("/api/auth/profile");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var profile = JsonSerializer.Deserialize<UserProfileResponse>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.NotNull(profile);
+        Assert.NotEmpty(profile.Email);
+    }
+
+    private async Task<string> GetValidTokenAsync()
+    {
+        var loginRequest = new LoginRequest
+        {
+            Email = "test@example.com",
+            Password = "TestPassword123!"
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<LoginResponse>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        return result.AccessToken;
     }
 }
 ```

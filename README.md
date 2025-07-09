@@ -31,6 +31,8 @@ This system implements a distributed banking platform using microservices that c
 - **🏦 Account Service**: Manages customer accounts, balances, and account operations
 - **💸 Transaction Service**: Processes financial transactions (deposits, withdrawals) - Write operations
 - **📊 Movement Service**: Provides transaction history and reporting - Read operations
+- **🔔 Notification Service**: Manages multi-channel notifications and alerts
+- **📈 Reporting Service**: Handles analytics, reports, and business intelligence
 
 ### Architecture Patterns
 
@@ -93,11 +95,13 @@ This system implements a distributed banking platform using microservices that c
                                            │    (Event Distribution)       │
                                            └───────────────┬───────────────┘
                                                            │
-                                                           ▼
-                                                ┌─────────────────┐
-                                                │   Movement      │
-                                                │   Service       │
-                                                └─────────────────┘
+                              ┌────────────────────────────┼────────────────────────────┐
+                              │                            │                            │
+                              ▼                            ▼                            ▼
+                    ┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
+                    │   Movement      │        │  Notification   │        │   Reporting     │
+                    │   Service       │        │   Service       │        │   Service       │
+                    └─────────────────┘        └─────────────────┘        └─────────────────┘
 ```
 
 ## 🔄 Event-Driven Flow
@@ -128,7 +132,9 @@ This system implements a distributed banking platform using microservices that c
 │   │   ├── Security/           # Authentication & Authorization
 │   │   ├── Account/           # Account Management
 │   │   ├── Transaction/       # Transaction Processing
-│   │   └── Movement/          # Movement History & Reporting
+│   │   ├── Movement/          # Movement History & Reporting
+│   │   ├── Notification/      # Notifications
+│   │   └── Reporting/         # Reporting & Analytics
 │   ├── shared/                # Common components
 │   └── client/               # Web application
 ├── docs/                     # Documentation
@@ -188,6 +194,12 @@ This system implements a distributed banking platform using microservices that c
 
    # Terminal 4 - Movement Service
    dotnet run --project src/services/Movement/src/Movement.Api
+
+   # Terminal 5 - Notification Service
+   dotnet run --project src/services/Notification/src/Notification.Api
+
+   # Terminal 6 - Reporting Service
+   dotnet run --project src/services/Reporting/src/Reporting.Api
    ```
 
 ## 🔧 Configuration
@@ -215,6 +227,8 @@ Each microservice exposes its own OpenAPI/Scalar documentation:
 - **Account API**: `https://localhost:5002/scalar`
 - **Transaction API**: `https://localhost:5003/scalar`
 - **Movement API**: `https://localhost:5004/scalar`
+- **Notification API**: `https://localhost:5005/scalar`
+- **Reporting API**: `https://localhost:5006/scalar`
 
 ## 🧪 Testing
 
@@ -310,3 +324,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Account Service](src/services/Account/README.md)
 - [Transaction Service](src/services/Transaction/README.md)
 - [Movement Service](src/services/Movement/README.md)
+- [Notification Service](src/services/Notification/README.md)
+- [Reporting Service](src/services/Reporting/README.md)
