@@ -8,10 +8,12 @@ trigger:
     include:
       - 'src/services/**/src/**'
       - 'src/services/**/tests/**'
+      - 'src/shared/**'
       - 'build/azure-pipelines/ci-build-test.yml'
     exclude:
       - 'src/services/**/*.md'
       - 'src/services/**/README.md'
+      - 'src/shared/*.md'
 
 variables:
   buildConfiguration: 'Release'

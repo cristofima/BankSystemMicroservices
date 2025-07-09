@@ -1,4 +1,4 @@
-namespace Security.Domain.Common;
+namespace BankSystem.Shared.Domain.Common;
 
 /// <summary>
 /// Represents a result of an operation with success/failure indication

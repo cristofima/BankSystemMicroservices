@@ -1,6 +1,6 @@
 using MediatR;
 using Security.Application.Dtos;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.Features.Authentication.Commands.Register;
 

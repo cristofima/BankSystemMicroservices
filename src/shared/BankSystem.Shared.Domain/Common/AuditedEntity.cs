@@ -1,4 +1,4 @@
-namespace Security.Domain.Common;
+namespace BankSystem.Shared.Domain.Common;
 
 /// <summary>
 /// Base class for entities that need audit tracking

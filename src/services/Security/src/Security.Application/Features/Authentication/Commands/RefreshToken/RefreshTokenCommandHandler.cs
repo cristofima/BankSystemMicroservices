@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Security.Application.Interfaces;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 using Security.Domain.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
