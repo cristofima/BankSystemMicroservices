@@ -78,16 +78,6 @@ stages:
         projects: '$(solution)'
         arguments: '--configuration $(buildConfiguration) --no-restore'
 
-    - bash: |
-        echo "Listing test projects..."
-        find $(Build.SourcesDirectory) -name "*UnitTests.csproj" -o -name "*IntegrationTests.csproj"
-        echo "Solution directory structure:"
-        ls -la $(Build.SourcesDirectory)/src/services/
-        echo "Checking if test projects are built..."
-        ls -la $(Build.SourcesDirectory)/src/services/Security/tests/Security.Application.UnitTests/bin/$(buildConfiguration)/net9.0/ || echo "Unit test build output not found"
-        ls -la $(Build.SourcesDirectory)/src/services/Security/tests/Security.Infrastructure.IntegrationTests/bin/$(buildConfiguration)/net9.0/ || echo "Integration test build output not found"
-      displayName: 'Debug - List Test Projects and Build Output'
-
     - task: DotNetCoreCLI@2
       displayName: 'Run All Unit Tests with Code Coverage'
       inputs:
@@ -105,20 +95,6 @@ stages:
         publishTestResults: true
       # Note: TestContainers will automatically use Docker on Linux
       continueOnError: true
-
-    - bash: |
-        echo "Listing coverage files in all possible locations..."
-        echo "=== Azure DevOps temp directory ==="
-        find $(Agent.TempDirectory) -name "*.xml" -type f 2>/dev/null | grep -i coverage || echo "No coverage files in temp directory"
-        echo "=== Custom results directory ==="
-        find $(resultsDirectory) -name "*.xml" -type f 2>/dev/null | grep -i coverage || echo "No coverage files in custom directory"
-        echo "=== All TestResults directories ==="
-        find $(System.DefaultWorkingDirectory) -name "TestResults" -type d 2>/dev/null || echo "No TestResults directories found"
-        echo "=== All coverage files across the build ==="
-        find $(System.DefaultWorkingDirectory) -name "*coverage*.xml" -type f 2>/dev/null || echo "No coverage files found anywhere"
-        echo "=== Azure DevOps temp structure ==="
-        ls -la $(Agent.TempDirectory)/ 2>/dev/null || echo "Cannot list temp directory"
-      displayName: 'Debug - List Coverage Files'
 
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage to Azure DevOps'
