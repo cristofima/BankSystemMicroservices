@@ -52,7 +52,7 @@ public class CustomerManager
 // ✅ Good: Clear intent
 public decimal CalculateMonthlyInterest(decimal principal, decimal annualRate)
 public List<Account> GetActiveAccountsByCustomer(Guid customerId)
-public bool IsAccountEligibleForOverdraft(Account account)
+public bool IsAccountEligibleForInvestment(Account account)
 
 // ❌ Bad: Unclear intent
 public decimal calc(decimal d1, decimal d2)

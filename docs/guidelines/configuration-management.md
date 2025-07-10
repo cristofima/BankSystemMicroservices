@@ -293,7 +293,6 @@ public class BusinessRulesOptions
     public class AccountLimits
     {
         public decimal MinimumBalance { get; set; } = 0m;
-        public decimal OverdraftLimit { get; set; } = 1000m;
         public int MaxAccountsPerCustomer { get; set; } = 5;
     }
 

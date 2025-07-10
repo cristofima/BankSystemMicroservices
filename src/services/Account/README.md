@@ -104,7 +104,6 @@ This service follows Clean Architecture principles with the following layers:
 
 - Daily withdrawal limit: Configurable per account type
 - Monthly transfer limit: Configurable per account type
-- Overdraft protection: Optional, configurable per account
 - Maximum negative balance: Varies by account type and customer credit rating
 
 ### Compliance Requirements
@@ -142,8 +141,7 @@ Authorization: Bearer {token}
   "customerId": "123e4567-e89b-12d3-a456-426614174000",
   "accountType": "Checking",
   "initialDeposit": 100.00,
-  "currency": "USD",
-  "overdraftProtection": false
+  "currency": "USD"
 }
 ```
 
