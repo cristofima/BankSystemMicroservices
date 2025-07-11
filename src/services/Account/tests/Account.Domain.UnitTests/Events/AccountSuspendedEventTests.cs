@@ -1,7 +1,7 @@
-using Account.Domain.Events;
+using BankSystem.Account.Domain.Events;
 using FluentAssertions;
 
-namespace Account.Domain.UnitTests.Events;
+namespace BankSystem.Account.Domain.UnitTests.Events;
 
 public class AccountSuspendedEventTests
 {
@@ -10,9 +10,9 @@ public class AccountSuspendedEventTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var reason = "Suspicious activity";
+        const string reason = "Suspicious activity";
         var suspendedAt = DateTime.UtcNow;
-        var suspendedBy = "System";
+        const string suspendedBy = "System";
 
         // Act
         var @event = new AccountSuspendedEvent(accountId, reason, suspendedAt, suspendedBy);

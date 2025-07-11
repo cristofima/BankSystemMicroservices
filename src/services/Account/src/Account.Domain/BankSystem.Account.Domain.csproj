@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Common\**\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\..\..\shared\BankSystem.Shared.Domain\BankSystem.Shared.Domain.csproj" />
   </ItemGroup>
 

@@ -13,7 +13,7 @@ public record Money
         ArgumentNullException.ThrowIfNull(currency);
 
         // Allow negative balances, but enforce precision
-        if (decimal.Round(amount, currency.DecimalPlaces) != amount)
+        if (decimal.Round(amount, Currency.DecimalPlaces) != amount)
             throw new DomainException($"Amount has too many decimal places for currency {currency.Code}");
 
         Amount = amount;
@@ -42,14 +42,6 @@ public record Money
             throw new DomainException($"Cannot subtract {other.Currency.Code} from {Currency.Code}");
 
         return new Money(Amount - other.Amount, Currency);
-    }
-
-    /// <summary>
-    /// Multiplies the amount by a factor.
-    /// </summary>
-    public Money Multiply(decimal factor)
-    {
-        return new Money(Amount * factor, Currency);
     }
 
     /// <summary>

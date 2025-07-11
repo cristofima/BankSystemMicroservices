@@ -104,7 +104,6 @@ This service follows Clean Architecture principles with the following layers:
 
 - Daily withdrawal limit: Configurable per account type
 - Monthly transfer limit: Configurable per account type
-- Maximum negative balance: Varies by account type and customer credit rating
 
 ### Compliance Requirements
 

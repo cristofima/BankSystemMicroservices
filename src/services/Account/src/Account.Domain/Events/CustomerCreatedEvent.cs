@@ -1,6 +1,6 @@
 using BankSystem.Shared.Domain.Common;
 
-namespace Account.Domain.Events;
+namespace BankSystem.Account.Domain.Events;
 
 /// <summary>
 /// Domain event raised when a new customer is created.

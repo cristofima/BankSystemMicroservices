@@ -1,11 +1,12 @@
-using Account.Domain.Enums;
-using Account.Domain.Events;
-using Account.Domain.Exceptions;
-using Account.Domain.ValueObjects;
+using BankSystem.Account.Domain.Enums;
+using BankSystem.Account.Domain.Events;
+using BankSystem.Account.Domain.Exceptions;
+using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Exceptions;
 using BankSystem.Shared.Domain.ValueObjects;
 
-namespace Account.Domain.Entities;
+namespace BankSystem.Account.Domain.Entities;
 
 /// <summary>
 /// Represents a bank account aggregate root in the banking domain.
@@ -18,12 +19,12 @@ public class Account : AggregateRoot<Guid>
     /// <summary>
     /// Gets the unique account number for this account.
     /// </summary>
-    public AccountNumber AccountNumber { get; private set; } = null!;
+    public AccountNumber AccountNumber { get; } = null!;
 
     /// <summary>
     /// Gets the customer who owns this account.
     /// </summary>
-    public Guid CustomerId { get; private set; }
+    public Guid CustomerId { get; }
 
     /// <summary>
     /// Gets the current balance of the account.
@@ -39,16 +40,6 @@ public class Account : AggregateRoot<Guid>
     /// Gets the type of account (Checking, Savings, etc.).
     /// </summary>
     public AccountType Type { get; private set; }
-
-    /// <summary>
-    /// Gets the date and time when the account was created.
-    /// </summary>
-    public DateTime CreatedAt { get; private set; }
-
-    /// <summary>
-    /// Gets the date and time when the account was last updated.
-    /// </summary>
-    public DateTime UpdatedAt { get; private set; }
 
     /// <summary>
     /// Gets the date and time when the account was closed (if applicable).
@@ -116,7 +107,7 @@ public class Account : AggregateRoot<Guid>
         initialDeposit ??= Money.Zero(currency);
 
         // Set initial deposit directly, even if PendingActivation
-        if (initialDeposit?.Amount > 0)
+        if (initialDeposit.Amount > 0)
         {
             account.Balance = initialDeposit;
             var initialDepositTransaction = Transaction.CreateDeposit(
@@ -151,9 +142,9 @@ public class Account : AggregateRoot<Guid>
         switch (Status)
         {
             case AccountStatus.Active:
-                throw new AccountDomainException("Account is already active");
+                throw new DomainException("Account is already active");
             case AccountStatus.Closed:
-                throw new AccountDomainException("Cannot activate a closed account");
+                throw new DomainException("Cannot activate a closed account");
             case AccountStatus.Suspended:
             case AccountStatus.PendingActivation:
                 break;
@@ -177,7 +168,7 @@ public class Account : AggregateRoot<Guid>
             throw new ArgumentException("Suspension reason is required", nameof(reason));
 
         if (Status == AccountStatus.Closed)
-            throw new AccountDomainException("Cannot suspend a closed account");
+            throw new DomainException("Cannot suspend a closed account");
 
         Status = AccountStatus.Suspended;
         UpdatedAt = DateTime.UtcNow;
@@ -195,10 +186,10 @@ public class Account : AggregateRoot<Guid>
             throw new ArgumentException("Closure reason is required", nameof(reason));
 
         if (Status == AccountStatus.Closed)
-            throw new AccountDomainException("Account is already closed");
+            throw new DomainException("Account is already closed");
 
         if (Balance.Amount != 0)
-            throw new AccountDomainException("Cannot close account with non-zero balance");
+            throw new DomainException("Cannot close account with non-zero balance");
 
         Status = AccountStatus.Closed;
         ClosedAt = DateTime.UtcNow;
@@ -213,23 +204,23 @@ public class Account : AggregateRoot<Guid>
     /// <param name="amount">The amount to deposit.</param>
     /// <param name="description">Description of the deposit.</param>
     /// <returns>The created transaction.</returns>
-    public Result Deposit(Money amount, string description)
+    public Result<Transaction> Deposit(Money amount, string description)
     {
-        if (amount is null)
-            throw new ArgumentNullException(nameof(amount));
+        ArgumentNullException.ThrowIfNull(amount);
+        
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentException("Description is required", nameof(description));
         if (Status != AccountStatus.Active)
-            throw new AccountDomainException("Cannot deposit to inactive account");
+            throw new DomainException("Cannot deposit to inactive account");
         if (amount.Amount <= 0)
-            return Result.Failure("Deposit amount must be positive");
+            return Result<Transaction>.Failure("Deposit amount must be positive");
 
         Balance = Balance.Add(amount);
         var transaction = Transaction.CreateDeposit(Id, amount, description);
         _transactions.Add(transaction);
         AddDomainEvent(new MoneyDepositedEvent(Id, amount.Amount, amount.Currency.ToString(), Balance.Amount, description));
         UpdatedAt = DateTime.UtcNow;
-        return Result.Success();
+        return Result<Transaction>.Success(transaction);
     }
 
     /// <summary>
@@ -243,13 +234,13 @@ public class Account : AggregateRoot<Guid>
         ArgumentNullException.ThrowIfNull(amount);
 
         if (amount.Amount <= 0)
-            throw new AccountDomainException("Withdrawal amount must be positive");
+            throw new DomainException("Withdrawal amount must be positive");
 
         if (!amount.Currency.Equals(Balance.Currency))
-            throw new AccountDomainException("Withdrawal currency must match account currency");
+            throw new DomainException("Withdrawal currency must match account currency");
 
         if (Status != AccountStatus.Active)
-            throw new AccountDomainException("Cannot withdraw from inactive account");
+            throw new DomainException("Cannot withdraw from inactive account");
 
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentException("Transaction description is required", nameof(description));
@@ -273,8 +264,4 @@ public class Account : AggregateRoot<Guid>
 
         return transaction;
     }
-
-
-
-
 }

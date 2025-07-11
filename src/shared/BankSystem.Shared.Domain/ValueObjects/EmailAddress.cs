@@ -1,6 +1,6 @@
 using System.Net.Mail;
 
-namespace Account.Domain.ValueObjects;
+namespace BankSystem.Shared.Domain.ValueObjects;
 
 /// <summary>
 /// Represents an email address value object with validation

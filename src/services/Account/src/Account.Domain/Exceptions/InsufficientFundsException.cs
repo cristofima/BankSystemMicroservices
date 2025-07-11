@@ -1,9 +1,11 @@
-namespace Account.Domain.Exceptions;
+using BankSystem.Shared.Domain.Exceptions;
+
+namespace BankSystem.Account.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when an account has insufficient funds for a requested operation.
 /// </summary>
-public class InsufficientFundsException : AccountDomainException
+public class InsufficientFundsException : DomainException
 {
     public decimal RequestedAmount { get; }
     public decimal AvailableBalance { get; }

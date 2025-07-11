@@ -1,8 +1,8 @@
-using Account.Domain.ValueObjects;
+using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.ValueObjects;
 
-namespace Account.Domain.Events;
+namespace BankSystem.Account.Domain.Events;
 
 /// <summary>
 /// Domain event raised when a new account is created.

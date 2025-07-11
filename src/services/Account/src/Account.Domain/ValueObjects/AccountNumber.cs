@@ -1,6 +1,6 @@
 using BankSystem.Shared.Domain.Exceptions;
 
-namespace Account.Domain.ValueObjects;
+namespace BankSystem.Account.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a bank account number with validation and formatting logic.

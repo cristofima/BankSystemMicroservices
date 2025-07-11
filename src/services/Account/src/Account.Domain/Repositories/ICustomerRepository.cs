@@ -1,7 +1,7 @@
-using Account.Domain.Entities;
-using Account.Domain.ValueObjects;
+using BankSystem.Account.Domain.Entities;
+using BankSystem.Shared.Domain.ValueObjects;
 
-namespace Account.Domain.Repositories;
+namespace BankSystem.Account.Domain.Repositories;
 
 /// <summary>
 /// Repository interface for Customer aggregate operations.

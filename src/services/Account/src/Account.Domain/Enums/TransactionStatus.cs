@@ -1,4 +1,4 @@
-﻿namespace Account.Domain.Enums;
+﻿namespace BankSystem.Account.Domain.Enums;
 
 /// <summary>
 /// Represents the status of a transaction.

@@ -1,6 +1,6 @@
 using BankSystem.Shared.Domain.Common;
 
-namespace Account.Domain.Events;
+namespace BankSystem.Account.Domain.Events;
 
 /// <summary>
 /// Domain event raised when an account is activated.

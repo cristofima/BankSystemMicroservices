@@ -1,7 +1,7 @@
-using Account.Domain.Entities;
-using Account.Domain.Enums;
+using BankSystem.Account.Domain.Entities;
+using BankSystem.Account.Domain.Enums;
 
-namespace Account.Domain.Repositories;
+namespace BankSystem.Account.Domain.Repositories;
 
 /// <summary>
 /// Repository interface for managing Transaction entities and related data operations.

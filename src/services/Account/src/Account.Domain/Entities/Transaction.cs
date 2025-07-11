@@ -1,9 +1,9 @@
-using Account.Domain.Enums;
-using Account.Domain.Guards;
+using BankSystem.Account.Domain.Enums;
+using BankSystem.Account.Domain.Guards;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.ValueObjects;
 
-namespace Account.Domain.Entities;
+namespace BankSystem.Account.Domain.Entities;
 
 /// <summary>
 /// Represents a financial transaction within the banking system.
@@ -43,11 +43,6 @@ public class Transaction : Entity<Guid>
     /// Gets the current status of the transaction.
     /// </summary>
     public TransactionStatus Status { get; private set; }
-
-    /// <summary>
-    /// Gets the date and time when the transaction was created.
-    /// </summary>
-    public DateTime CreatedAt { get; private set; }
 
     /// <summary>
     /// Gets the date and time when the transaction was processed.
@@ -138,8 +133,6 @@ public class Transaction : Entity<Guid>
                 throw new InvalidOperationException("Cannot cancel a completed transaction");
             case TransactionStatus.Cancelled:
                 throw new InvalidOperationException("Transaction is already cancelled");
-            case TransactionStatus.Pending:
-            case TransactionStatus.Failed:
             default:
                 Status = TransactionStatus.Cancelled;
 

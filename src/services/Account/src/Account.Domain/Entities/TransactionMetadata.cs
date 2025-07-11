@@ -1,4 +1,4 @@
-﻿namespace Account.Domain.Entities;
+﻿namespace BankSystem.Account.Domain.Entities;
 
 /// <summary>
 /// Represents additional metadata for a transaction.

@@ -1,7 +1,7 @@
-using Account.Domain.Enums;
-using Account.Domain.ValueObjects;
+using BankSystem.Account.Domain.Enums;
+using BankSystem.Account.Domain.ValueObjects;
 
-namespace Account.Domain.Repositories;
+namespace BankSystem.Account.Domain.Repositories;
 
 /// <summary>
 /// Repository interface for Account aggregate operations.

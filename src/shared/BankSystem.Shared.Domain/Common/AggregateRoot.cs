@@ -5,7 +5,7 @@ namespace BankSystem.Shared.Domain.Common;
 /// </summary>
 public abstract class AggregateRoot<TId> : Entity<TId>
 {
-    private readonly List<IDomainEvent> _domainEvents = new();
+    private readonly List<IDomainEvent> _domainEvents = [];
 
     /// <summary>
     /// Domain events produced by this aggregate.

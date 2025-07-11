@@ -1,4 +1,4 @@
-﻿namespace Account.Domain.Guards;
+﻿namespace BankSystem.Account.Domain.Guards;
 
 /// <summary>
 /// Guard clauses for parameter validation.

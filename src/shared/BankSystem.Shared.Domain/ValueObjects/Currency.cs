@@ -7,13 +7,14 @@ public record Currency
 {
     private static readonly HashSet<string> ValidCurrencyCodes =
     [
-        "USD", "EUR", "GBP", "CAD", "AUD", "JPY"
+        "USD", "EUR", "GBP"
     ];
 
     public string Code { get; }
     public string Name { get; }
     public string Symbol { get; }
 
+    /// <param name="code">The ISO currency code (e.g., "USD", "EUR")</param>
     public Currency(string code)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -28,13 +29,6 @@ public record Currency
         Name = GetCurrencyName(code);
         Symbol = GetCurrencySymbol(code);
     }
-
-    /// <summary>
-    /// Creates a Currency instance from a currency code.
-    /// </summary>
-    /// <param name="code">The ISO currency code (e.g., "USD", "EUR")</param>
-    /// <returns>A Currency instance</returns>
-    public static Currency FromCode(string code) => new(code);
 
     /// <summary>
     /// Validates if the given currency code is supported.
@@ -65,20 +59,13 @@ public record Currency
     /// <summary>
     /// Number of decimal places supported by this currency (e.g. JPY has 0, most others 2).
     /// </summary>
-    public int DecimalPlaces => Code switch
-    {
-        "JPY" => 0,
-        _     => 2
-    };
+    public static int DecimalPlaces => 2;
 
     private static string GetCurrencyName(string code) => code switch
     {
         "USD" => "US Dollar",
         "EUR" => "Euro",
         "GBP" => "British Pound Sterling",
-        "CAD" => "Canadian Dollar",
-        "AUD" => "Australian Dollar",
-        "JPY" => "Japanese Yen",
         _ => code
     };
 
@@ -87,9 +74,6 @@ public record Currency
         "USD" => "$",
         "EUR" => "€",
         "GBP" => "£",
-        "CAD" => "C$",
-        "AUD" => "A$",
-        "JPY" => "¥",
         _ => code
     };
 

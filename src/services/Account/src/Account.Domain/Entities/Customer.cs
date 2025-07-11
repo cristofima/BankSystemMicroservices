@@ -1,7 +1,7 @@
-using Account.Domain.ValueObjects;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.ValueObjects;
 
-namespace Account.Domain.Entities;
+namespace BankSystem.Account.Domain.Entities;
 
 /// <summary>
 /// Represents a bank customer entity
@@ -14,9 +14,7 @@ public class Customer : Entity<Guid>
     public string LastName { get; private set; } = string.Empty;
     public EmailAddress EmailAddress { get; private set; } = null!;
     public PhoneNumber? PhoneNumber { get; private set; }
-    public DateTime DateOfBirth { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; private set; }
+    public DateTime DateOfBirth { get; private init; }
     public bool IsActive { get; private set; }
 
     /// <summary>
@@ -138,8 +136,7 @@ public class Customer : Entity<Guid>
     /// <param name="account">Account to add</param>
     internal void AddAccount(Account account)
     {
-        if (account == null)
-            throw new ArgumentNullException(nameof(account));
+        ArgumentNullException.ThrowIfNull(account);
 
         if (account.CustomerId != Id)
             throw new InvalidOperationException("Account does not belong to this customer");
@@ -159,8 +156,7 @@ public class Customer : Entity<Guid>
         if (string.IsNullOrWhiteSpace(lastName))
             throw new ArgumentException("Last name cannot be empty", nameof(lastName));
 
-        if (emailAddress == null)
-            throw new ArgumentNullException(nameof(emailAddress));
+        ArgumentNullException.ThrowIfNull(emailAddress);
 
         if (dateOfBirth > DateTime.UtcNow.Date)
             throw new ArgumentException("Date of birth cannot be in the future", nameof(dateOfBirth));

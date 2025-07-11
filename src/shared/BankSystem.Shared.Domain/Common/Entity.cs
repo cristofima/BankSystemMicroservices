@@ -3,7 +3,7 @@ namespace BankSystem.Shared.Domain.Common;
 /// <summary>
 /// Base class for entities with an identity.
 /// </summary>
-public abstract class Entity<TId>
+public abstract class Entity<TId> : AuditedEntity
 {
     /// <summary>
     /// Unique identifier for the entity.

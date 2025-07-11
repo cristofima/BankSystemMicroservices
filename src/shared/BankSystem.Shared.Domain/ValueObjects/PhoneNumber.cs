@@ -1,4 +1,4 @@
-namespace Account.Domain.ValueObjects;
+namespace BankSystem.Shared.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a phone number value object with validation and formatting
@@ -63,7 +63,7 @@ public record PhoneNumber
         if (NationalNumber.Length <= 4)
             return $"{CountryCode} {new string('*', NationalNumber.Length)}";
 
-        var visibleDigits = 2;
+        const int visibleDigits = 2;
         var maskedMiddle = new string('*', NationalNumber.Length - (visibleDigits * 2));
         return $"{CountryCode} {NationalNumber[..visibleDigits]}{maskedMiddle}{NationalNumber[^visibleDigits..]}";
     }
@@ -96,8 +96,7 @@ public record PhoneNumber
     private static bool IsValidCountryCode(string countryCode)
     {
         return countryCode.StartsWith('+') &&
-               countryCode.Length >= 2 &&
-               countryCode.Length <= 4 &&
+               countryCode.Length is >= 2 and <= 4 &&
                countryCode[1..].All(char.IsDigit);
     }
 
@@ -106,8 +105,7 @@ public record PhoneNumber
     /// </summary>
     private static bool IsValidNationalNumber(string nationalNumber)
     {
-        return nationalNumber.Length >= 7 &&
-               nationalNumber.Length <= 15 &&
+        return nationalNumber.Length is >= 7 and <= 15 &&
                nationalNumber.All(char.IsDigit);
     }
 
