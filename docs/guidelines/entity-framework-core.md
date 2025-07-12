@@ -66,6 +66,19 @@ dotnet ef database drop --project Security.Infrastructure --startup-project Secu
 dotnet ef database update --project Security.Infrastructure --startup-project Security.Api
 ```
 
+### Environment-Specific Commands
+
+```powershell
+# Development environment
+dotnet ef database update --project Security.Infrastructure --startup-project Security.Api --environment Development
+
+# Staging environment
+dotnet ef database update --project Security.Infrastructure --startup-project Security.Api --environment Staging
+
+# Production environment (use scripts instead)
+dotnet ef migrations script --project Security.Infrastructure --startup-project Security.Api --environment Production
+```
+
 ## DbContext Configuration
 
 ### Configuration Best Practices
@@ -231,6 +244,45 @@ dotnet ef migrations script --idempotent --project Security.Infrastructure --sta
 5. **Rollback plan**: Have a rollback strategy ready
 6. **Monitor performance**: Check performance impact of new indexes/changes
 
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### Issue: "Your target project doesn't match your migrations assembly"
+
+**Solution**: Always specify both projects in the command:
+
+```powershell
+dotnet ef migrations add MigrationName --project Security.Infrastructure --startup-project Security.Api
+```
+
+#### Issue: "No DbContext was found"
+
+**Solution**: Ensure DbContext is properly registered in the startup project's `Program.cs`
+
+#### Issue: "Build failed"
+
+**Solution**: Build the solution first:
+
+```powershell
+dotnet build
+dotnet ef migrations add MigrationName --project Security.Infrastructure --startup-project Security.Api
+```
+
+#### Issue: "Connection string not found"
+
+**Solution**: Verify connection string configuration in `appsettings.json` and environment variables
+
+### Debugging Migration Issues
+
+```powershell
+# Verbose output for troubleshooting
+dotnet ef migrations add MigrationName --project Security.Infrastructure --startup-project Security.Api --verbose
+
+# Check EF Core version compatibility
+dotnet list package --include-transitive | findstr EntityFramework
+```
+
 ## Performance Considerations
 
 ### Index Strategy
@@ -263,36 +315,76 @@ var userSummaries = await _context.Users
     .ToListAsync();
 ```
 
+## Security Considerations
+
+### Sensitive Data Logging
+
+```csharp
+// Disable in production
+options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
+```
+
+### Connection String Security
+
+```json
+// Use Azure Key Vault for production
+"ConnectionStrings": {
+  "DefaultConnection": "@Microsoft.KeyVault(SecretUri=https://your-keyvault.vault.azure.net/secrets/connection-string/)"
+}
+```
+
+## Integration with Clean Architecture
+
+### Repository Pattern Implementation
+
+```csharp
+// IUserRepository.cs (Application layer)
+public interface IUserRepository
+{
+    Task<ApplicationUser?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<ApplicationUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task AddAsync(ApplicationUser user, CancellationToken cancellationToken = default);
+    Task UpdateAsync(ApplicationUser user, CancellationToken cancellationToken = default);
+}
+
+// UserRepository.cs (Infrastructure layer)
+public class UserRepository : IUserRepository
+{
+    private readonly SecurityDbContext _context;
+
+    public UserRepository(SecurityDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<ApplicationUser?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+}
+```
+
 ## Testing with Entity Framework
 
 ### Integration Testing Setup
 
 ```csharp
-[TestFixture]
-public class SecurityDbContextTests
+public class SecurityDbContextTests : IDisposable
 {
-    private SecurityDbContext _context;
-    private DbContextOptions<SecurityDbContext> _options;
+    private readonly SecurityDbContext _context;
 
-    [SetUp]
-    public void Setup()
+    public SecurityDbContextTests()
     {
-        _options = new DbContextOptionsBuilder<SecurityDbContext>()
+        var options = new DbContextOptionsBuilder<SecurityDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _context = new SecurityDbContext(_options);
+        _context = new SecurityDbContext(options);
         _context.Database.EnsureCreated();
     }
 
-    [TearDown]
-    public void TearDown()
-    {
-        _context.Database.EnsureDeleted();
-        _context.Dispose();
-    }
-
-    [Test]
+    [Fact]
     public async Task CanCreateAndRetrieveUser()
     {
         // Arrange
@@ -310,35 +402,16 @@ public class SecurityDbContextTests
         var retrievedUser = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == "testuser@example.com");
 
-        Assert.That(retrievedUser, Is.Not.Null);
-        Assert.That(retrievedUser.UserName, Is.EqualTo("testuser@example.com"));
+        Assert.NotNull(retrievedUser);
+        Assert.Equal("testuser@example.com", retrievedUser.UserName);
+    }
+
+    public void Dispose()
+    {
+        _context.Database.EnsureDeleted();
+        _context.Dispose();
     }
 }
-```
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-#### Issue: "Your target project doesn't match your migrations assembly"
-
-**Solution**: Always specify both projects in the command:
-
-```powershell
-dotnet ef migrations add MigrationName --project Security.Infrastructure --startup-project Security.Api
-```
-
-#### Issue: "No DbContext was found"
-
-**Solution**: Ensure DbContext is properly registered in the startup project's `Program.cs`
-
-#### Issue: "Build failed"
-
-**Solution**: Build the solution first:
-
-```powershell
-dotnet build
-dotnet ef migrations add MigrationName --project Security.Infrastructure --startup-project Security.Api
 ```
 
 ---

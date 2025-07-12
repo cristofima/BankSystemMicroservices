@@ -798,21 +798,19 @@ services.AddDbContext<BankDbContext>(options =>
 
 ```csharp
 // ✅ Good: Performance test setup
-[TestFixture]
-public class PerformanceTests
+public class PerformanceTests : IAsyncLifetime
 {
-    private WebApplicationFactory<Program> _factory;
-    private HttpClient _client;
+    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
 
-    [OneTimeSetUp]
-    public void OneTimeSetUp()
+    public PerformanceTests()
     {
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
                 {
-                    // Use in-memory database for consistent performance testing
+                    // Replace real DB with in-memory DB for test
                     services.RemoveDbContext<BankDbContext>();
                     services.AddDbContext<BankDbContext>(options =>
                         options.UseInMemoryDatabase("PerformanceTestDb"));
@@ -822,17 +820,17 @@ public class PerformanceTests
         _client = _factory.CreateClient();
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccountTransactions_Under100ConcurrentRequests_ShouldMaintainPerformance()
     {
         // Arrange
         var accountId = await CreateTestAccountAsync();
-        await SeedTransactionsAsync(accountId, 1000); // Create test data
+        await SeedTransactionsAsync(accountId, 1000);
 
         var tasks = new List<Task<HttpResponseMessage>>();
         var stopwatch = Stopwatch.StartNew();
 
-        // Act - Simulate 100 concurrent requests
+        // Act
         for (int i = 0; i < 100; i++)
         {
             tasks.Add(_client.GetAsync($"/api/accounts/{accountId}/transactions?page=1&pageSize=50"));
@@ -842,23 +840,21 @@ public class PerformanceTests
         stopwatch.Stop();
 
         // Assert
-        Assert.That(responses.All(r => r.IsSuccessStatusCode), Is.True);
-        Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(5000),
-            "100 concurrent requests should complete within 5 seconds");
+        Assert.True(responses.All(r => r.IsSuccessStatusCode), "All responses should be successful");
+        Assert.True(stopwatch.ElapsedMilliseconds < 5000, "100 concurrent requests should complete within 5 seconds");
 
         var averageResponseTime = stopwatch.ElapsedMilliseconds / 100.0;
-        Assert.That(averageResponseTime, Is.LessThan(100),
-            "Average response time should be under 100ms");
+        Assert.True(averageResponseTime < 100, "Average response time should be under 100ms");
     }
 
-    [Test]
+    [Fact]
     public async Task CreateTransaction_MemoryUsage_ShouldNotExceedThreshold()
     {
         // Arrange
         var initialMemory = GC.GetTotalMemory(forceFullCollection: true);
         var accountId = await CreateTestAccountAsync();
 
-        // Act - Create many transactions
+        // Act
         for (int i = 0; i < 1000; i++)
         {
             var request = new CreateTransactionRequest
@@ -869,10 +865,9 @@ public class PerformanceTests
             };
 
             var response = await _client.PostAsJsonAsync("/api/transactions", request);
-            Assert.That(response.IsSuccessStatusCode, Is.True);
+            Assert.True(response.IsSuccessStatusCode);
         }
 
-        // Force garbage collection and measure memory
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
@@ -880,9 +875,30 @@ public class PerformanceTests
         var finalMemory = GC.GetTotalMemory(forceFullCollection: false);
         var memoryIncrease = finalMemory - initialMemory;
 
-        // Assert - Memory increase should be reasonable
-        Assert.That(memoryIncrease, Is.LessThan(50 * 1024 * 1024),
-            "Memory increase should be less than 50MB for 1000 transactions");
+        // Assert
+        Assert.True(memoryIncrease < 50 * 1024 * 1024, "Memory increase should be less than 50MB");
+    }
+
+    // Optionally implement async setup/teardown if needed
+    public Task InitializeAsync() => Task.CompletedTask;
+    public Task DisposeAsync()
+    {
+        _client.Dispose();
+        _factory.Dispose();
+        return Task.CompletedTask;
+    }
+
+    // Placeholder methods
+    private async Task<Guid> CreateTestAccountAsync()
+    {
+        // Simulate creating an account
+        return Guid.NewGuid();
+    }
+
+    private async Task SeedTransactionsAsync(Guid accountId, int count)
+    {
+        // Simulate seeding data
+        await Task.CompletedTask;
     }
 }
 ```

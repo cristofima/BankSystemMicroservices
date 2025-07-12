@@ -374,10 +374,9 @@ public class TransactionProcessingService : BackgroundService
 ### Unit Testing Async Methods
 
 ```csharp
-[TestFixture]
 public class AccountServiceTests
 {
-    [Test]
+    [Fact]
     public async Task CreateAccountAsync_ValidCommand_ShouldReturnSuccess()
     {
         // Arrange
@@ -398,11 +397,11 @@ public class AccountServiceTests
         var result = await service.CreateAccountAsync(command);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.True(result.IsSuccess);
         mockRepository.Verify(r => r.AddAsync(It.IsAny<Account>()), Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccountAsync_NonExistentAccount_ShouldThrowException()
     {
         // Arrange
@@ -417,7 +416,7 @@ public class AccountServiceTests
         var ex = await Assert.ThrowsAsync<AccountNotFoundException>(
             () => service.GetAccountAsync(accountId));
 
-        Assert.That(ex.AccountId, Is.EqualTo(accountId));
+        Assert.Equal(accountId, ex.AccountId);
     }
 }
 ```
@@ -425,20 +424,18 @@ public class AccountServiceTests
 ### Integration Testing with Async
 
 ```csharp
-[TestFixture]
-public class TransactionControllerIntegrationTests
+public class TransactionControllerIntegrationTests : IAsyncLifetime
 {
-    private WebApplicationFactory<Program> _factory;
-    private HttpClient _client;
+    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
 
-    [SetUp]
-    public void Setup()
+    public TransactionControllerIntegrationTests()
     {
         _factory = new WebApplicationFactory<Program>();
         _client = _factory.CreateClient();
     }
 
-    [Test]
+    [Fact]
     public async Task CreateTransaction_ValidRequest_ShouldReturnCreated()
     {
         // Arrange
@@ -453,11 +450,22 @@ public class TransactionControllerIntegrationTests
         var response = await _client.PostAsJsonAsync("/api/transactions", request);
 
         // Assert
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<TransactionDto>(content);
-        Assert.That(result, Is.Not.Null);
+
+        Assert.NotNull(result);
+    }
+
+    // Proper cleanup for test resources
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public Task DisposeAsync()
+    {
+        _client.Dispose();
+        _factory.Dispose();
+        return Task.CompletedTask;
     }
 }
 ```

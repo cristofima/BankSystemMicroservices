@@ -534,20 +534,18 @@ public class SendGridEmailService : IEmailService
 
 ```csharp
 // ✅ Good: Fast, Independent, Repeatable, Self-Validating, Timely
-[TestFixture]
 public class AccountServiceTests
 {
-    private AccountService _accountService;
-    private Mock<IAccountRepository> _mockRepository;
+    private readonly AccountService _accountService;
+    private readonly Mock<IAccountRepository> _mockRepository;
 
-    [SetUp]
-    public void SetUp()
+    public AccountServiceTests()
     {
         _mockRepository = new Mock<IAccountRepository>();
         _accountService = new AccountService(_mockRepository.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_WithValidData_ShouldReturnSuccess()
     {
         // Arrange
@@ -559,12 +557,12 @@ public class AccountServiceTests
         var result = await _accountService.CreateAccountAsync(command);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value.Email, Is.EqualTo(command.Email));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(command.Email, result.Value.Email);
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Account>()), Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_WithExistingEmail_ShouldReturnFailure()
     {
         // Arrange
@@ -576,8 +574,8 @@ public class AccountServiceTests
         var result = await _accountService.CreateAccountAsync(command);
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
-        Assert.That(result.Error, Contains.Substring("already exists"));
+        Assert.True(result.IsFailure);
+        Assert.Contains("already exists", result.Error);
     }
 }
 ```

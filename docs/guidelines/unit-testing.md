@@ -1194,32 +1194,35 @@ public class AccountTestsBad
 ### Test Categories and Traits
 
 ```csharp
-// ✅ Good: Using categories for test organization
-[TestFixture]
-[Category("Unit")]
-[Category("Domain")]
+// ✅ Good: Using Trait categories for test organization
+[Trait("Category", "Unit")]
+[Trait("Category", "Domain")]
 public class AccountTests : DomainTestBase
 {
-    [Test]
-    [Category("BusinessRules")]
+    [Fact]
+    [Trait("Category", "BusinessRules")]
     public void Withdraw_ExceedsDailyLimit_ShouldReturnFailure()
     {
         // Test implementation
     }
 
-    [Test]
-    [Category("Validation")]
+    [Fact]
+    [Trait("Category", "Validation")]
     public void Withdraw_NegativeAmount_ShouldReturnFailure()
     {
         // Test implementation
     }
 
-    [Test]
-    [Category("Performance")]
-    [Timeout(100)] // Should complete within 100ms
+    [Fact]
+    [Trait("Category", "Performance")]
     public void GetBalance_LargeTransactionHistory_ShouldCompleteQuickly()
     {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
         // Test implementation
+
+        stopwatch.Stop();
+        Assert.True(stopwatch.ElapsedMilliseconds <= 100, "Test exceeded 100ms timeout");
     }
 }
 ```

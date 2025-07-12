@@ -674,7 +674,7 @@ dotnet ef migrations script --project Security.Infrastructure --startup-project 
 dotnet ef database update <MigrationName> --project Security.Infrastructure --startup-project Security.Api
 ```
 
-For more detailed Entity Framework documentation, see [Entity Framework Guidelines](../../docs/guidelines/entity-framework.md).
+For more detailed Entity Framework documentation, see [Entity Framework Core Guidelines](../../docs/guidelines/entity-framework-core.md).
 
 ## 🤝 Contributing
 

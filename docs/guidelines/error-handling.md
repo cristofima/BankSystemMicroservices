@@ -453,10 +453,9 @@ public class TransactionService
 ### Unit Testing Exceptions
 
 ```csharp
-[TestFixture]
 public class AccountTests
 {
-    [Test]
+    [Fact]
     public void Withdraw_InsufficientFunds_ShouldReturnFailure()
     {
         // Arrange
@@ -467,16 +466,19 @@ public class AccountTests
         var result = account.Withdraw(withdrawAmount, "Test withdrawal");
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
-        Assert.That(result.Error, Contains.Substring("Insufficient funds"));
+        Assert.True(result.IsFailure);
+        Assert.Contains("Insufficient funds", result.Error);
     }
 
-    [Test]
+    [Fact]
     public void CreateAccount_NegativeInitialDeposit_ShouldThrowException()
     {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentException>(() =>
+        // Arrange, Act & Assert
+        var ex = Assert.Throws<ArgumentException>(() =>
             new Money(-100, Currency.USD));
+
+        // Optionally assert exception message
+        // Assert.Contains("some expected message", ex.Message);
     }
 }
 ```
@@ -484,10 +486,17 @@ public class AccountTests
 ### Integration Testing Error Handling
 
 ```csharp
-[TestFixture]
 public class TransactionControllerTests
 {
-    [Test]
+    private readonly HttpClient _httpClient;
+
+    public TransactionControllerTests()
+    {
+        // Assume _httpClient is set up via TestServer or factory
+        _httpClient = TestServerFactory.CreateClient(); // Replace with your setup
+    }
+
+    [Fact]
     public async Task CreateTransaction_AccountNotFound_ShouldReturnNotFound()
     {
         // Arrange
@@ -502,11 +511,12 @@ public class TransactionControllerTests
         var response = await _httpClient.PostAsJsonAsync("/api/transactions", command);
 
         // Assert
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
         var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(content);
-        Assert.That(errorResponse.Type, Is.EqualTo("not_found"));
+
+        Assert.Equal("not_found", errorResponse.Type);
     }
 }
 ```

@@ -867,10 +867,9 @@ public static class HealthCheckExtensions
 ### Unit Testing Example
 
 ```csharp
-[TestFixture]
 public class AccountTests
 {
-    [Test]
+    [Fact]
     public void Deposit_ValidAmount_ShouldIncreaseBalance()
     {
         // Arrange
@@ -882,12 +881,12 @@ public class AccountTests
         account.Deposit(depositAmount, "Test deposit");
 
         // Assert
-        Assert.That(account.Balance, Is.EqualTo(initialBalance + depositAmount));
-        Assert.That(account.DomainEvents, Has.Count.EqualTo(2)); // AccountCreated + TransactionCreated
-        Assert.That(account.DomainEvents.Last(), Is.TypeOf<TransactionCreatedEvent>());
+        Assert.Equal(initialBalance + depositAmount, account.Balance);
+        Assert.Equal(2, account.DomainEvents.Count); // AccountCreated + TransactionCreated
+        Assert.IsType<TransactionCreatedEvent>(account.DomainEvents.Last());
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_InsufficientFunds_ShouldThrowException()
     {
         // Arrange
@@ -903,7 +902,6 @@ public class AccountTests
 ### Integration Testing Example
 
 ```csharp
-[TestFixture]
 public class TransactionControllerTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
@@ -915,7 +913,7 @@ public class TransactionControllerTests : IClassFixture<WebApplicationFactory<Pr
         _client = _factory.CreateClient();
     }
 
-    [Test]
+    [Fact]
     public async Task CreateDeposit_ValidRequest_ShouldReturnCreated()
     {
         // Arrange
@@ -927,12 +925,12 @@ public class TransactionControllerTests : IClassFixture<WebApplicationFactory<Pr
         var response = await _client.PostAsync("/api/transactions/deposit", content);
 
         // Assert
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var responseContent = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<TransactionDto>(responseContent);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Amount, Is.EqualTo(100m));
+        Assert.NotNull(result);
+        Assert.Equal(100m, result.Amount);
     }
 }
 ```

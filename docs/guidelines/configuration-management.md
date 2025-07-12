@@ -612,14 +612,12 @@ public class TenantService
 ### Unit Testing with Configuration
 
 ```csharp
-[TestFixture]
 public class TransactionServiceTests
 {
-    private IOptions<BusinessRulesOptions> _businessRulesOptions;
-    private TransactionService _transactionService;
+    private readonly IOptions<BusinessRulesOptions> _businessRulesOptions;
+    private readonly TransactionService _transactionService;
 
-    [SetUp]
-    public void Setup()
+    public TransactionServiceTests()
     {
         var businessRules = new BusinessRulesOptions
         {
@@ -631,10 +629,13 @@ public class TransactionServiceTests
         };
 
         _businessRulesOptions = Options.Create(businessRules);
-        _transactionService = new TransactionService(_businessRulesOptions, Mock.Of<ILogger<TransactionService>>());
+        _transactionService = new TransactionService(
+            _businessRulesOptions,
+            Mock.Of<ILogger<TransactionService>>()
+        );
     }
 
-    [Test]
+    [Fact]
     public async Task ValidateTransaction_AmountExceedsLimit_ShouldReturnFailure()
     {
         // Arrange
@@ -644,8 +645,8 @@ public class TransactionServiceTests
         var result = await _transactionService.ValidateTransactionAsync(command);
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
-        Assert.That(result.Error, Contains.Substring("exceeds single transaction limit"));
+        Assert.True(result.IsFailure);
+        Assert.Contains("exceeds single transaction limit", result.Error);
     }
 }
 ```
