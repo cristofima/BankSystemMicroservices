@@ -110,12 +110,12 @@ public class AccountTests
         var withdrawAmount = new Money(500m, currency);
 
         // Act
-        var transaction = account.Withdraw(withdrawAmount, "Test withdrawal");
+        var result = account.Withdraw(withdrawAmount, "Test withdrawal");
 
         // Assert
         account.Balance.Amount.Should().Be(500m);
-        transaction.Should().NotBeNull();
-        transaction.Amount.Should().Be(withdrawAmount);
+        result.Value.Should().NotBeNull();
+        result.Value.Amount.Should().Be(withdrawAmount);
         account.DomainEvents.Should().ContainSingle(e => e is MoneyWithdrawnEvent);
     }
 

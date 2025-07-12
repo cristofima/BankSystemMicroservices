@@ -9,6 +9,8 @@ public record AccountNumber
 {
     private const int AccountNumberLength = 10;
     private const string AccountNumberPrefix = "ACC";
+    private static readonly Random Random = new();
+    private static readonly Lock RandomLock = new();
 
     public string Value { get; }
 
@@ -31,14 +33,16 @@ public record AccountNumber
     /// <returns>A new AccountNumber instance with generated value</returns>
     public static AccountNumber Generate()
     {
-        var random = new Random();
         var digits = new char[AccountNumberLength];
-        
-        for (var i = 0; i < AccountNumberLength; i++)
+
+        lock (RandomLock)
         {
-            digits[i] = (char)('0' + random.Next(0, 10));
+            for (var i = 0; i < AccountNumberLength; i++)
+            {
+                digits[i] = (char)('0' + Random.Next(0, 10));
+            }
         }
-        
+
         var accountNumber = AccountNumberPrefix + new string(digits);
         return new AccountNumber(accountNumber);
     }

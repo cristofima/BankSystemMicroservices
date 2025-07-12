@@ -180,22 +180,23 @@ public class Account : AggregateRoot<Guid>
     /// Closes the account permanently.
     /// </summary>
     /// <param name="reason">The reason for closing the account.</param>
-    public void Close(string reason)
+    public Result Close(string reason)
     {
         if (string.IsNullOrWhiteSpace(reason))
-            throw new ArgumentException("Closure reason is required", nameof(reason));
+            return Result.Failure("Closure reason is required");
 
         if (Status == AccountStatus.Closed)
-            throw new DomainException("Account is already closed");
+            return Result.Failure("Account is already closed");
 
         if (Balance.Amount != 0)
-            throw new DomainException("Cannot close account with non-zero balance");
+            return Result.Failure("Cannot close account with non-zero balance");
 
         Status = AccountStatus.Closed;
         ClosedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
 
         AddDomainEvent(new AccountClosedEvent(Id, AccountNumber, CustomerId, reason, Balance));
+        return Result.Success();
     }
 
     /// <summary>
@@ -209,9 +210,9 @@ public class Account : AggregateRoot<Guid>
         ArgumentNullException.ThrowIfNull(amount);
         
         if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException("Description is required", nameof(description));
+            return Result<Transaction>.Failure("Description is required");
         if (Status != AccountStatus.Active)
-            throw new DomainException("Cannot deposit to inactive account");
+            return Result<Transaction>.Failure("Cannot deposit to inactive account");
         if (amount.Amount <= 0)
             return Result<Transaction>.Failure("Deposit amount must be positive");
 
@@ -229,21 +230,21 @@ public class Account : AggregateRoot<Guid>
     /// <param name="amount">The amount to withdraw.</param>
     /// <param name="description">Description of the withdrawal.</param>
     /// <returns>The created transaction.</returns>
-    public Transaction Withdraw(Money amount, string description)
+    public Result<Transaction> Withdraw(Money amount, string description)
     {
         ArgumentNullException.ThrowIfNull(amount);
 
         if (amount.Amount <= 0)
-            throw new DomainException("Withdrawal amount must be positive");
+            return Result<Transaction>.Failure("Withdrawal amount must be positive");
 
         if (!amount.Currency.Equals(Balance.Currency))
-            throw new DomainException("Withdrawal currency must match account currency");
+            return Result<Transaction>.Failure("Withdrawal currency must match account currency");
 
         if (Status != AccountStatus.Active)
-            throw new DomainException("Cannot withdraw from inactive account");
+            return Result<Transaction>.Failure("Cannot withdraw from inactive account");
 
         if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException("Transaction description is required", nameof(description));
+            return Result<Transaction>.Failure("Transaction description is required");
 
         // Check if withdrawal is allowed (balance cannot go below zero)
         if (Balance.Amount < amount.Amount)
@@ -262,6 +263,6 @@ public class Account : AggregateRoot<Guid>
             description,
             DateTime.UtcNow));
 
-        return transaction;
+        return Result<Transaction>.Success(transaction);
     }
 }

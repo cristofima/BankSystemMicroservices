@@ -57,7 +57,7 @@ public record Currency
     public static Currency GBP => new("GBP");
 
     /// <summary>
-    /// Number of decimal places supported by this currency (e.g. JPY has 0, most others 2).
+    /// Number of decimal places supported by this currency
     /// </summary>
     public static int DecimalPlaces => 2;
 

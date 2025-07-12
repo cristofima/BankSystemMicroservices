@@ -1,9 +1,12 @@
-﻿namespace BankSystem.Account.Domain.Enums;
+﻿﻿namespace BankSystem.Account.Domain.Enums;
 
+/// <summary>
+/// Lifecycle state of an account.
+/// </summary>
 public enum AccountStatus
 {
-    Active,
-    Suspended,
-    Closed,
-    PendingActivation
+    PendingActivation = 0,
+    Active            = 1,
+    Suspended         = 2,
+    Closed            = 3
 }
