@@ -89,7 +89,7 @@ public class CreateDepositCommandHandler : IRequestHandler<CreateDepositCommand,
             }
 
             // Create money value object
-            var amount = new Money(request.Amount, Currency.FromCode(request.Currency));
+            var amount = new Money(request.Amount, new Currency(request.Currency));
 
             // Execute domain logic
             var depositResult = account.Deposit(amount, request.Description);

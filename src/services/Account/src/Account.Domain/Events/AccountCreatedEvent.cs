@@ -11,7 +11,7 @@ public record AccountCreatedEvent(
     Guid AccountId,
     Guid CustomerId,
     AccountNumber AccountNumber,
-    Money InitialBalance,
+    Money InitialDeposit,
     string AccountType,
     DateTime CreatedAt) : IDomainEvent
 {
