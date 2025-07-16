@@ -7,6 +7,9 @@ public record Money
     public decimal Amount { get; init; }
     public Currency Currency { get; init; }
 
+    // Private constructor for EF Core
+    private Money() { }
+
     // Primary constructor with validation
     public Money(decimal amount, Currency currency)
     {

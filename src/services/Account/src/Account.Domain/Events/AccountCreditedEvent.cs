@@ -5,7 +5,7 @@ namespace BankSystem.Account.Domain.Events;
 /// <summary>
 /// Domain event raised when money is deposited into an account.
 /// </summary>
-public record MoneyDepositedEvent(
+public record AccountCreditedEvent(
     Guid AccountId,
     decimal Amount,
     string Currency,

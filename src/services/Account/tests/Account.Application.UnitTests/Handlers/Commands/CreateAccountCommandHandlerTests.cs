@@ -36,14 +36,13 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ValidCommand_ShouldReturnSuccessResult()
     {
         // Arrange
-        var command = new CreateAccountCommand(Guid.NewGuid(), AccountType.Checking, 1000m, "USD");
+        var command = new CreateAccountCommand(Guid.NewGuid(), AccountType.Checking, "USD");
 
         var currency = new Currency(command.Currency);
         var expectedAccount = AccountEntity.CreateNew(
             command.CustomerId,
             command.AccountType,
-            currency,
-            new Money(command.InitialDeposit, currency)
+            currency
         );
 
         var expectedDto = new AccountDto
@@ -73,7 +72,6 @@ public class CreateAccountCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(command.CustomerId, result.Value.CustomerId);
-        Assert.Equal(command.InitialDeposit, result.Value.Balance);
         Assert.Equal(command.Currency, result.Value.Currency);
         Assert.Equal(command.AccountType.ToString(), result.Value.AccountType);
 
@@ -82,38 +80,23 @@ public class CreateAccountCommandHandlerTests
             Times.Once);
     }
 
-    [Fact]
-    public async Task Handle_NegativeInitialDeposit_ShouldReturnFailure()
-    {
-        // Arrange
-        var command = new CreateAccountCommand(Guid.NewGuid(), AccountType.Checking, -100m, "USD");
-
-        // Act
-        var result = await _commandValidator.ValidateAsync(command);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Contains("Initial balance cannot be negative", result.Errors.Select(e => e.ErrorMessage));
-    }
-
     [Theory]
-    [InlineData(AccountType.Checking, "USD", 100.00)]
-    [InlineData(AccountType.Savings, "EUR", 500.50)]
-    [InlineData(AccountType.Business, "GBP", 1000.75)]
+    [InlineData(AccountType.Checking, "USD" )]
+    [InlineData(AccountType.Savings, "EUR" )]
+    [InlineData(AccountType.Business, "GBP")]
     public async Task Handle_DifferentAccountTypesAndCurrencies_ShouldCreateAccountSuccessfully(
         AccountType accountType,
-        string currency,
-        decimal initialDeposit)
+        string currency)
     {
         // Arrange
-        var command = new CreateAccountCommand(Guid.NewGuid(), accountType, initialDeposit, currency);
+        var command = new CreateAccountCommand(Guid.NewGuid(), accountType, currency);
 
         var expectedDto = new AccountDto
         {
             Id = Guid.NewGuid(),
             CustomerId = command.CustomerId,
             AccountNumber = "1234567890",
-            Balance = initialDeposit,
+            Balance = 0,
             Currency = currency,
             Status = nameof(AccountStatus.Active),
             AccountType = accountType.ToString(),
@@ -135,7 +118,6 @@ public class CreateAccountCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(accountType.ToString(), result.Value.AccountType);
         Assert.Equal(currency, result.Value.Currency);
-        Assert.Equal(initialDeposit, result.Value.Balance);
     }
 
     [Fact]
@@ -146,7 +128,6 @@ public class CreateAccountCommandHandlerTests
         var command = new CreateAccountCommand(
             CustomerId: customerId,
             AccountType: AccountType.Checking,
-            InitialDeposit: 1000m,
             Currency: "USD");
 
         var createdAccount = AccountEntity.CreateNew(
@@ -201,7 +182,6 @@ public class CreateAccountCommandHandlerTests
         var command = new CreateAccountCommand(
             CustomerId: customerId,
             AccountType: AccountType.Savings,
-            InitialDeposit: 0m,
             Currency: "EUR");
 
         var expectedDto = new AccountDto
@@ -247,7 +227,6 @@ public class CreateAccountCommandHandlerTests
         var command = new CreateAccountCommand(
             CustomerId: customerId,
             AccountType: AccountType.Checking,
-            InitialDeposit: 1000m,
             Currency: "USD");
 
         _mockAccountRepository
@@ -273,7 +252,6 @@ public class CreateAccountCommandHandlerTests
         var command = new CreateAccountCommand(
             CustomerId: customerId,
             AccountType: AccountType.Checking,
-            InitialDeposit: 1000m,
             Currency: "USD");
 
         var expectedException = new Exception("Repository failed");
@@ -308,7 +286,6 @@ public class CreateAccountCommandHandlerTests
         var command = new CreateAccountCommand(
             CustomerId: customerId,
             AccountType: AccountType.Checking,
-            InitialDeposit: 1000m,
             Currency: "USD");
 
         var expectedException = new AutoMapperMappingException("Mapping failed");
@@ -347,7 +324,6 @@ public class CreateAccountCommandHandlerTests
         var command = new CreateAccountCommand(
             CustomerId: customerId,
             AccountType: AccountType.Checking,
-            InitialDeposit: 1000m,
             Currency: "USD");
 
         using var cts = new CancellationTokenSource();

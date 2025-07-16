@@ -8,6 +8,14 @@ namespace BankSystem.Account.Application.Interfaces;
 public interface IAccountRepository
 {
     /// <summary>
+    /// Gets an account by its unique identifier
+    /// </summary>
+    /// <param name="accountId">The account identifier</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The account if found, null otherwise</returns>
+    //Task<AccountEntity?> GetByIdAsync(Guid accountId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets an account by its account number
     /// </summary>
     /// <param name="accountNumber">The account number</param>
@@ -22,14 +30,6 @@ public interface IAccountRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Collection of accounts for the customer</returns>
     Task<IEnumerable<AccountEntity>> GetByCustomerIdAsync(Guid customerId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets an account with its transaction history
-    /// </summary>
-    /// <param name="accountId">The account identifier</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The account with transactions if found, null otherwise</returns>
-    Task<AccountEntity?> GetByIdWithTransactionsAsync(Guid accountId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds a new account to the repository

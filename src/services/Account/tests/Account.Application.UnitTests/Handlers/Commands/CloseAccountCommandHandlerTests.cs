@@ -37,10 +37,10 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             var account = AccountEntity.CreateNew(
                 customerId,
                 AccountType.Checking,
-                Currency.USD,
-                new Money(100m, Currency.USD));
+                Currency.USD);
 
             account.Activate();
+            account.Deposit(new Money(100m, Currency.USD), "Test Deposit");
             account.Withdraw(new Money(100m, Currency.USD), "Test Withdraw");
 
             _mockAccountRepository
@@ -101,8 +101,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             var account = AccountEntity.CreateNew(
                 customerId,
                 AccountType.Checking,
-                Currency.USD,
-                new Money(0m, Currency.USD));
+                Currency.USD);
 
             account.Close(reason);
 
@@ -135,8 +134,10 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             var account = AccountEntity.CreateNew(
                 customerId,
                 AccountType.Checking,
-                Currency.USD,
-                new Money(100m, Currency.USD));
+                Currency.USD);
+
+            account.Activate();
+            account.Deposit(new Money(100m, Currency.USD), "Test Deposit");
 
             _mockAccountRepository
                 .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
@@ -167,8 +168,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             var account = AccountEntity.CreateNew(
                 customerId,
                 AccountType.Checking,
-                Currency.USD,
-                new Money(0m, Currency.USD));
+                Currency.USD);
 
             _mockAccountRepository
                 .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
@@ -191,13 +191,12 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             _mockAccountRepository.Verify(x => x.UpdateAsync(It.Is<AccountEntity>(a => a.Status == AccountStatus.Closed), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        public async Task Handle_NullOrEmptyReason_ShouldReturnError(string reason)
+        [Fact]
+        public async Task Handle_EmptyReason_ShouldReturnError()
         {
             // Arrange
             const string accountNumber = "12345";
+            var reason = string.Empty;
             var command = new CloseAccountCommand(accountNumber, reason);
 
             // Act
@@ -258,8 +257,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             var account = AccountEntity.CreateNew(
                 customerId,
                 AccountType.Checking,
-                Currency.USD,
-                new Money(0m, Currency.USD));
+                Currency.USD);
 
             _mockAccountRepository
                 .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))

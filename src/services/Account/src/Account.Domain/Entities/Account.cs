@@ -14,7 +14,6 @@ namespace BankSystem.Account.Domain.Entities;
 /// </summary>
 public class Account : AggregateRoot<Guid>
 {
-    private readonly List<Transaction> _transactions = [];
 
     /// <summary>
     /// Gets the unique account number for this account.
@@ -45,16 +44,6 @@ public class Account : AggregateRoot<Guid>
     /// Gets the date and time when the account was closed (if applicable).
     /// </summary>
     public DateTime? ClosedAt { get; private set; }
-
-    /// <summary>
-    /// Gets the read-only collection of transactions for this account.
-    /// </summary>
-    public IReadOnlyCollection<Transaction> Transactions => _transactions.AsReadOnly();
-
-    /// <summary>
-    /// Gets a value indicating whether the account is active.
-    /// </summary>
-    public bool IsActive => Status == AccountStatus.Active;
 
     // Private constructor for EF Core
     private Account()
@@ -89,13 +78,11 @@ public class Account : AggregateRoot<Guid>
     /// <param name="customerId">The customer ID who will own the account.</param>
     /// <param name="type">The type of account to create.</param>
     /// <param name="currency">The currency for the account.</param>
-    /// <param name="initialDeposit">The initial deposit amount (optional).</param>
     /// <returns>A new account instance.</returns>
     public static Account CreateNew(
         Guid customerId,
         AccountType type,
-        Currency currency,
-        Money? initialDeposit = null)
+        Currency currency)
     {
         var accountNumber = AccountNumber.Generate();
         var account = new Account(
@@ -104,30 +91,10 @@ public class Account : AggregateRoot<Guid>
             type,
             currency);
 
-        initialDeposit ??= Money.Zero(currency);
-
-        // Set initial deposit directly, even if PendingActivation
-        if (initialDeposit.Amount > 0)
-        {
-            account.Balance = initialDeposit;
-            var initialDepositTransaction = Transaction.CreateDeposit(
-                account.Id,
-                initialDeposit,
-                "Initial deposit");
-            account._transactions.Add(initialDepositTransaction);
-            account.AddDomainEvent(new MoneyDepositedEvent(
-                account.Id,
-                initialDeposit.Amount,
-                currency,
-                account.Balance.Amount,
-                "Initial deposit"));
-        }
-
         account.AddDomainEvent(new AccountCreatedEvent(
             account.Id,
             customerId,
             account.AccountNumber,
-            initialDeposit,
             type.ToString(),
             DateTime.UtcNow));
 
@@ -147,6 +114,7 @@ public class Account : AggregateRoot<Guid>
                 throw new DomainException("Cannot activate a closed account");
             case AccountStatus.Suspended:
             case AccountStatus.PendingActivation:
+            case AccountStatus.Frozen:
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -188,7 +156,7 @@ public class Account : AggregateRoot<Guid>
         if (Status == AccountStatus.Closed)
             return Result.Failure("Account is already closed");
 
-        if (Balance.Amount != 0)
+        if (!Balance.IsZero)
             return Result.Failure("Cannot close account with non-zero balance");
 
         Status = AccountStatus.Closed;
@@ -204,24 +172,21 @@ public class Account : AggregateRoot<Guid>
     /// </summary>
     /// <param name="amount">The amount to deposit.</param>
     /// <param name="description">Description of the deposit.</param>
-    /// <returns>The created transaction.</returns>
-    public Result<Transaction> Deposit(Money amount, string description)
+    public Result Deposit(Money amount, string description)
     {
         ArgumentNullException.ThrowIfNull(amount);
         
         if (string.IsNullOrWhiteSpace(description))
-            return Result<Transaction>.Failure("Description is required");
+            return Result.Failure("Description is required");
         if (Status != AccountStatus.Active)
-            return Result<Transaction>.Failure("Cannot deposit to inactive account");
-        if (amount.Amount <= 0)
-            return Result<Transaction>.Failure("Deposit amount must be positive");
+            return Result.Failure("Cannot deposit to inactive account");
+        if (!amount.IsPositive)
+            return Result.Failure("Deposit amount must be positive");
 
         Balance = Balance.Add(amount);
-        var transaction = Transaction.CreateDeposit(Id, amount, description);
-        _transactions.Add(transaction);
-        AddDomainEvent(new MoneyDepositedEvent(Id, amount.Amount, amount.Currency.ToString(), Balance.Amount, description));
+        AddDomainEvent(new AccountCreditedEvent(Id, amount.Amount, amount.Currency.ToString(), Balance.Amount, description));
         UpdatedAt = DateTime.UtcNow;
-        return Result<Transaction>.Success(transaction);
+        return Result.Success();
     }
 
     /// <summary>
@@ -229,40 +194,35 @@ public class Account : AggregateRoot<Guid>
     /// </summary>
     /// <param name="amount">The amount to withdraw.</param>
     /// <param name="description">Description of the withdrawal.</param>
-    /// <returns>The created transaction.</returns>
-    public Result<Transaction> Withdraw(Money amount, string description)
+    public Result Withdraw(Money amount, string description)
     {
         ArgumentNullException.ThrowIfNull(amount);
 
         if (amount.Amount <= 0)
-            return Result<Transaction>.Failure("Withdrawal amount must be positive");
+            return Result.Failure("Withdrawal amount must be positive");
 
         if (!amount.Currency.Equals(Balance.Currency))
-            return Result<Transaction>.Failure("Withdrawal currency must match account currency");
+            return Result.Failure("Withdrawal currency must match account currency");
 
         if (Status != AccountStatus.Active)
-            return Result<Transaction>.Failure("Cannot withdraw from inactive account");
+            return Result.Failure("Cannot withdraw from inactive account");
 
         if (string.IsNullOrWhiteSpace(description))
-            return Result<Transaction>.Failure("Transaction description is required");
+            return Result.Failure("Transaction description is required");
 
         // Check if withdrawal is allowed (balance cannot go below zero)
-        if (Balance.Amount < amount.Amount)
+        if (Balance.IsLessThan(amount))
             throw new InsufficientFundsException(Id, amount.Amount, Balance.Amount);
 
         Balance = Balance.Subtract(amount);
         UpdatedAt = DateTime.UtcNow;
 
-        var transaction = Transaction.CreateWithdrawal(Id, amount, description);
-        _transactions.Add(transaction);
-
-        AddDomainEvent(new MoneyWithdrawnEvent(
+        AddDomainEvent(new AccountDebitedEvent(
             Id,
             amount,
             Balance,
-            description,
-            DateTime.UtcNow));
+            description));
 
-        return Result<Transaction>.Success(transaction);
+        return Result.Success();
     }
 }

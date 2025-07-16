@@ -63,7 +63,7 @@ public class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior
             .Where(f => f != null)
             .ToList();
 
-        if (failures.Any())
+        if (failures.Count > 0)
             throw new ValidationException(failures);
 
         return await next();
@@ -94,18 +94,10 @@ public class LoggingPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TR
 
         _logger.LogInformation("Handling {RequestName}", requestName);
 
-        try
-        {
-            var response = await next();
-            
-            _logger.LogInformation("Successfully handled {RequestName}", requestName);
-            
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error handling {RequestName}", requestName);
-            throw;
-        }
+        var response = await next();
+
+        _logger.LogInformation("Successfully handled {RequestName}", requestName);
+
+        return response;
     }
 }

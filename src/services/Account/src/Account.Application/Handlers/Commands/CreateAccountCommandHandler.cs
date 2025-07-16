@@ -33,14 +33,12 @@ public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand,
             _logger.LogInformation("Creating account for customer {CustomerId}", request.CustomerId);
 
             var currency = new Currency(request.Currency);
-            var initialDeposit = new Money(request.InitialDeposit, currency);
 
             // Create new account
             var account = AccountEntity.CreateNew(
                 request.CustomerId,
                 request.AccountType,
-                currency,
-                initialDeposit);
+                currency);
 
             // Save account
             await _accountRepository.AddAsync(account, cancellationToken);

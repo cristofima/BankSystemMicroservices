@@ -14,6 +14,9 @@ public record Currency
     public string Name { get; }
     public string Symbol { get; }
 
+    // Private constructor for EF Core
+    private Currency() { }
+
     /// <param name="code">The ISO currency code (e.g., "USD", "EUR")</param>
     public Currency(string code)
     {

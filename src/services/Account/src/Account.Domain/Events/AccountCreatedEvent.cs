@@ -1,6 +1,5 @@
 using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Shared.Domain.Common;
-using BankSystem.Shared.Domain.ValueObjects;
 
 namespace BankSystem.Account.Domain.Events;
 
@@ -11,7 +10,6 @@ public record AccountCreatedEvent(
     Guid AccountId,
     Guid CustomerId,
     AccountNumber AccountNumber,
-    Money InitialDeposit,
     string AccountType,
     DateTime CreatedAt) : IDomainEvent
 {

@@ -16,12 +16,6 @@ public class CreateAccountCommandValidator : AbstractValidator<CreateAccountComm
             .IsInEnum()
             .WithMessage("Invalid account type");
 
-        RuleFor(x => x.InitialDeposit)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage("Initial balance cannot be negative")
-            .LessThanOrEqualTo(1_000_000)
-            .WithMessage("Initial balance cannot exceed $1,000,000");
-
         RuleFor(x => x.Currency)
             .NotEmpty()
             .WithMessage("Currency is required")
