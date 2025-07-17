@@ -4,4 +4,4 @@ using MediatR;
 
 namespace BankSystem.Account.Application.Queries;
 
-public record GetAccountByIdQuery(string AccountNumber) : IRequest<Result<AccountDto>>;
+public record GetAccountByIdQuery(Guid AccountId) : IRequest<Result<AccountDto>>;

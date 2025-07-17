@@ -1,7 +1,6 @@
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 using BankSystem.Account.Domain.Enums;
 using BankSystem.Account.Domain.Events;
-using BankSystem.Account.Domain.Exceptions;
 using BankSystem.Shared.Domain.ValueObjects;
 using FluentAssertions;
 
@@ -70,8 +69,6 @@ public class AccountTests
         var currency = Currency.EUR;
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking, currency);
         account.Activate();
-        account.Deposit(new Money(100m, currency), "Test");
-        account.Withdraw(new Money(100m, currency), "Test");
 
         // Act
         account.Close("Customer request");
@@ -79,59 +76,5 @@ public class AccountTests
         // Assert
         account.Status.Should().Be(AccountStatus.Closed);
         account.DomainEvents.Should().ContainSingle(e => e is AccountClosedEvent);
-    }
-
-    [Fact]
-    public void Deposit_ValidAmount_ShouldIncreaseBalance()
-    {
-        // Arrange
-        var currency = Currency.GBP;
-        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Savings, currency);
-        account.Activate();
-        var depositAmount = new Money(500m, currency);
-
-        // Act
-        var result = account.Deposit(depositAmount, "Test deposit");
-
-        // Assert
-        account.Balance.Amount.Should().Be(depositAmount.Amount);
-        result.IsSuccess.Should().BeTrue();
-        account.DomainEvents.Should().ContainSingle(e => e is AccountCreditedEvent);
-    }
-
-    [Fact]
-    public void Withdraw_ValidAmount_ShouldDecreaseBalance()
-    {
-        // Arrange
-        var currency = Currency.USD;
-        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Business, currency);
-        account.Activate();
-        account.Deposit(new Money(700m, currency), "Test");
-        
-        var withdrawAmount = new Money(500m, currency);
-
-        // Act
-        var result = account.Withdraw(withdrawAmount, "Test withdrawal");
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        account.Balance.Amount.Should().Be(200m);
-        account.DomainEvents.Should().ContainSingle(e => e is AccountDebitedEvent);
-    }
-
-    [Fact]
-    public void Withdraw_InsufficientFunds_ShouldThrowException()
-    {
-        // Arrange
-        var currency = Currency.USD;
-        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking, currency);
-        account.Activate();
-        var withdrawAmount = new Money(200m, currency);
-
-        // Act
-        Action action = () => account.Withdraw(withdrawAmount, "Test withdrawal");
-
-        // Assert
-        action.Should().Throw<InsufficientFundsException>();
     }
 }

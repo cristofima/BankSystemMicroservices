@@ -28,11 +28,11 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
         public async Task Handle_ValidActiveAccount_ShouldCloseAccountSuccessfully()
         {
             // Arrange
-            const string accountNumber = "12345";
+            var accountId = Guid.NewGuid();
             var customerId = Guid.NewGuid();
             const string reason = "Customer request";
 
-            var command = new CloseAccountCommand(accountNumber, reason);
+            var command = new CloseAccountCommand(accountId, reason);
 
             var account = AccountEntity.CreateNew(
                 customerId,
@@ -40,11 +40,9 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
                 Currency.USD);
 
             account.Activate();
-            account.Deposit(new Money(100m, Currency.USD), "Test Deposit");
-            account.Withdraw(new Money(100m, Currency.USD), "Test Withdraw");
 
             _mockAccountRepository
-                .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(account);
 
             _mockAccountRepository
@@ -60,7 +58,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
 
             account.Status.Should().Be(AccountStatus.Closed);
 
-            _mockAccountRepository.Verify(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()), Times.Once);
+            _mockAccountRepository.Verify(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
             _mockAccountRepository.Verify(x => x.UpdateAsync(It.Is<AccountEntity>(a => a.Status == AccountStatus.Closed), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -68,12 +66,12 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
         public async Task Handle_AccountNotFound_ShouldReturnFailure()
         {
             // Arrange
-            const string accountNumber = "12345"; ;
+            var accountId = Guid.NewGuid();
             const string reason = "Customer request";
-            var command = new CloseAccountCommand(accountNumber, reason);
+            var command = new CloseAccountCommand(accountId, reason);
 
             _mockAccountRepository
-                .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((AccountEntity?)null);
 
             // Act
@@ -84,7 +82,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             result.IsSuccess.Should().BeFalse();
             result.Error.Should().Be("Account not found");
 
-            _mockAccountRepository.Verify(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()), Times.Once);
+            _mockAccountRepository.Verify(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
             _mockAccountRepository.Verify(x => x.UpdateAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -92,11 +90,11 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
         public async Task Handle_AlreadyClosedAccount_ShouldReturnFailure()
         {
             // Arrange
-            const string accountNumber = "12345";
+            var accountId = Guid.NewGuid();
             var customerId = Guid.NewGuid();
             const string reason = "Customer request";
 
-            var command = new CloseAccountCommand(accountNumber, reason);
+            var command = new CloseAccountCommand(accountId, reason);
 
             var account = AccountEntity.CreateNew(
                 customerId,
@@ -106,7 +104,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             account.Close(reason);
 
             _mockAccountRepository
-                .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(account);
 
             // Act
@@ -117,41 +115,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             result.IsSuccess.Should().BeFalse();
             result.Error.Should().Contain("already closed");
 
-            _mockAccountRepository.Verify(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()), Times.Once);
-            _mockAccountRepository.Verify(x => x.UpdateAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task Handle_AccountWitNonZeroBalance_ShouldReturnFailure()
-        {
-            // Arrange
-            const string accountNumber = "12345";
-            var customerId = Guid.NewGuid();
-            const string reason = "Customer request";
-
-            var command = new CloseAccountCommand(accountNumber, reason);
-
-            var account = AccountEntity.CreateNew(
-                customerId,
-                AccountType.Checking,
-                Currency.USD);
-
-            account.Activate();
-            account.Deposit(new Money(100m, Currency.USD), "Test Deposit");
-
-            _mockAccountRepository
-                .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(account);
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.IsSuccess.Should().BeFalse();
-            result.Error.Should().Contain("non-zero balance");
-
-            _mockAccountRepository.Verify(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()), Times.Once);
+            _mockAccountRepository.Verify(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
             _mockAccountRepository.Verify(x => x.UpdateAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -159,11 +123,11 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
         public async Task Handle_ZeroBalanceAccount_ShouldCloseSuccessfully()
         {
             // Arrange
-            const string accountNumber = "12345";
+            var accountId = Guid.NewGuid();
             var customerId = Guid.NewGuid();
             const string reason = "Customer request";
 
-            var command = new CloseAccountCommand(accountNumber, reason);
+            var command = new CloseAccountCommand(accountId, reason);
 
             var account = AccountEntity.CreateNew(
                 customerId,
@@ -171,7 +135,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
                 Currency.USD);
 
             _mockAccountRepository
-                .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(account);
 
             _mockAccountRepository
@@ -187,7 +151,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
 
             account.Status.Should().Be(AccountStatus.Closed);
 
-            _mockAccountRepository.Verify(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()), Times.Once);
+            _mockAccountRepository.Verify(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
             _mockAccountRepository.Verify(x => x.UpdateAsync(It.Is<AccountEntity>(a => a.Status == AccountStatus.Closed), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -195,9 +159,9 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
         public async Task Handle_EmptyReason_ShouldReturnError()
         {
             // Arrange
-            const string accountNumber = "12345";
+            var accountId = Guid.NewGuid();
             var reason = string.Empty;
-            var command = new CloseAccountCommand(accountNumber, reason);
+            var command = new CloseAccountCommand(accountId, reason);
 
             // Act
             var validationResult = await _commandValidator.ValidateAsync(command);
@@ -212,25 +176,25 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
         {
             // Arrange
             const string reason = "Customer request";
-            var command = new CloseAccountCommand(string.Empty, reason);
+            var command = new CloseAccountCommand(Guid.Empty, reason);
 
             // Act
             var validationResult = await _commandValidator.ValidateAsync(command);
 
             // Assert
             validationResult.IsValid.Should().BeFalse();
-            validationResult.Errors.Should().ContainSingle(e => e.ErrorMessage == "Account Number is required");
+            validationResult.Errors.Should().ContainSingle(e => e.ErrorMessage == "Account ID is required");
         }
 
         [Fact]
         public async Task Handle_RepositoryThrowsException_ShouldReturnFailure()
         {
             // Arrange
-            const string accountNumber = "12345";
-            var command = new CloseAccountCommand(accountNumber, "Customer request");
+            var accountId = Guid.NewGuid();
+            var command = new CloseAccountCommand(accountId, "Customer request");
 
             _mockAccountRepository
-                .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Database error"));
 
             // Act
@@ -241,18 +205,18 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             result.IsSuccess.Should().BeFalse();
             result.Error.Should().Contain("Database error");
 
-            _mockAccountRepository.Verify(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()), Times.Once);
+            _mockAccountRepository.Verify(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task Handle_UpdateAsyncThrowsException_ShouldReturnFailure()
         {
             // Arrange
-            const string accountNumber = "12345";
+            var accountId = Guid.NewGuid();
             var customerId = Guid.NewGuid();
             const string reason = "Customer request";
 
-            var command = new CloseAccountCommand(accountNumber, reason);
+            var command = new CloseAccountCommand(accountId, reason);
 
             var account = AccountEntity.CreateNew(
                 customerId,
@@ -260,7 +224,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
                 Currency.USD);
 
             _mockAccountRepository
-                .Setup(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(account);
 
             _mockAccountRepository
@@ -275,7 +239,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
             result.IsSuccess.Should().BeFalse();
             result.Error.Should().Contain("Database error");
 
-            _mockAccountRepository.Verify(x => x.GetByAccountNumberAsync(accountNumber, It.IsAny<CancellationToken>()), Times.Once);
+            _mockAccountRepository.Verify(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
             _mockAccountRepository.Verify(x => x.UpdateAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -283,8 +247,8 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands
         public async Task Handle_CancellationTokenCancelled_ShouldReturnFailure()
         {
             // Arrange
-            const string accountNumber = "12345";
-            var command = new CloseAccountCommand(accountNumber, "Customer request");
+            var accountId = Guid.NewGuid();
+            var command = new CloseAccountCommand(accountId, "Customer request");
 
             var cancellationTokenSource = new CancellationTokenSource();
             await cancellationTokenSource.CancelAsync();

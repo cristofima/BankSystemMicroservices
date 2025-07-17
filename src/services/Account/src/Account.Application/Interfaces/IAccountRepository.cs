@@ -13,15 +13,7 @@ public interface IAccountRepository
     /// <param name="accountId">The account identifier</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The account if found, null otherwise</returns>
-    //Task<AccountEntity?> GetByIdAsync(Guid accountId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets an account by its account number
-    /// </summary>
-    /// <param name="accountNumber">The account number</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The account if found, null otherwise</returns>
-    Task<AccountEntity?> GetByAccountNumberAsync(string accountNumber, CancellationToken cancellationToken = default);
+    Task<AccountEntity?> GetByIdAsync(Guid accountId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all accounts for a specific customer

@@ -1,6 +1,5 @@
 using BankSystem.Account.Domain.Enums;
 using BankSystem.Account.Domain.Events;
-using BankSystem.Account.Domain.Exceptions;
 using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Exceptions;
@@ -28,7 +27,7 @@ public class Account : AggregateRoot<Guid>
     /// <summary>
     /// Gets the current balance of the account.
     /// </summary>
-    public Money Balance { get; private set; } = null!;
+    public Money Balance { get; } = null!;
 
     /// <summary>
     /// Gets the current status of the account.
@@ -164,65 +163,6 @@ public class Account : AggregateRoot<Guid>
         UpdatedAt = DateTime.UtcNow;
 
         AddDomainEvent(new AccountClosedEvent(Id, AccountNumber, CustomerId, reason, Balance));
-        return Result.Success();
-    }
-
-    /// <summary>
-    /// Deposits money into the account.
-    /// </summary>
-    /// <param name="amount">The amount to deposit.</param>
-    /// <param name="description">Description of the deposit.</param>
-    public Result Deposit(Money amount, string description)
-    {
-        ArgumentNullException.ThrowIfNull(amount);
-        
-        if (string.IsNullOrWhiteSpace(description))
-            return Result.Failure("Description is required");
-        if (Status != AccountStatus.Active)
-            return Result.Failure("Cannot deposit to inactive account");
-        if (!amount.IsPositive)
-            return Result.Failure("Deposit amount must be positive");
-
-        Balance = Balance.Add(amount);
-        AddDomainEvent(new AccountCreditedEvent(Id, amount.Amount, amount.Currency.ToString(), Balance.Amount, description));
-        UpdatedAt = DateTime.UtcNow;
-        return Result.Success();
-    }
-
-    /// <summary>
-    /// Withdraws money from the account.
-    /// </summary>
-    /// <param name="amount">The amount to withdraw.</param>
-    /// <param name="description">Description of the withdrawal.</param>
-    public Result Withdraw(Money amount, string description)
-    {
-        ArgumentNullException.ThrowIfNull(amount);
-
-        if (amount.Amount <= 0)
-            return Result.Failure("Withdrawal amount must be positive");
-
-        if (!amount.Currency.Equals(Balance.Currency))
-            return Result.Failure("Withdrawal currency must match account currency");
-
-        if (Status != AccountStatus.Active)
-            return Result.Failure("Cannot withdraw from inactive account");
-
-        if (string.IsNullOrWhiteSpace(description))
-            return Result.Failure("Transaction description is required");
-
-        // Check if withdrawal is allowed (balance cannot go below zero)
-        if (Balance.IsLessThan(amount))
-            throw new InsufficientFundsException(Id, amount.Amount, Balance.Amount);
-
-        Balance = Balance.Subtract(amount);
-        UpdatedAt = DateTime.UtcNow;
-
-        AddDomainEvent(new AccountDebitedEvent(
-            Id,
-            amount,
-            Balance,
-            description));
-
         return Result.Success();
     }
 }

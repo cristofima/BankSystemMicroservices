@@ -23,12 +23,12 @@ public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, R
     {
         try
         {
-            _logger.LogInformation("Closing account {AccountNumber}", request.AccountNumber);
+            _logger.LogInformation("Closing account {AccountId}", request.AccountId);
 
-            var account = await _accountRepository.GetByAccountNumberAsync(request.AccountNumber, cancellationToken);
-            if (account == null)
+            var account = await _accountRepository.GetByIdAsync(request.AccountId, cancellationToken);
+            if (account is null)
             {
-                _logger.LogWarning("Account {AccountNumber} not found for closure", request.AccountNumber);
+                _logger.LogWarning("Account {AccountId} not found for closure", request.AccountId);
                 return Result.Failure("Account not found");
             }
 
@@ -36,19 +36,19 @@ public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, R
             var closeResult = account.Close(request.Reason);
             if (!closeResult.IsSuccess)
             {
-                _logger.LogWarning("Failed to close account {AccountNumber}: {Error}", request.AccountNumber, closeResult.Error);
+                _logger.LogWarning("Failed to close account {AccountId}: {Error}", request.AccountId, closeResult.Error);
                 return closeResult;
             }
 
             await _accountRepository.UpdateAsync(account, cancellationToken);
 
-            _logger.LogInformation("Account {AccountNumber} closed successfully", request.AccountNumber);
+            _logger.LogInformation("Account {AccountId} closed successfully", request.AccountId);
 
             return Result.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error closing account {AccountNumber}", request.AccountNumber);
+            _logger.LogError(ex, "Error closing account {AccountId}", request.AccountId);
             return Result.Failure($"Error closing account: {ex.Message}");
         }
     }

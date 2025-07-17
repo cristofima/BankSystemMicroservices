@@ -7,9 +7,9 @@ public class CloseAccountCommandValidator : AbstractValidator<CloseAccountComman
 {
     public CloseAccountCommandValidator()
     {
-        RuleFor(x => x.AccountNumber)
+        RuleFor(x => x.AccountId)
             .NotEmpty()
-            .WithMessage("Account Number is required");
+            .WithMessage("Account ID is required");
 
         RuleFor(x => x.Reason)
             .NotEmpty()

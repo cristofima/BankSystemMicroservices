@@ -7,8 +7,8 @@ public class GetAccountByIdQueryValidator : AbstractValidator<GetAccountByIdQuer
 {
     public GetAccountByIdQueryValidator()
     {
-        RuleFor(x => x.AccountNumber)
+        RuleFor(x => x.AccountId)
             .NotEmpty()
-            .WithMessage("Account Number is required");
+            .WithMessage("Account ID is required");
     }
 }

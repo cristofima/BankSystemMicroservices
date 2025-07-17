@@ -4,5 +4,5 @@ using BankSystem.Shared.Domain.Common;
 namespace BankSystem.Account.Application.Commands;
 
 public record CloseAccountCommand(
-    string AccountNumber,
+    Guid AccountId,
     string Reason) : IRequest<Result>;

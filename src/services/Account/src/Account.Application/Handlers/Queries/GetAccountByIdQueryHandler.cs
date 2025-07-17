@@ -28,24 +28,24 @@ public class GetAccountByIdQueryHandler : IRequestHandler<GetAccountByIdQuery, R
     {
         try
         {
-            _logger.LogInformation("Retrieving account with number: {AccountNumber}", request.AccountNumber);
+            _logger.LogInformation("Retrieving account with ID: {AccountId}", request.AccountId);
 
-            var account = await _accountRepository.GetByAccountNumberAsync(request.AccountNumber, cancellationToken);
+            var account = await _accountRepository.GetByIdAsync(request.AccountId, cancellationToken);
 
             if (account == null)
             {
-                _logger.LogWarning("Account not found with number: {AccountNumber}", request.AccountNumber);
+                _logger.LogWarning("Account not found with ID: {AccountId}", request.AccountId);
                 return Result<AccountDto>.Failure("Account not found");
             }
 
             var accountDto = _mapper.Map<AccountDto>(account);
 
-            _logger.LogInformation("Successfully retrieved account with number: {AccountNumber}", request.AccountNumber);
+            _logger.LogInformation("Successfully retrieved account with ID: {AccountId}", request.AccountId);
             return Result<AccountDto>.Success(accountDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while retrieving account with number: {AccountNumber}", request.AccountNumber);
+            _logger.LogError(ex, "Error occurred while retrieving account with ID: {AccountId}", request.AccountId);
             return Result<AccountDto>.Failure("An error occurred while retrieving the account");
         }
     }
