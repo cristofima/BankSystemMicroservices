@@ -82,7 +82,9 @@ stages:
       displayName: 'Run All Unit Tests with Code Coverage'
       inputs:
         command: 'test'
-        projects: 'src/services/**/tests/**/*UnitTests.csproj'
+        projects: |
+          src/services/**/tests/**/*UnitTests.csproj
+          src/shared/tests/**/*UnitTests.csproj
         arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
         publishTestResults: true
 
