@@ -9,8 +9,7 @@ public record AccountActivatedEvent(
     Guid AccountId,
     Guid CustomerId,
     string AccountNumber,
-    DateTime ActivatedAt,
-    string? Reason = null) : IDomainEvent
+    DateTime ActivatedAt) : IDomainEvent
 {
     public Guid Id { get; } = Guid.NewGuid();
     public DateTime OccurredOn { get; } = DateTime.UtcNow;

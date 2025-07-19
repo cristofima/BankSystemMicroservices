@@ -8,7 +8,6 @@ namespace BankSystem.Account.Domain.ValueObjects;
 public record AccountNumber
 {
     private const int AccountNumberLength = 10;
-    private const string AccountNumberPrefix = "ACC";
     private static readonly Random Random = new();
     private static readonly Lock RandomLock = new();
 
@@ -19,10 +18,10 @@ public record AccountNumber
         if (string.IsNullOrWhiteSpace(value))
             throw new DomainException("Account number cannot be null or empty");
 
-        var cleanValue = value.Trim().ToUpperInvariant();
-        
+        var cleanValue = value.Trim();
+
         if (!IsValidFormat(cleanValue))
-            throw new DomainException($"Invalid account number format: {value}. Expected format: ACC followed by 10 digits");
+            throw new DomainException($"Invalid account number format: {value}. Expected format are 10 digits");
 
         Value = cleanValue;
     }
@@ -43,18 +42,7 @@ public record AccountNumber
             }
         }
 
-        var accountNumber = AccountNumberPrefix + new string(digits);
-        return new AccountNumber(accountNumber);
-    }
-
-    /// <summary>
-    /// Creates an AccountNumber from a string value.
-    /// </summary>
-    /// <param name="value">The account number string</param>
-    /// <returns>AccountNumber instance</returns>
-    public static AccountNumber FromString(string value)
-    {
-        return new AccountNumber(value);
+        return new AccountNumber(new string(digits));
     }
 
     /// <summary>
@@ -67,44 +55,22 @@ public record AccountNumber
         if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        var cleanValue = value.Trim().ToUpperInvariant();
+        var cleanValue = value.Trim();
 
-        // Must start with ACC prefix
-        if (!cleanValue.StartsWith(AccountNumberPrefix))
-            return false;
-
-        // Must have exact length (prefix + digits)
-        if (cleanValue.Length != AccountNumberPrefix.Length + AccountNumberLength)
-            return false;
-
-        // Remaining characters must be digits
-        var digits = cleanValue[AccountNumberPrefix.Length..];
-        return digits.All(char.IsDigit);
-    }
-
-    /// <summary>
-    /// Gets the numeric part of the account number.
-    /// </summary>
-    /// <returns>The numeric portion as a string</returns>
-    public string GetNumericPart()
-    {
-        return Value[AccountNumberPrefix.Length..];
+        // Must have exact length and characters must be digits
+        return cleanValue.Length == AccountNumberLength && cleanValue.All(char.IsDigit);
     }
 
     /// <summary>
     /// Gets a masked version of the account number for display purposes.
     /// </summary>
-    /// <returns>Masked account number (e.g., ACC****5678)</returns>
+    /// <returns>Masked account number (e.g., ****5678)</returns>
     public string GetMaskedValue()
     {
-        if (Value.Length <= 7)
-            return Value;
-
-        var prefix = Value[..3]; // ACC
         var suffix = Value[^4..]; // Last 4 digits
         var maskedMiddle = new string('*', Value.Length - 7);
-        
-        return prefix + maskedMiddle + suffix;
+
+        return maskedMiddle + suffix;
     }
 
     public override string ToString() => Value;
