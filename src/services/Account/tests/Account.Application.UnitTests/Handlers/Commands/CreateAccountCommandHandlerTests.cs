@@ -3,7 +3,6 @@ using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Handlers.Commands;
 using BankSystem.Account.Application.Interfaces;
-using BankSystem.Account.Application.Validators;
 using BankSystem.Account.Domain.Enums;
 using BankSystem.Shared.Domain.ValueObjects;
 using FluentAssertions;
@@ -19,7 +18,6 @@ public class CreateAccountCommandHandlerTests
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<ILogger<CreateAccountCommandHandler>> _mockLogger;
     private readonly CreateAccountCommandHandler _handler;
-    private readonly CreateAccountCommandValidator _commandValidator = new();
 
     public CreateAccountCommandHandlerTests()
     {
