@@ -8,13 +8,15 @@ public class GuardTests
     public void AgainstNull_ShouldThrow_WhenNull()
     {
         string? value = null;
-        Assert.Throws<ArgumentNullException>(() => Guard.AgainstNull(value, nameof(value)));
+        var ex = Assert.Throws<ArgumentNullException>(() => Guard.AgainstNull(value, nameof(value)));
+        Assert.Equal("value", ex.ParamName);
     }
 
     [Fact]
     public void AgainstNull_ShouldNotThrow_WhenNotNull()
     {
         Guard.AgainstNull("test", "value");
+        Assert.True(true);
     }
 
     [Theory]
@@ -23,19 +25,24 @@ public class GuardTests
     [InlineData("   ")]
     public void AgainstNullOrEmpty_String_ShouldThrow_WhenInvalid(string? input)
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstNullOrEmpty(input!, "value"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstNullOrEmpty(input!, "value"));
+        Assert.Equal("value", ex.ParamName);
+        Assert.StartsWith("Value cannot be null or empty", ex.Message);
     }
 
     [Fact]
     public void AgainstNullOrEmpty_String_ShouldNotThrow_WhenValid()
     {
         Guard.AgainstNullOrEmpty("value", "value");
+        Assert.True(true);
     }
 
     [Fact]
     public void AgainstNegative_ShouldThrow_WhenNegative()
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstNegative(-1, "value"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstNegative(-1, "value"));
+        Assert.Equal("value", ex.ParamName);
+        Assert.Contains("-1", ex.Message);
     }
 
     [Theory]
@@ -44,6 +51,7 @@ public class GuardTests
     public void AgainstNegative_ShouldNotThrow_WhenZeroOrPositive(decimal input)
     {
         Guard.AgainstNegative(input, "value");
+        Assert.True(true);
     }
 
     [Theory]
@@ -51,13 +59,15 @@ public class GuardTests
     [InlineData(0)]
     public void AgainstZeroOrNegative_Decimal_ShouldThrow(decimal input)
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstZeroOrNegative(input, "value"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstZeroOrNegative(input, "value"));
+        Assert.Equal("value", ex.ParamName);
     }
 
     [Fact]
     public void AgainstZeroOrNegative_Decimal_ShouldNotThrow_WhenPositive()
     {
         Guard.AgainstZeroOrNegative(1, "value");
+        Assert.True(true);
     }
 
     [Theory]
@@ -65,20 +75,25 @@ public class GuardTests
     [InlineData(0)]
     public void AgainstZeroOrNegative_Int_ShouldThrow(int input)
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstZeroOrNegative(input, "value"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstZeroOrNegative(input, "value"));
+        Assert.Equal("value", ex.ParamName);
     }
 
     [Fact]
     public void AgainstZeroOrNegative_Int_ShouldNotThrow_WhenPositive()
     {
         Guard.AgainstZeroOrNegative(1, "value");
+        Assert.True(true);
     }
 
     [Fact]
     public void AgainstInvalidRange_ShouldThrow_WhenOutOfRange()
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstInvalidRange(5, 10, 20, "value"));
-        Assert.Throws<ArgumentException>(() => Guard.AgainstInvalidRange(25, 10, 20, "value"));
+        var ex1 = Assert.Throws<ArgumentException>(() => Guard.AgainstInvalidRange(5, 10, 20, "value"));
+        Assert.Contains("[10, 20]", ex1.Message);
+
+        var ex2 = Assert.Throws<ArgumentException>(() => Guard.AgainstInvalidRange(25, 10, 20, "value"));
+        Assert.Contains("[10, 20]", ex2.Message);
     }
 
     [Theory]
@@ -88,58 +103,70 @@ public class GuardTests
     public void AgainstInvalidRange_ShouldNotThrow_WhenInRange(decimal input)
     {
         Guard.AgainstInvalidRange(input, 10, 20, "value");
+        Assert.True(true);
     }
 
     [Fact]
     public void AgainstEmptyGuid_ShouldThrow_WhenEmpty()
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstEmptyGuid(Guid.Empty, "value"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstEmptyGuid(Guid.Empty, "value"));
+        Assert.Equal("value", ex.ParamName);
     }
 
     [Fact]
     public void AgainstEmptyGuid_ShouldNotThrow_WhenValid()
     {
         Guard.AgainstEmptyGuid(Guid.NewGuid(), "value");
+        Assert.True(true);
     }
 
     [Fact]
     public void AgainstNullOrEmpty_Collection_ShouldThrow_WhenNull()
     {
         List<int>? collection = null;
-        Assert.Throws<ArgumentException>(() => Guard.AgainstNullOrEmpty(collection!, "collection"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstNullOrEmpty(collection!, "collection"));
+        Assert.Equal("collection", ex.ParamName);
     }
 
     [Fact]
     public void AgainstNullOrEmpty_Collection_ShouldThrow_WhenEmpty()
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstNullOrEmpty(new List<int>(), "collection"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstNullOrEmpty(new List<int>(), "collection"));
+        Assert.Equal("collection", ex.ParamName);
     }
 
     [Fact]
     public void AgainstNullOrEmpty_Collection_ShouldNotThrow_WhenHasItems()
     {
         Guard.AgainstNullOrEmpty(new List<int> { 1 }, "collection");
+        Assert.True(true);
     }
 
     private enum TestEnum
-    { Value1, Value2 }
+    {
+        Value1,
+        Value2
+    }
 
     [Fact]
     public void AgainstInvalidEnum_ShouldThrow_WhenInvalidValue()
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstInvalidEnum((TestEnum)999, "value"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstInvalidEnum((TestEnum)999, "value"));
+        Assert.Equal("value", ex.ParamName);
     }
 
     [Fact]
     public void AgainstInvalidEnum_ShouldNotThrow_WhenValidValue()
     {
         Guard.AgainstInvalidEnum(TestEnum.Value1, "value");
+        Assert.True(true);
     }
 
     [Fact]
     public void AgainstExcessiveLength_ShouldThrow_WhenTooLong()
     {
-        Assert.Throws<ArgumentException>(() => Guard.AgainstExcessiveLength("123456", 5, "value"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.AgainstExcessiveLength("123456", 5, "value"));
+        Assert.Equal("value", ex.ParamName);
     }
 
     [Theory]
@@ -149,43 +176,50 @@ public class GuardTests
     public void AgainstExcessiveLength_ShouldNotThrow_WhenValid(string? input)
     {
         Guard.AgainstExcessiveLength(input!, 5, "value");
+        Assert.True(true);
     }
 
     [Fact]
     public void Against_WithCustomException_ShouldThrow_WhenNull()
     {
-        Assert.Throws<InvalidOperationException>(() =>
+        var ex = Assert.Throws<InvalidOperationException>(() =>
             Guard.Against<string, InvalidOperationException>(null, () => new InvalidOperationException()));
+        Assert.NotNull(ex);
     }
 
     [Fact]
     public void Against_WithCustomException_ShouldNotThrow_WhenNotNull()
     {
         Guard.Against<string, InvalidOperationException>("value", () => new InvalidOperationException());
+        Assert.True(true);
     }
 
     [Fact]
     public void AgainstCondition_ShouldThrow_WhenTrue()
     {
-        Assert.Throws<ArgumentException>(() => Guard.Against(true, "Condition is true"));
+        var ex = Assert.Throws<ArgumentException>(() => Guard.Against(true, "Condition is true"));
+        Assert.Contains("Condition is true", ex.Message);
     }
 
     [Fact]
     public void AgainstCondition_ShouldNotThrow_WhenFalse()
     {
         Guard.Against(false, "Condition is false");
+        Assert.True(true);
     }
 
     [Fact]
     public void AgainstCondition_WithCustomException_ShouldThrow_WhenTrue()
     {
-        Assert.Throws<InvalidOperationException>(() =>
-            Guard.Against<InvalidOperationException>(true, () => new InvalidOperationException()));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Guard.Against(true, () => new InvalidOperationException()));
+        Assert.NotNull(ex);
     }
 
     [Fact]
     public void AgainstCondition_WithCustomException_ShouldNotThrow_WhenFalse()
     {
-        Guard.Against<InvalidOperationException>(false, () => new InvalidOperationException());
+        Guard.Against(false, () => new InvalidOperationException());
+        Assert.True(true);
     }
 }

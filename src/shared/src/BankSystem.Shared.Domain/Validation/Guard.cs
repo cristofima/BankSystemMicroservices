@@ -13,7 +13,7 @@ public static class Guard
     /// <param name="value">The value to check for null</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentNullException">Thrown when value is null</exception>
-    public static void AgainstNull<T>(T value, string parameterName) where T : class
+    public static void AgainstNull<T>(T value, string parameterName) where T : class?
     {
         if (value is null)
             throw new ArgumentNullException(parameterName);
