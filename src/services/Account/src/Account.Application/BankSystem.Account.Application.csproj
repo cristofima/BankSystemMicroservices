@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\shared\BankSystem.Shared.Domain\BankSystem.Shared.Domain.csproj" />
     <ProjectReference Include="..\Account.Domain\BankSystem.Account.Domain.csproj" />
   </ItemGroup>
 
