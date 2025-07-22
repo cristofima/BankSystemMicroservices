@@ -192,7 +192,7 @@ public class Account : AggregateRoot<Guid>
         ClosedAt = DateTime.UtcNow;
         UpdatedBy = closedBy;
 
-        AddDomainEvent(new AccountClosedEvent(Id, AccountNumber, CustomerId, reason, Balance));
+        AddDomainEvent(new AccountClosedEvent(Id, AccountNumber, CustomerId, reason));
         return Result.Success();
     }
 }

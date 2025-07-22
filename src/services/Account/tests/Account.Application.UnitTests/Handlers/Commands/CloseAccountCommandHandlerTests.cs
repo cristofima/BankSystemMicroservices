@@ -57,6 +57,7 @@ public class CloseAccountCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
+        command.ValidationErrorTitle.Should().NotBeNullOrEmpty();
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
 
