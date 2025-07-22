@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Security.Application.Interfaces;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.Features.Authentication.Commands.Logout;
 

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Security.Application.Dtos;
 using Security.Application.Interfaces;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 using Security.Domain.Entities;
 
 namespace Security.Application.Features.Authentication.Commands.Register;

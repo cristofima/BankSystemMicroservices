@@ -1,5 +1,5 @@
 using Security.Domain.Entities;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.Interfaces;
 

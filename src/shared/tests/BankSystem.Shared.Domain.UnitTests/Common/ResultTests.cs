@@ -1,7 +1,7 @@
-﻿using FluentAssertions;
-using Security.Domain.Common;
+﻿using BankSystem.Shared.Domain.Common;
+using FluentAssertions;
 
-namespace Security.Domain.UnitTests.Common;
+namespace BankSystem.Shared.Domain.UnitTests.Common;
 
 public class ResultTests
 {
@@ -43,21 +43,6 @@ public class ResultTests
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(string.Empty);
     }
-
-    [Fact]
-    public void ImplicitOperator_FromString_ShouldCreateFailureResult()
-    {
-        // Arrange
-        const string errorMessage = "Validation failed";
-
-        // Act
-        Result result = errorMessage;
-
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(errorMessage);
-    }
 }
 
 public class ResultOfTTests
@@ -86,38 +71,6 @@ public class ResultOfTTests
 
         // Act
         var result = Result<int>.Failure(errorMessage);
-
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Value.Should().Be(0);
-        result.Error.Should().Be(errorMessage);
-    }
-
-    [Fact]
-    public void ImplicitOperator_FromValue_ShouldCreateSuccessResult()
-    {
-        // Arrange
-        const int value = 42;
-
-        // Act
-        Result<int> result = value;
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.IsFailure.Should().BeFalse();
-        result.Value.Should().Be(value);
-        result.Error.Should().BeNullOrEmpty();
-    }
-
-    [Fact]
-    public void ImplicitOperator_FromString_ShouldCreateFailureResult()
-    {
-        // Arrange
-        const string errorMessage = "Invalid operation";
-
-        // Act
-        Result<int> result = errorMessage;
 
         // Assert
         result.IsSuccess.Should().BeFalse();

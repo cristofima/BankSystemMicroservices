@@ -718,13 +718,20 @@ services.Configure<LoggerFilterOptions>(options =>
 
 ```csharp
 // ✅ Good: Security-focused unit tests
-[TestFixture]
 public class AuthorizationTests
 {
-    private AuthorizationService _authorizationService;
-    private Mock<IUserService> _mockUserService;
+    private readonly AuthorizationService _authorizationService;
+    private readonly Mock<IUserService> _mockUserService;
+    private readonly TransactionValidator _transactionValidator;
 
-    [Test]
+    public AuthorizationTests()
+    {
+        _mockUserService = new Mock<IUserService>();
+        _authorizationService = new AuthorizationService(_mockUserService.Object);
+        _transactionValidator = new TransactionValidator(); // Replace with DI or mock if needed
+    }
+
+    [Fact]
     public async Task AuthorizeAccountAccess_UserNotOwner_ShouldDeny()
     {
         // Arrange
@@ -739,10 +746,10 @@ public class AuthorizationTests
         var result = await _authorizationService.CanAccessAccountAsync(userId, accountId);
 
         // Assert
-        Assert.That(result, Is.False);
+        Assert.False(result);
     }
 
-    [Test]
+    [Fact]
     public async Task ValidateTransactionAmount_ExceedsLimit_ShouldFail()
     {
         // Arrange
@@ -756,8 +763,8 @@ public class AuthorizationTests
         var result = await _transactionValidator.ValidateAsync(transaction);
 
         // Assert
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("daily limit")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("daily limit")));
     }
 }
 ```

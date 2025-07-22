@@ -11,7 +11,7 @@ The Account Service is responsible for managing customer bank accounts within th
 - **Account Lifecycle Management**: Create, activate, suspend, and close customer accounts
 - **Account Information Management**: Store and retrieve account details (account number, type, status, metadata)
 - **Account Status Management**: Handle account status transitions (Active, Suspended, Frozen, Closed)
-- **Account Type Management**: Support different account types (Checking, Savings, Business, etc.)
+- **Account Type Management**: Support different account types (Checking, Savings, Business)
 - **Customer Account Relationships**: Manage relationships between customers and their accounts
 - **Account Validation**: Enforce business rules for account creation and modifications
 - **Account History**: Maintain audit trails for account changes
@@ -91,7 +91,7 @@ This service follows Clean Architecture principles with the following layers:
   - Business: $500.00
 - Maximum accounts per customer: 10
 - Account numbers are auto-generated (10 digits) and unique
-- Supported account types: Checking, Savings, Business, Joint
+- Supported account types: Checking, Savings, Business
 
 ### Account Status Management
 
@@ -104,8 +104,6 @@ This service follows Clean Architecture principles with the following layers:
 
 - Daily withdrawal limit: Configurable per account type
 - Monthly transfer limit: Configurable per account type
-- Overdraft protection: Optional, configurable per account
-- Maximum negative balance: Varies by account type and customer credit rating
 
 ### Compliance Requirements
 
@@ -142,8 +140,7 @@ Authorization: Bearer {token}
   "customerId": "123e4567-e89b-12d3-a456-426614174000",
   "accountType": "Checking",
   "initialDeposit": 100.00,
-  "currency": "USD",
-  "overdraftProtection": false
+  "currency": "USD"
 }
 ```
 

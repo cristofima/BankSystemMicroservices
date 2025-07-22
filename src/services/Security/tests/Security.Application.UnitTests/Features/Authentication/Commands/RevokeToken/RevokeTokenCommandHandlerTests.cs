@@ -4,7 +4,7 @@ using Moq;
 using Xunit;
 using Security.Application.Features.Authentication.Commands.RevokeToken;
 using Security.Application.UnitTests.Common;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.RevokeToken;
 

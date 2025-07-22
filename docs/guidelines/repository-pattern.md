@@ -529,15 +529,13 @@ public static class ServiceCollectionExtensions
 ### Unit Testing with In-Memory Database
 
 ```csharp
-[TestFixture]
-public class AccountRepositoryTests
+public class AccountRepositoryTests : IDisposable
 {
-    private BankDbContext _context;
-    private AccountRepository _repository;
-    private ILogger<AccountRepository> _logger;
+    private readonly BankDbContext _context;
+    private readonly AccountRepository _repository;
+    private readonly ILogger<AccountRepository> _logger;
 
-    [SetUp]
-    public void Setup()
+    public AccountRepositoryTests()
     {
         var options = new DbContextOptionsBuilder<BankDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -548,14 +546,7 @@ public class AccountRepositoryTests
         _repository = new AccountRepository(_context, _logger);
     }
 
-    [TearDown]
-    public void TearDown()
-    {
-        _context.Database.EnsureDeleted();
-        _context.Dispose();
-    }
-
-    [Test]
+    [Fact]
     public async Task GetByIdAsync_ExistingAccount_ShouldReturnAccount()
     {
         // Arrange
@@ -570,11 +561,11 @@ public class AccountRepositoryTests
         var result = await _repository.GetByIdAsync(accountId);
 
         // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Id, Is.EqualTo(accountId));
+        Assert.NotNull(result);
+        Assert.Equal(accountId, result.Id);
     }
 
-    [Test]
+    [Fact]
     public async Task GetByIdAsync_NonExistentAccount_ShouldReturnNull()
     {
         // Arrange
@@ -584,7 +575,13 @@ public class AccountRepositoryTests
         var result = await _repository.GetByIdAsync(nonExistentId);
 
         // Assert
-        Assert.That(result, Is.Null);
+        Assert.Null(result);
+    }
+
+    public void Dispose()
+    {
+        _context.Database.EnsureDeleted();
+        _context.Dispose();
     }
 }
 ```

@@ -210,15 +210,13 @@ Derived classes must be substitutable for their base classes.
 public abstract class Account
 {
     public virtual decimal Balance { get; protected set; }
-    public virtual decimal OverdraftLimit { get; protected set; } = 0;
 
     public virtual Result Withdraw(decimal amount)
     {
         if (amount <= 0)
             return Result.Failure("Amount must be positive");
 
-        var availableBalance = Balance + OverdraftLimit;
-        if (amount > availableBalance)
+        if (amount > Balance)
             return Result.Failure("Insufficient funds");
 
         Balance -= amount;
@@ -228,26 +226,13 @@ public abstract class Account
 
 public class CheckingAccount : Account
 {
-    public override decimal OverdraftLimit { get; protected set; } = 500;
-
     // Follows contract of base class
     public override Result Withdraw(decimal amount)
     {
         // Can add specific checking account logic
         var result = base.Withdraw(amount);
 
-        if (result.IsSuccess && Balance < 0)
-        {
-            // Apply overdraft fee for checking accounts
-            ApplyOverdraftFee();
-        }
-
         return result;
-    }
-
-    private void ApplyOverdraftFee()
-    {
-        Balance -= 35; // Overdraft fee
     }
 }
 

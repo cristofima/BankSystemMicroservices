@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 using Security.Domain.Entities;
 using Security.Infrastructure.Data;
 using System.Security.Cryptography;

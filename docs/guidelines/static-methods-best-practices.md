@@ -225,7 +225,7 @@ public static class EntityMappers
 
     public static Money ToMoney(this decimal amount, string currencyCode = "USD")
     {
-        return new Money(amount, Currency.FromCode(currencyCode));
+        return new Money(amount, new Currency(currencyCode));
     }
 
     public static string ToFormattedString(this Money money)

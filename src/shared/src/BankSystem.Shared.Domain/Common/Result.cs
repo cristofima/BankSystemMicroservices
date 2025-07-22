@@ -1,4 +1,4 @@
-namespace Security.Domain.Common;
+namespace BankSystem.Shared.Domain.Common;
 
 /// <summary>
 /// Represents a result of an operation with success/failure indication
@@ -8,17 +8,17 @@ public class Result
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
     public string Error { get; }
+    public ErrorType? ErrorType { get; }
 
-    protected Result(bool isSuccess, string error)
+    protected Result(bool isSuccess, string error, ErrorType? errorType = null)
     {
         IsSuccess = isSuccess;
         Error = error;
+        ErrorType = errorType;
     }
 
     public static Result Success() => new(true, string.Empty);
-    public static Result Failure(string error) => new(false, error);
-
-    public static implicit operator Result(string error) => Failure(error);
+    public static Result Failure(string error, ErrorType errorType = Common.ErrorType.Failure) => new(false, error, errorType);
 }
 
 /// <summary>
@@ -28,14 +28,11 @@ public class Result<T> : Result
 {
     public T? Value { get; }
 
-    protected Result(bool isSuccess, T? value, string error) : base(isSuccess, error)
+    protected Result(bool isSuccess, T? value, string error, ErrorType? errorType = null) : base(isSuccess, error, errorType)
     {
         Value = value;
     }
 
     public static Result<T> Success(T value) => new(true, value, string.Empty);
-    public static new Result<T> Failure(string error) => new(false, default, error);
-
-    public static implicit operator Result<T>(string error) => Failure(error);
-    public static implicit operator Result<T>(T value) => Success(value);
+    public new static Result<T> Failure(string error, ErrorType errorType = Common.ErrorType.Failure) => new(false, default, error, errorType);
 }

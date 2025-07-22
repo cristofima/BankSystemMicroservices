@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Security.Domain.Common;
 
 namespace Security.Domain.Entities;
 
