@@ -8,7 +8,7 @@ namespace BankSystem.Account.Application.UnitTests.Mappings;
 
 public class AccountMappingProfileTests
 {
-    private readonly IConfigurationProvider _configuration;
+    private readonly MapperConfiguration _configuration;
     private readonly IMapper _mapper;
 
     public AccountMappingProfileTests()

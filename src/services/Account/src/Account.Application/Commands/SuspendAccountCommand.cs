@@ -8,5 +8,5 @@ public sealed record SuspendAccountCommand(
     Guid AccountId,
     string Reason) : IRequest<Result>, IValidationRequest
 {
-    public string ValidationErrorTitle => "Account Suspension Failed";
+    public string ValidationErrorTitle() => "Account Suspension Failed";
 }

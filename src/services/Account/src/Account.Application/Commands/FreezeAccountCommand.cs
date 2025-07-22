@@ -8,5 +8,5 @@ public sealed record FreezeAccountCommand(
     Guid AccountId,
     string Reason) : IRequest<Result>, IValidationRequest
 {
-    public string ValidationErrorTitle => "Account Freezing Failed";
+    public string ValidationErrorTitle() => "Account Freezing Failed";
 }

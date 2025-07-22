@@ -56,11 +56,11 @@ public class AccountController : ApiControllerBase
         {
             _logger.LogWarning("Failed to create account for user {UserName}: {Error}",
                 userName, result.Error);
-            return HandleFailure(result, command.ValidationErrorTitle);
+            return HandleFailure(result, command.ValidationErrorTitle());
         }
 
         _logger.LogInformation("Account {AccountId} created successfully for user {UserName}",
-            result.Value.Id, userName);
+            result.Value!.Id, userName);
 
         return StatusCode(201, result.Value);
     }
@@ -148,7 +148,7 @@ public class AccountController : ApiControllerBase
             _logger.LogWarning("Failed to activate account {AccountId}: {Error}",
                 command.AccountId, result.Error);
 
-            return HandleFailure(result, command.ValidationErrorTitle);
+            return HandleFailure(result, command.ValidationErrorTitle());
         }
 
         _logger.LogInformation("Account {AccountId} activated successfully", command.AccountId);
@@ -183,7 +183,7 @@ public class AccountController : ApiControllerBase
             _logger.LogWarning("Failed to freeze account {AccountId}: {Error}",
                 command.AccountId, result.Error);
 
-            return HandleFailure(result, command.ValidationErrorTitle);
+            return HandleFailure(result, command.ValidationErrorTitle());
         }
 
         _logger.LogInformation("Account {AccountId} frozen successfully", command.AccountId);
@@ -219,7 +219,7 @@ public class AccountController : ApiControllerBase
             _logger.LogWarning("Failed to suspend account {AccountId}: {Error}",
                 command.AccountId, result.Error);
 
-            return HandleFailure(result, command.ValidationErrorTitle);
+            return HandleFailure(result, command.ValidationErrorTitle());
         }
 
         _logger.LogInformation("Account {AccountId} suspended successfully", command.AccountId);
@@ -255,7 +255,7 @@ public class AccountController : ApiControllerBase
             _logger.LogWarning("Failed to close account {AccountId}: {Error}",
                 command.AccountId, result.Error);
 
-            return HandleFailure(result, command.ValidationErrorTitle);
+            return HandleFailure(result, command.ValidationErrorTitle());
         }
 
         _logger.LogInformation("Account {AccountId} closed successfully", command.AccountId);

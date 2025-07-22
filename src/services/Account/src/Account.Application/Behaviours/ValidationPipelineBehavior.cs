@@ -52,8 +52,8 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineB
         if (errorsDictionary.Count == 0) return await next();
 
         var title = request is IValidationRequest validationRequest
-            ? validationRequest.ValidationErrorTitle
-            : "Validation error";
+            ? validationRequest.ValidationErrorTitle()
+            : "Validation Error";
 
         throw new CustomValidationException(errorsDictionary!, title);
     }

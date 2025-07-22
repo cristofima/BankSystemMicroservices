@@ -40,7 +40,7 @@ public class AccountDbContext(DbContextOptions<AccountDbContext> options) : DbCo
             .IsFixedLength()
             .HasConversion(
                 accountNumber => accountNumber.Value,
-                value => new AccountNumber(value)); ;
+                value => new AccountNumber(value));
 
         accountEntity.Property(a => a.CustomerId)
             .IsRequired();

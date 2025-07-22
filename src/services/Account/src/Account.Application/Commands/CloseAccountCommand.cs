@@ -8,5 +8,5 @@ public sealed record CloseAccountCommand(
     Guid AccountId,
     string Reason) : IRequest<Result>, IValidationRequest
 {
-    public string ValidationErrorTitle => "Account Closure Failed";
+    public string ValidationErrorTitle() => "Account Closure Failed";
 }

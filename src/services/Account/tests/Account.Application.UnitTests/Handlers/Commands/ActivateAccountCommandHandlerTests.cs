@@ -48,7 +48,7 @@ public class ActivateAccountCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        command.ValidationErrorTitle.Should().NotBeNullOrEmpty();
+        command.ValidationErrorTitle().Should().NotBeNullOrEmpty();
         result.IsSuccess.Should().BeTrue();
         _mockAccountRepository.Verify(r => r.UpdateAsync(mockAccount, It.IsAny<CancellationToken>()), Times.Once);
     }

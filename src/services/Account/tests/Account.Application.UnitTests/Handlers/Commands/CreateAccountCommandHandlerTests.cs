@@ -77,7 +77,7 @@ public class CreateAccountCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        command.ValidationErrorTitle.Should().NotBeNullOrEmpty();
+        command.ValidationErrorTitle().Should().NotBeNullOrEmpty();
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(command.Currency, result.Value.Currency);

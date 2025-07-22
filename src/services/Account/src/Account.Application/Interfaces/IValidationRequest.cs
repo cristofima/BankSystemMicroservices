@@ -8,5 +8,5 @@ public interface IValidationRequest
     /// <summary>
     /// Gets the title for the validation error response.
     /// </summary>
-    string ValidationErrorTitle { get; }
+    string ValidationErrorTitle();
 }

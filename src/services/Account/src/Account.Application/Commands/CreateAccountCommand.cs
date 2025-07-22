@@ -10,5 +10,5 @@ public sealed record CreateAccountCommand(
     AccountType AccountType,
     string Currency = "USD") : IRequest<Result<AccountDto>>, IValidationRequest
 {
-    public string ValidationErrorTitle => "Account Creation Failed";
+    public string ValidationErrorTitle() => "Account Creation Failed";
 }

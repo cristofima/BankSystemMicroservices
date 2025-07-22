@@ -3,7 +3,7 @@ using BankSystem.Shared.Domain.Common;
 
 namespace BankSystem.Account.Domain.Events;
 
-public class AccountFrozenEvent(
+public record AccountFrozenEvent(
     Guid AccountId,
     AccountNumber AccountNumber,
     Guid CustomerId,
