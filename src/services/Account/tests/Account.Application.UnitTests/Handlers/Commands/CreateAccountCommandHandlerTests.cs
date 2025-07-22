@@ -15,17 +15,26 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands;
 public class CreateAccountCommandHandlerTests
 {
     private readonly Mock<IAccountRepository> _mockAccountRepository;
+    private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<ILogger<CreateAccountCommandHandler>> _mockLogger;
     private readonly CreateAccountCommandHandler _handler;
+    private readonly string userName = "testuser";
 
     public CreateAccountCommandHandlerTests()
     {
         _mockAccountRepository = new Mock<IAccountRepository>();
+        _mockAuthenticatedUserService = new Mock<IAuthenticatedUserService>();
         _mockMapper = new Mock<IMapper>();
         _mockLogger = new Mock<ILogger<CreateAccountCommandHandler>>();
+
+        _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
+        _mockAuthenticatedUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
+        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(userName);
+
         _handler = new CreateAccountCommandHandler(
             _mockAccountRepository.Object,
+            _mockAuthenticatedUserService.Object,
             _mockMapper.Object,
             _mockLogger.Object);
     }
@@ -34,13 +43,14 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ValidCommand_ShouldReturnSuccessResult()
     {
         // Arrange
-        var command = new CreateAccountCommand(Guid.NewGuid(), AccountType.Checking, "USD");
+        var command = new CreateAccountCommand(AccountType.Checking, "USD");
 
         var currency = new Currency(command.Currency);
         var expectedAccount = AccountEntity.CreateNew(
-            command.CustomerId,
+            _mockAuthenticatedUserService.Object.CustomerId,
             command.AccountType,
-            currency
+            currency,
+            userName
         );
 
         var expectedDto = new AccountDto
@@ -69,7 +79,6 @@ public class CreateAccountCommandHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Equal(command.CustomerId, result.Value.CustomerId);
         Assert.Equal(command.Currency, result.Value.Currency);
         Assert.Equal(command.AccountType.ToString(), result.Value.AccountType);
 
@@ -87,12 +96,12 @@ public class CreateAccountCommandHandlerTests
         string currency)
     {
         // Arrange
-        var command = new CreateAccountCommand(Guid.NewGuid(), accountType, currency);
+        var command = new CreateAccountCommand(accountType, currency);
 
         var expectedDto = new AccountDto
         {
             Id = Guid.NewGuid(),
-            CustomerId = command.CustomerId,
+            CustomerId = _mockAuthenticatedUserService.Object.CustomerId,
             AccountNumber = "1234567890",
             Balance = 0,
             Currency = currency,
@@ -122,16 +131,16 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ValidCommand_ShouldCreateAccountSuccessfully()
     {
         // Arrange
-        var customerId = Guid.NewGuid();
+        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         var command = new CreateAccountCommand(
-            CustomerId: customerId,
             AccountType: AccountType.Checking,
             Currency: "USD");
 
         var createdAccount = AccountEntity.CreateNew(
             customerId,
             AccountType.Checking,
-            new Currency("USD"));
+            new Currency("USD"),
+            userName);
 
         var expectedDto = new AccountDto
         {
@@ -176,9 +185,8 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ValidCommandWithZeroBalance_ShouldCreateAccountWithoutDeposit()
     {
         // Arrange
-        var customerId = Guid.NewGuid();
+        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         var command = new CreateAccountCommand(
-            CustomerId: customerId,
             AccountType: AccountType.Savings,
             Currency: "EUR");
 
@@ -221,9 +229,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ExceptionThrown_ShouldReturnFailureResult()
     {
         // Arrange
-        var customerId = Guid.NewGuid();
         var command = new CreateAccountCommand(
-            CustomerId: customerId,
             AccountType: AccountType.Checking,
             Currency: "USD");
 
@@ -246,9 +252,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_RepositoryThrowsException_ShouldLogErrorAndReturnFailure()
     {
         // Arrange
-        var customerId = Guid.NewGuid();
         var command = new CreateAccountCommand(
-            CustomerId: customerId,
             AccountType: AccountType.Checking,
             Currency: "USD");
 
@@ -280,9 +284,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_MapperThrowsException_ShouldLogErrorAndReturnFailure()
     {
         // Arrange
-        var customerId = Guid.NewGuid();
         var command = new CreateAccountCommand(
-            CustomerId: customerId,
             AccountType: AccountType.Checking,
             Currency: "USD");
 
@@ -318,9 +320,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_CancellationRequested_ShouldReturnFailureResult()
     {
         // Arrange
-        var customerId = Guid.NewGuid();
         var command = new CreateAccountCommand(
-            CustomerId: customerId,
             AccountType: AccountType.Checking,
             Currency: "USD");
 
@@ -336,36 +336,6 @@ public class CreateAccountCommandHandlerTests
 
         // Assert
         result.IsFailure.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Constructor_NullAccountRepository_ShouldThrowArgumentNullException()
-    {
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(
-            () => new CreateAccountCommandHandler(null!, _mockMapper.Object, _mockLogger.Object));
-
-        exception.ParamName.Should().Be("accountRepository");
-    }
-
-    [Fact]
-    public void Constructor_NullMapper_ShouldThrowArgumentNullException()
-    {
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(
-            () => new CreateAccountCommandHandler(_mockAccountRepository.Object, null!, _mockLogger.Object));
-
-        exception.ParamName.Should().Be("mapper");
-    }
-
-    [Fact]
-    public void Constructor_NullLogger_ShouldThrowArgumentNullException()
-    {
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(
-            () => new CreateAccountCommandHandler(_mockAccountRepository.Object, _mockMapper.Object, null!));
-
-        exception.ParamName.Should().Be("logger");
     }
 
     private void VerifyLoggerWasCalled(LogLevel logLevel, string message)

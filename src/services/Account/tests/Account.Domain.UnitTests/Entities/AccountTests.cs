@@ -1,8 +1,8 @@
-using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 using BankSystem.Account.Domain.Enums;
 using BankSystem.Account.Domain.Events;
 using BankSystem.Shared.Domain.ValueObjects;
 using FluentAssertions;
+using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 
 namespace BankSystem.Account.Domain.UnitTests.Entities;
 
@@ -11,7 +11,7 @@ public class AccountTests
     private static AccountEntity CreateTestAccount(Guid customerId, AccountType accountType, Currency? currency = null)
     {
         currency ??= Currency.USD;
-        return AccountEntity.CreateNew(customerId, accountType, currency);
+        return AccountEntity.CreateNew(customerId, accountType, currency, "test");
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class AccountTests
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
 
         // Act
-        account.Activate();
+        account.Activate("test");
 
         // Assert
         account.Status.Should().Be(AccountStatus.Active);
@@ -52,14 +52,27 @@ public class AccountTests
     {
         // Arrange
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
-        account.Activate();
 
         // Act
-        account.Suspend("Suspicious activity");
+        account.Suspend("Suspicious activity", "test");
 
         // Assert
         account.Status.Should().Be(AccountStatus.Suspended);
         account.DomainEvents.Should().ContainSingle(e => e is AccountSuspendedEvent);
+    }
+
+    [Fact]
+    public void Freeze_ValidAccount_ShouldFreezeAccount()
+    {
+        // Arrange
+        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
+
+        // Act
+        account.Freeze("Suspicious activity", "test");
+
+        // Assert
+        account.Status.Should().Be(AccountStatus.Frozen);
+        account.DomainEvents.Should().ContainSingle(e => e is AccountFrozenEvent);
     }
 
     [Fact]
@@ -68,10 +81,10 @@ public class AccountTests
         // Arrange
         var currency = Currency.EUR;
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking, currency);
-        account.Activate();
+        account.Activate("test");
 
         // Act
-        account.Close("Customer request");
+        account.Close("Customer request", "test");
 
         // Assert
         account.Status.Should().Be(AccountStatus.Closed);

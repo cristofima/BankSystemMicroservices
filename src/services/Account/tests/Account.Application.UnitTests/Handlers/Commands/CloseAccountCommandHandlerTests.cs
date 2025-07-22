@@ -13,13 +13,20 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands;
 public class CloseAccountCommandHandlerTests
 {
     private readonly Mock<IAccountRepository> _mockAccountRepository;
+    private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
     private readonly CloseAccountCommandHandler _handler;
+    private readonly string userName = "testuser";
 
     public CloseAccountCommandHandlerTests()
     {
         _mockAccountRepository = new Mock<IAccountRepository>();
+        _mockAuthenticatedUserService = new Mock<IAuthenticatedUserService>();
         var mockLogger = new Mock<ILogger<CloseAccountCommandHandler>>();
-        _handler = new CloseAccountCommandHandler(_mockAccountRepository.Object, mockLogger.Object);
+        _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
+        _mockAuthenticatedUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
+        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(userName);
+
+        _handler = new CloseAccountCommandHandler(_mockAccountRepository.Object, _mockAuthenticatedUserService.Object, mockLogger.Object);
     }
 
     [Fact]
@@ -27,7 +34,7 @@ public class CloseAccountCommandHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
+        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         const string reason = "Customer request";
 
         var command = new CloseAccountCommand(accountId, reason);
@@ -35,9 +42,8 @@ public class CloseAccountCommandHandlerTests
         var account = AccountEntity.CreateNew(
             customerId,
             AccountType.Checking,
-            Currency.USD);
-
-        account.Activate();
+            Currency.USD,
+            userName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
@@ -89,7 +95,7 @@ public class CloseAccountCommandHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
+        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         const string reason = "Customer request";
 
         var command = new CloseAccountCommand(accountId, reason);
@@ -97,9 +103,10 @@ public class CloseAccountCommandHandlerTests
         var account = AccountEntity.CreateNew(
             customerId,
             AccountType.Checking,
-            Currency.USD);
+            Currency.USD,
+            userName);
 
-        account.Close(reason);
+        account.Close(reason, userName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
@@ -122,7 +129,7 @@ public class CloseAccountCommandHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
+        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         const string reason = "Customer request";
 
         var command = new CloseAccountCommand(accountId, reason);
@@ -130,7 +137,8 @@ public class CloseAccountCommandHandlerTests
         var account = AccountEntity.CreateNew(
             customerId,
             AccountType.Checking,
-            Currency.USD);
+            Currency.USD,
+            userName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
@@ -180,7 +188,7 @@ public class CloseAccountCommandHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
+        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         const string reason = "Customer request";
 
         var command = new CloseAccountCommand(accountId, reason);
@@ -188,7 +196,8 @@ public class CloseAccountCommandHandlerTests
         var account = AccountEntity.CreateNew(
             customerId,
             AccountType.Checking,
-            Currency.USD);
+            Currency.USD,
+            userName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))

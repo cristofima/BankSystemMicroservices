@@ -4,6 +4,7 @@ using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Queries;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace BankSystem.Account.Application.Handlers.Queries;
@@ -19,9 +20,13 @@ public class GetAccountByIdQueryHandler : IRequestHandler<GetAccountByIdQuery, R
         IMapper mapper,
         ILogger<GetAccountByIdQueryHandler> logger)
     {
-        _accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
-        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(accountRepository, "accountRepository");
+        Guard.AgainstNull(mapper, "mapper");
+        Guard.AgainstNull(logger, "logger");
+
+        _accountRepository = accountRepository;
+        _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<Result<AccountDto>> Handle(GetAccountByIdQuery request, CancellationToken cancellationToken)
@@ -32,10 +37,10 @@ public class GetAccountByIdQueryHandler : IRequestHandler<GetAccountByIdQuery, R
 
             var account = await _accountRepository.GetByIdAsync(request.AccountId, cancellationToken);
 
-            if (account == null)
+            if (account is null)
             {
-                _logger.LogWarning("Account not found with ID: {AccountId}", request.AccountId);
-                return Result<AccountDto>.Failure("Account not found");
+                _logger.LogWarning("Account {AccountId} not found", request.AccountId);
+                return Result<AccountDto>.Failure($"Account {request.AccountId} not found", ErrorType.NotFound);
             }
 
             var accountDto = _mapper.Map<AccountDto>(account);

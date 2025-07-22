@@ -8,10 +8,6 @@ public class CreateAccountCommandValidator : AbstractValidator<CreateAccountComm
 {
     public CreateAccountCommandValidator()
     {
-        RuleFor(x => x.CustomerId)
-            .NotEmpty()
-            .WithMessage("Customer ID is required");
-
         RuleFor(x => x.AccountType)
             .IsInEnum()
             .WithMessage("Invalid account type");

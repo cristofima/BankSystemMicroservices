@@ -1,44 +1,56 @@
-using AccountEntity = BankSystem.Account.Domain.Entities.Account;
+using AutoMapper;
 using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.DTOs;
-using AutoMapper;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Domain.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 
 namespace BankSystem.Account.Application.Handlers.Commands;
 
 public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand, Result<AccountDto>>
 {
     private readonly IAccountRepository _accountRepository;
+    private readonly IAuthenticatedUserService _authenticatedUserService;
     private readonly IMapper _mapper;
     private readonly ILogger<CreateAccountCommandHandler> _logger;
 
     public CreateAccountCommandHandler(
         IAccountRepository accountRepository,
+        IAuthenticatedUserService authenticatedUserService,
         IMapper mapper,
         ILogger<CreateAccountCommandHandler> logger)
     {
-        _accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
-        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(accountRepository, "accountRepository");
+        Guard.AgainstNull(authenticatedUserService, "authenticatedUserService");
+        Guard.AgainstNull(mapper, "mapper");
+        Guard.AgainstNull(logger, "logger");
+
+        _accountRepository = accountRepository;
+        _authenticatedUserService = authenticatedUserService;
+        _mapper = mapper;   
+        _logger = logger;
     }
 
     public async Task<Result<AccountDto>> Handle(CreateAccountCommand request, CancellationToken cancellationToken)
     {
+        var customerId = _authenticatedUserService.CustomerId;
+
         try
         {
-            _logger.LogInformation("Creating account for customer {CustomerId}", request.CustomerId);
+            _logger.LogInformation("Creating account for customer {CustomerId}", customerId);
 
             var currency = new Currency(request.Currency);
 
             // Create new account
             var account = AccountEntity.CreateNew(
-                request.CustomerId,
+                customerId,
                 request.AccountType,
-                currency);
+                currency,
+                _authenticatedUserService.UserName);
 
             // Save account
             await _accountRepository.AddAsync(account, cancellationToken);
@@ -46,13 +58,13 @@ public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand,
             var accountDto = _mapper.Map<AccountDto>(account);
 
             _logger.LogInformation("Account {AccountId} created successfully for customer {CustomerId}",
-                account.Id, request.CustomerId);
+                account.Id, customerId);
 
             return Result<AccountDto>.Success(accountDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating account for customer {CustomerId}", request.CustomerId);
+            _logger.LogError(ex, "Error creating account for customer {CustomerId}", customerId);
             return Result<AccountDto>.Failure("An error occurred while creating the account");
         }
     }

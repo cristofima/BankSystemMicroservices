@@ -1,6 +1,7 @@
 using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,14 +10,21 @@ namespace BankSystem.Account.Application.Handlers.Commands;
 public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, Result>
 {
     private readonly IAccountRepository _accountRepository;
+    private readonly IAuthenticatedUserService _authenticatedUserService;
     private readonly ILogger<CloseAccountCommandHandler> _logger;
 
     public CloseAccountCommandHandler(
         IAccountRepository accountRepository,
+        IAuthenticatedUserService authenticatedUserService,
         ILogger<CloseAccountCommandHandler> logger)
     {
-        _accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(accountRepository, "accountRepository");
+        Guard.AgainstNull(authenticatedUserService, "authenticatedUserService");
+        Guard.AgainstNull(logger, "logger");
+
+        _accountRepository = accountRepository;
+        _authenticatedUserService = authenticatedUserService;
+        _logger = logger;
     }
 
     public async Task<Result> Handle(CloseAccountCommand request, CancellationToken cancellationToken)
@@ -33,7 +41,7 @@ public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, R
             }
 
             // Close the account
-            var closeResult = account.Close(request.Reason);
+            var closeResult = account.Close(request.Reason, _authenticatedUserService.UserName);
             if (!closeResult.IsSuccess)
             {
                 _logger.LogWarning("Failed to close account {AccountId}: {Error}", request.AccountId, closeResult.Error);

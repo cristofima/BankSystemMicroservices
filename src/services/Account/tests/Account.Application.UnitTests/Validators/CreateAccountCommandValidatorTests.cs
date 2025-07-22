@@ -14,7 +14,7 @@ public class CreateAccountCommandValidatorTests
     public async Task Handle_ValidCommand_ShouldReturnSuccess()
     {
         // Arrange
-        var command = new CreateAccountCommand(Guid.NewGuid(), AccountType.Checking, Currency.EUR);
+        var command = new CreateAccountCommand(AccountType.Checking, Currency.EUR);
 
         // Act
         var validationResult = await _commandValidator.ValidateAsync(command);
@@ -25,24 +25,10 @@ public class CreateAccountCommandValidatorTests
     }
 
     [Fact]
-    public async Task Handle_EmptyCustomerId_ShouldReturnError()
-    {
-        // Arrange
-        var command = new CreateAccountCommand(Guid.Empty, AccountType.Checking);
-
-        // Act
-        var validationResult = await _commandValidator.ValidateAsync(command);
-
-        // Assert
-        validationResult.IsValid.Should().BeFalse();
-        validationResult.Errors.Should().ContainSingle(e => e.ErrorMessage == "Customer ID is required");
-    }
-
-    [Fact]
     public async Task Handle_InvalidCurrencyCode_ShouldReturnError()
     {
         // Arrange
-        var command = new CreateAccountCommand(Guid.Empty, AccountType.Checking, "ABC");
+        var command = new CreateAccountCommand(AccountType.Checking, "ABC");
 
         // Act
         var validationResult = await _commandValidator.ValidateAsync(command);

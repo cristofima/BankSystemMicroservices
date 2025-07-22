@@ -33,7 +33,7 @@ public class GetAccountByIdQueryHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var account = AccountEntity.CreateNew(Guid.NewGuid(), AccountType.Checking, Currency.USD);
+        var account = AccountEntity.CreateNew(Guid.NewGuid(), AccountType.Checking, Currency.USD, "test");
         var accountDto = new AccountDto();
         _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
@@ -65,7 +65,7 @@ public class GetAccountByIdQueryHandlerTests
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal("Account not found", result.Error);
+        Assert.Equal($"Account {accountId} not found", result.Error);
     }
 
     [Fact]
