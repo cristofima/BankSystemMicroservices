@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Security.Domain.Entities;
 
 namespace Security.Infrastructure.Data;
@@ -67,7 +68,7 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser>
         });
     }
 
-    private static void ConfigureRefreshTokenProperties(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<RefreshToken> entity)
+    private static void ConfigureRefreshTokenProperties(EntityTypeBuilder<RefreshToken> entity)
     {
         entity.HasKey(e => e.Token);
 
@@ -110,13 +111,13 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser>
             .HasDefaultValueSql("GETUTCDATE()");
 
         entity.Property(e => e.CreatedBy)
-            .HasMaxLength(450);
+            .HasMaxLength(30);
 
         entity.Property(e => e.UpdatedBy)
-            .HasMaxLength(450);
+            .HasMaxLength(30);
     }
 
-    private static void ConfigureRefreshTokenRelationships(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<RefreshToken> entity)
+    private static void ConfigureRefreshTokenRelationships(EntityTypeBuilder<RefreshToken> entity)
     {
         entity.HasOne(e => e.User)
             .WithMany(u => u.RefreshTokens)
@@ -124,7 +125,7 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser>
             .OnDelete(DeleteBehavior.Cascade);
     }
 
-    private static void ConfigureRefreshTokenIndexes(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<RefreshToken> entity)
+    private static void ConfigureRefreshTokenIndexes(EntityTypeBuilder<RefreshToken> entity)
     {
         entity.HasIndex(e => e.UserId);
         entity.HasIndex(e => e.JwtId);
