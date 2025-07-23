@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Account.Application\BankSystem.Account.Application.csproj" />
     <ProjectReference Include="..\Account.Infrastructure\BankSystem.Account.Infrastructure.csproj" />
   </ItemGroup>
