@@ -1,6 +1,7 @@
 using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Queries;
+using BankSystem.Shared.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -139,20 +140,12 @@ public class AccountController : ApiControllerBase
         [FromBody] ActivateAccountCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Activating account {AccountId}", command.AccountId);
-
-        var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            _logger.LogWarning("Failed to activate account {AccountId}: {Error}",
-                command.AccountId, result.Error);
-
-            return HandleFailure(result, command.ValidationErrorTitle());
-        }
-
-        _logger.LogInformation("Account {AccountId} activated successfully", command.AccountId);
-        return NoContent();
+        return await HandleAccountAction(
+            command,
+            "Activating",
+            "activate",
+            "activated",
+            cancellationToken);
     }
 
     /// <summary>
@@ -174,20 +167,12 @@ public class AccountController : ApiControllerBase
         [FromBody] FreezeAccountCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Freezing account {AccountId}", command.AccountId);
-
-        var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            _logger.LogWarning("Failed to freeze account {AccountId}: {Error}",
-                command.AccountId, result.Error);
-
-            return HandleFailure(result, command.ValidationErrorTitle());
-        }
-
-        _logger.LogInformation("Account {AccountId} frozen successfully", command.AccountId);
-        return NoContent();
+        return await HandleAccountAction(
+            command,
+            "Freezing",
+            "freeze",
+            "frozen",
+            cancellationToken);
     }
 
     /// <summary>
@@ -205,25 +190,16 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult>SuspendAccount(
+    public async Task<ActionResult> SuspendAccount(
         [FromBody] SuspendAccountCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Suspending account {AccountId} with reason: {Reason}",
-            command.AccountId, command.Reason);
-
-        var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            _logger.LogWarning("Failed to suspend account {AccountId}: {Error}",
-                command.AccountId, result.Error);
-
-            return HandleFailure(result, command.ValidationErrorTitle());
-        }
-
-        _logger.LogInformation("Account {AccountId} suspended successfully", command.AccountId);
-        return NoContent();
+        return await HandleAccountAction(
+            command,
+            "Suspending",
+            "suspend",
+            "suspended",
+            cancellationToken);
     }
 
     /// <summary>
@@ -245,20 +221,35 @@ public class AccountController : ApiControllerBase
         [FromBody] CloseAccountCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Closing account {AccountId} with reason: {Reason}",
-            command.AccountId, command.Reason);
+        return await HandleAccountAction(
+            command,
+            "Closing",
+            "close",
+            "closed",
+            cancellationToken);
+    }
+
+    private async Task<ActionResult> HandleAccountAction<TCommand>(
+        TCommand command,
+        string actionPresentTense,
+        string actionVerb,
+        string actionPastTense,
+        CancellationToken cancellationToken)
+        where TCommand : IAccountActionCommand, IRequest<Result>
+    {
+        _logger.LogInformation("{Action} account {AccountId}", actionPresentTense, command.AccountId);
 
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
         {
-            _logger.LogWarning("Failed to close account {AccountId}: {Error}",
-                command.AccountId, result.Error);
+            _logger.LogWarning("Failed to {ActionVerb} account {AccountId}: {Error}",
+                actionVerb, command.AccountId, result.Error);
 
             return HandleFailure(result, command.ValidationErrorTitle());
         }
 
-        _logger.LogInformation("Account {AccountId} closed successfully", command.AccountId);
+        _logger.LogInformation("Account {AccountId} {ActionPastTense} successfully", command.AccountId, actionPastTense);
         return NoContent();
     }
 }
