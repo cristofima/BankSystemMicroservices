@@ -15,7 +15,7 @@ public class SuspendAccountCommandHandlerTests
     private readonly Mock<IAccountRepository> _mockAccountRepository;
     private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
     private readonly SuspendAccountCommandHandler _handler;
-    private readonly string userName = "testuser";
+    private const string TestUserName = "testuser";
 
     public SuspendAccountCommandHandlerTests()
     {
@@ -24,7 +24,7 @@ public class SuspendAccountCommandHandlerTests
         var mockLogger = new Mock<ILogger<SuspendAccountCommandHandler>>();
 
         _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(userName);
+        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(TestUserName);
 
         _handler = new SuspendAccountCommandHandler(
             _mockAccountRepository.Object,
@@ -39,7 +39,7 @@ public class SuspendAccountCommandHandlerTests
         var accountId = Guid.NewGuid();
         var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         var command = new SuspendAccountCommand(accountId, "Suspicious activity");
-        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, userName);
+        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, TestUserName);
 
         _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockAccount);
@@ -61,7 +61,7 @@ public class SuspendAccountCommandHandlerTests
         var command = new SuspendAccountCommand(accountId, "Reason");
 
         _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AccountEntity)null);
+            .ReturnsAsync((AccountEntity?)null);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -78,8 +78,8 @@ public class SuspendAccountCommandHandlerTests
         var accountId = Guid.NewGuid();
         var customerId = _mockAuthenticatedUserService.Object.CustomerId;
         var command = new SuspendAccountCommand(accountId, "Reason");
-        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, userName);
-        mockAccount.Close("Closing account", userName);
+        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, TestUserName);
+        mockAccount.Close("Closing account", TestUserName);
 
         _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockAccount);

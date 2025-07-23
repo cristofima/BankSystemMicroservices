@@ -32,6 +32,19 @@ public static class Guard
     }
 
     /// <summary>
+    /// Guards against null or empty collections.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the collection</typeparam>
+    /// <param name="collection">The collection to check</param>
+    /// <param name="parameterName">The name of the parameter being checked</param>
+    /// <exception cref="ArgumentException">Thrown when collection is null or empty</exception>
+    public static void AgainstNullOrEmpty<T>(IEnumerable<T> collection, string parameterName)
+    {
+        if (collection == null || !collection.Any())
+            throw new ArgumentException("Collection cannot be null or empty", parameterName);
+    }
+
+    /// <summary>
     /// Guards against negative values.
     /// </summary>
     /// <param name="value">The decimal value to check</param>
@@ -94,19 +107,6 @@ public static class Guard
     }
 
     /// <summary>
-    /// Guards against null or empty collections.
-    /// </summary>
-    /// <typeparam name="T">The type of elements in the collection</typeparam>
-    /// <param name="collection">The collection to check</param>
-    /// <param name="parameterName">The name of the parameter being checked</param>
-    /// <exception cref="ArgumentException">Thrown when collection is null or empty</exception>
-    public static void AgainstNullOrEmpty<T>(IEnumerable<T> collection, string parameterName)
-    {
-        if (collection == null || !collection.Any())
-            throw new ArgumentException("Collection cannot be null or empty", parameterName);
-    }
-
-    /// <summary>
     /// Guards against invalid enum values.
     /// </summary>
     /// <typeparam name="TEnum">The enum type</typeparam>
@@ -115,7 +115,7 @@ public static class Guard
     /// <exception cref="ArgumentException">Thrown when value is not a valid enum value</exception>
     public static void AgainstInvalidEnum<TEnum>(TEnum value, string parameterName) where TEnum : struct, Enum
     {
-        if (!Enum.IsDefined(typeof(TEnum), value))
+        if (!Enum.IsDefined(value))
             throw new ArgumentException($"Invalid enum value: {value}", parameterName);
     }
 

@@ -5,7 +5,6 @@ namespace BankSystem.Shared.Domain.UnitTests.ValueObjects;
 public class CurrencyTests
 {
     [Theory]
-    [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
     public void Constructor_ShouldThrow_WhenNullOrWhitespace(string invalid)

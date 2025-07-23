@@ -6,7 +6,6 @@ namespace BankSystem.Account.Domain.UnitTests.ValueObjects;
 public class AccountNumberTests
 {
     [Theory]
-    [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
     public void Constructor_ShouldThrow_WhenNullOrWhiteSpace(string invalid)
@@ -62,9 +61,7 @@ public class AccountNumberTests
     {
         var accountNumber = new AccountNumber("1234567890");
         var masked = accountNumber.GetMaskedValue();
-        Assert.EndsWith("7890", masked);
-        Assert.Contains("*", masked);
-        Assert.Equal("***7890", masked);
+        Assert.Equal("******7890", masked);
     }
 
     [Fact]

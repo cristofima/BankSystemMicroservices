@@ -17,7 +17,7 @@ public class GetAccountsByCustomerIdQueryHandlerTests
     private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
     private readonly Mock<IMapper> _mockMapper;
     private readonly GetAccountsByCustomerIdQueryHandler _handler;
-    private readonly string userName = "testuser";
+    private const string TestUserName = "testuser";
 
     public GetAccountsByCustomerIdQueryHandlerTests()
     {
@@ -28,7 +28,7 @@ public class GetAccountsByCustomerIdQueryHandlerTests
 
         _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
         _mockAuthenticatedUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(userName);
+        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(TestUserName);
 
         _handler = new GetAccountsByCustomerIdQueryHandler(
             _mockAccountRepository.Object,
@@ -42,7 +42,7 @@ public class GetAccountsByCustomerIdQueryHandlerTests
     {
         // Arrange
         var customerId = _mockAuthenticatedUserService.Object.CustomerId;
-        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, userName);
+        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, TestUserName);
         var accounts = new List<AccountEntity> { mockAccount, mockAccount };
         var accountDtos = new List<AccountDto> { new(), new() };
         _mockAccountRepository.Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))

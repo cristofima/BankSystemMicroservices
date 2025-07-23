@@ -15,7 +15,7 @@ public class CloseAccountCommandHandlerTests
     private readonly Mock<IAccountRepository> _mockAccountRepository;
     private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
     private readonly CloseAccountCommandHandler _handler;
-    private readonly string userName = "testuser";
+    private const string TestUserName = "testuser";
 
     public CloseAccountCommandHandlerTests()
     {
@@ -24,7 +24,7 @@ public class CloseAccountCommandHandlerTests
         var mockLogger = new Mock<ILogger<CloseAccountCommandHandler>>();
         _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
         _mockAuthenticatedUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(userName);
+        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(TestUserName);
 
         _handler = new CloseAccountCommandHandler(_mockAccountRepository.Object, _mockAuthenticatedUserService.Object, mockLogger.Object);
     }
@@ -43,7 +43,7 @@ public class CloseAccountCommandHandlerTests
             customerId,
             AccountType.Checking,
             Currency.USD,
-            userName);
+            TestUserName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
@@ -105,9 +105,9 @@ public class CloseAccountCommandHandlerTests
             customerId,
             AccountType.Checking,
             Currency.USD,
-            userName);
+            TestUserName);
 
-        account.Close(reason, userName);
+        account.Close(reason, TestUserName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
@@ -139,7 +139,7 @@ public class CloseAccountCommandHandlerTests
             customerId,
             AccountType.Checking,
             Currency.USD,
-            userName);
+            TestUserName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
@@ -198,7 +198,7 @@ public class CloseAccountCommandHandlerTests
             customerId,
             AccountType.Checking,
             Currency.USD,
-            userName);
+            TestUserName);
 
         _mockAccountRepository
             .Setup(x => x.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
