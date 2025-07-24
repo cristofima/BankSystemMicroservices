@@ -140,11 +140,11 @@ public static class Guard
     /// <param name="value">The value to check for null</param>
     /// <param name="exceptionFactory">Factory function to create the exception</param>
     /// <exception cref="TException">The exception created by the factory</exception>
-    public static void Against<T, TException>(T value, Func<TException> exceptionFactory) 
+    public static void Against<T, TException>(T? value, Func<TException> exceptionFactory) 
         where T : class 
         where TException : Exception
     {
-        if (value == null)
+        if (value is null)
             throw exceptionFactory();
     }
 

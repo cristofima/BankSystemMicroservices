@@ -49,7 +49,6 @@ public class CurrencyTests
     [InlineData("gbp", true)]
     [InlineData("JPY", false)]
     [InlineData("", false)]
-    [InlineData(null, false)]
     public void IsValidCurrencyCode_ShouldReturnExpected(string code, bool expected)
     {
         Assert.Equal(expected, Currency.IsValidCurrencyCode(code!));

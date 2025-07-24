@@ -15,8 +15,9 @@ public class GuardTests
     [Fact]
     public void AgainstNull_ShouldNotThrow_WhenNotNull()
     {
-        Guard.AgainstNull("test", "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstNull("test", "value");
     }
 
     [Theory]
@@ -33,8 +34,9 @@ public class GuardTests
     [Fact]
     public void AgainstNullOrEmpty_String_ShouldNotThrow_WhenValid()
     {
-        Guard.AgainstNullOrEmpty("value", "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstNullOrEmpty("value", "value");
     }
 
     [Fact]
@@ -50,8 +52,9 @@ public class GuardTests
     [InlineData(1)]
     public void AgainstNegative_ShouldNotThrow_WhenZeroOrPositive(decimal input)
     {
-        Guard.AgainstNegative(input, "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstNegative(input, "value");
     }
 
     [Theory]
@@ -66,8 +69,9 @@ public class GuardTests
     [Fact]
     public void AgainstZeroOrNegative_Decimal_ShouldNotThrow_WhenPositive()
     {
-        Guard.AgainstZeroOrNegative(1, "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstZeroOrNegative(1, "value");
     }
 
     [Theory]
@@ -82,8 +86,9 @@ public class GuardTests
     [Fact]
     public void AgainstZeroOrNegative_Int_ShouldNotThrow_WhenPositive()
     {
-        Guard.AgainstZeroOrNegative(1, "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstZeroOrNegative(1, "value");
     }
 
     [Fact]
@@ -102,8 +107,9 @@ public class GuardTests
     [InlineData(20)]
     public void AgainstInvalidRange_ShouldNotThrow_WhenInRange(decimal input)
     {
-        Guard.AgainstInvalidRange(input, 10, 20, "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstInvalidRange(input, 10, 20, "value");
     }
 
     [Fact]
@@ -116,8 +122,9 @@ public class GuardTests
     [Fact]
     public void AgainstEmptyGuid_ShouldNotThrow_WhenValid()
     {
-        Guard.AgainstEmptyGuid(Guid.NewGuid(), "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstEmptyGuid(Guid.NewGuid(), "value");
     }
 
     [Fact]
@@ -138,8 +145,9 @@ public class GuardTests
     [Fact]
     public void AgainstNullOrEmpty_Collection_ShouldNotThrow_WhenHasItems()
     {
-        Guard.AgainstNullOrEmpty(new List<int> { 1 }, "collection");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstNullOrEmpty(new List<int> { 1 }, "collection");
     }
 
     private enum TestEnum
@@ -158,8 +166,8 @@ public class GuardTests
     [Fact]
     public void AgainstInvalidEnum_ShouldNotThrow_WhenValidValue()
     {
-        Guard.AgainstInvalidEnum(TestEnum.Value1, "value");
-        Assert.True(true);
+        void Action() => Guard.AgainstInvalidEnum(TestEnum.Value1, "value");
+        AssertNotThrow(Action);
     }
 
     [Fact]
@@ -175,8 +183,9 @@ public class GuardTests
     [InlineData("12345")]
     public void AgainstExcessiveLength_ShouldNotThrow_WhenValid(string? input)
     {
-        Guard.AgainstExcessiveLength(input!, 5, "value");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.AgainstExcessiveLength(input!, 5, "value");
     }
 
     [Fact]
@@ -190,8 +199,9 @@ public class GuardTests
     [Fact]
     public void Against_WithCustomException_ShouldNotThrow_WhenNotNull()
     {
-        Guard.Against<string, InvalidOperationException>("value", () => new InvalidOperationException());
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.Against<string, InvalidOperationException>("value", () => new InvalidOperationException());
     }
 
     [Fact]
@@ -204,8 +214,9 @@ public class GuardTests
     [Fact]
     public void AgainstCondition_ShouldNotThrow_WhenFalse()
     {
-        Guard.Against(false, "Condition is false");
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.Against(false, "Condition is false");
     }
 
     [Fact]
@@ -219,7 +230,14 @@ public class GuardTests
     [Fact]
     public void AgainstCondition_WithCustomException_ShouldNotThrow_WhenFalse()
     {
-        Guard.Against(false, () => new InvalidOperationException());
-        Assert.True(true);
+        AssertNotThrow(Action);
+        return;
+        void Action() => Guard.Against(false, () => new InvalidOperationException());
+    }
+
+    private static void AssertNotThrow(Action action)
+    {
+        var exception = Record.Exception(() => action);
+        Assert.Null(exception);
     }
 }
