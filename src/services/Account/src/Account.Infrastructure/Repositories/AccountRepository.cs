@@ -1,4 +1,5 @@
 using BankSystem.Account.Application.Interfaces;
+using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Shared.Domain.Validation;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +79,6 @@ public class AccountRepository : IAccountRepository
         _logger.LogDebug("Checking if account number exists: {AccountNumber}", accountNumber);
 
         return await _context.Accounts
-            .AnyAsync(a => a.AccountNumber.Value == accountNumber, cancellationToken);
+            .AnyAsync(a => a.AccountNumber.Equals(new AccountNumber(accountNumber)), cancellationToken);
     }
 }
