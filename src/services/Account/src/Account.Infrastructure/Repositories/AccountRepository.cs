@@ -26,17 +26,9 @@ public class AccountRepository : IAccountRepository
     {
         Guard.AgainstEmptyGuid(accountId, nameof(accountId));
 
-        try
-        {
-            _logger.LogDebug("Retrieving account by ID: {AccountId}", accountId);
+        _logger.LogDebug("Retrieving account by ID: {AccountId}", accountId);
 
-            return await _context.Accounts.FindAsync([accountId], cancellationToken: cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving account by ID {AccountId}", accountId);
-            throw;
-        }
+        return await _context.Accounts.FindAsync([accountId], cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
@@ -44,20 +36,12 @@ public class AccountRepository : IAccountRepository
     {
         Guard.AgainstEmptyGuid(customerId, nameof(customerId));
 
-        try
-        {
-            _logger.LogDebug("Retrieving accounts for customer: {CustomerId}", customerId);
+        _logger.LogDebug("Retrieving accounts for customer: {CustomerId}", customerId);
 
-            return await _context.Accounts
-                .Where(a => a.CustomerId == customerId)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving accounts for customer {CustomerId}", customerId);
-            throw;
-        }
+        return await _context.Accounts
+            .Where(a => a.CustomerId == customerId)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
     /// <inheritdoc />
@@ -65,20 +49,12 @@ public class AccountRepository : IAccountRepository
     {
         Guard.AgainstNull(account, nameof(account));
 
-        try
-        {
-            _logger.LogDebug("Adding new account: {AccountId}", account.Id);
+        _logger.LogDebug("Adding new account: {AccountId}", account.Id);
 
-            _context.Accounts.Add(account);
-            await _context.SaveChangesAsync(cancellationToken);
+        _context.Accounts.Add(account);
+        await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Account {AccountId} added successfully", account.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adding account {AccountId}", account.Id);
-            throw;
-        }
+        _logger.LogInformation("Account {AccountId} added successfully", account.Id);
     }
 
     /// <inheritdoc />
@@ -86,20 +62,12 @@ public class AccountRepository : IAccountRepository
     {
         Guard.AgainstNull(account, nameof(account));
 
-        try
-        {
-            _logger.LogDebug("Updating account: {AccountId}", account.Id);
+        _logger.LogDebug("Updating account: {AccountId}", account.Id);
 
-            _context.Accounts.Update(account);
-            await _context.SaveChangesAsync(cancellationToken);
+        _context.Accounts.Update(account);
+        await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Account {AccountId} updated successfully", account.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating account {AccountId}", account.Id);
-            throw;
-        }
+        _logger.LogInformation("Account {AccountId} updated successfully", account.Id);
     }
 
     /// <inheritdoc />
@@ -107,17 +75,9 @@ public class AccountRepository : IAccountRepository
     {
         Guard.AgainstNullOrEmpty(accountNumber, nameof(accountNumber));
 
-        try
-        {
-            _logger.LogDebug("Checking if account number exists: {AccountNumber}", accountNumber);
+        _logger.LogDebug("Checking if account number exists: {AccountNumber}", accountNumber);
 
-            return await _context.Accounts
-                .AnyAsync(a => a.AccountNumber.Value == accountNumber, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking if account number exists {AccountNumber}", accountNumber);
-            throw;
-        }
+        return await _context.Accounts
+            .AnyAsync(a => a.AccountNumber.Value == accountNumber, cancellationToken);
     }
 }
