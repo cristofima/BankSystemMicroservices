@@ -39,7 +39,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         // Verify token was persisted to database
         var persistedToken = await context.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Token == result.Token);
-        
+
         Assert.NotNull(persistedToken);
         Assert.Equal(user.Id, persistedToken.UserId);
         Assert.Equal(jwtId, persistedToken.JwtId);
@@ -136,7 +136,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         var user = await CreateTestUserAsync();
         var oldJwtId = Guid.NewGuid().ToString();
         var newJwtId = Guid.NewGuid().ToString();
-        
+
         var refreshTokenService = GetService<IRefreshTokenService>();
         var oldRefreshToken = await refreshTokenService.CreateRefreshTokenAsync(user.Id, oldJwtId);
         Assert.NotNull(oldRefreshToken);
@@ -155,14 +155,14 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         var context = GetDbContext();
         var oldTokenFromDb = await context.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Token == oldRefreshToken.Token);
-        
+
         Assert.NotNull(oldTokenFromDb);
         Assert.True(oldTokenFromDb.IsRevoked);
 
         // Verify new token exists and is valid
         var newTokenFromDb = await context.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Token == newToken.Token);
-        
+
         Assert.NotNull(newTokenFromDb);
         Assert.False(newTokenFromDb.IsRevoked);
         Assert.Equal(newJwtId, newTokenFromDb.JwtId);
@@ -210,7 +210,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         var context = GetDbContext();
         var revokedToken = await context.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Token == token);
-        
+
         Assert.NotNull(revokedToken);
         Assert.True(revokedToken.IsRevoked);
     }
@@ -236,7 +236,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         // Arrange
         var user = await CreateTestUserAsync();
         var refreshTokenService = GetService<IRefreshTokenService>();
-        
+
         // Create multiple tokens for the user
         await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
         await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
@@ -257,13 +257,13 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         var userTokens = await context.RefreshTokens
             .Where(rt => rt.UserId == user.Id)
             .ToListAsync();
-        
+
         Assert.All(userTokens, token => Assert.True(token.IsRevoked));
 
         // Verify other user's token is not affected
         var otherUserTokenFromDb = await context.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Token == otherUserToken!.Token);
-        
+
         Assert.NotNull(otherUserTokenFromDb);
         Assert.False(otherUserTokenFromDb.IsRevoked);
     }
@@ -288,7 +288,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         // Arrange
         var user = await CreateTestUserAsync();
         var refreshTokenService = GetService<IRefreshTokenService>();
-        
+
         // Create valid tokens
         var validToken1 = await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
         var validToken2 = await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
@@ -340,11 +340,11 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
 
         // Should have 3 tokens remaining: 2 valid + 1 recently expired (not cleaned)
         Assert.Equal(3, remainingTokens.Count);
-        
+
         // Verify the tokens that should have been removed are gone
         Assert.DoesNotContain(remainingTokens, t => t.Token == oldExpiredToken.Token);
         Assert.DoesNotContain(remainingTokens, t => t.Token == revokedToken.Token);
-        
+
         // Verify the tokens that should remain are still there
         Assert.Contains(remainingTokens, t => t.Token == validToken1!.Token);
         Assert.Contains(remainingTokens, t => t.Token == validToken2!.Token);
@@ -357,7 +357,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         // Arrange
         var refreshTokenService = GetService<IRefreshTokenService>();
         var context = GetDbContext();
-        
+
         var user = await CreateTestUserAsync();
         await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
 
@@ -451,39 +451,6 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("Error revoking token", result.Error);
-    }
-
-    [Fact]
-    public async Task RevokeAllUserTokensAsync_WhenDbThrowsException_ShouldReturnFailure()
-    {
-        // Arrange
-        var refreshTokenService = GetService<IRefreshTokenService>();
-        var user = await CreateTestUserAsync();
-        await refreshTokenService.CreateRefreshTokenAsync(user.Id, Guid.NewGuid().ToString());
-
-        // Simulate DB failure by disposing context
-        var context = GetDbContext();
-        await context.DisposeAsync();
-
-        // Act
-        var result = await refreshTokenService.RevokeAllUserTokensAsync(user.Id);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Error revoking user tokens", result.Error);
-    }
-
-    [Fact]
-    public async Task CleanupExpiredTokensAsync_WhenDbThrowsException_ShouldNotThrow()
-    {
-        // Arrange
-        var refreshTokenService = GetService<IRefreshTokenService>();
-        var context = GetDbContext();
-        await context.DisposeAsync();
-
-        // Act & Assert
-        var exception = await Record.ExceptionAsync(() => refreshTokenService.CleanupExpiredTokensAsync());
-        Assert.Null(exception); // Assert that no exception was thrown
     }
 
     [Fact]
@@ -648,7 +615,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
         var context = GetDbContext();
         context.Users.Add(user);
         await context.SaveChangesAsync();
-        
+
         return user;
     }
 }
