@@ -1,12 +1,14 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 #nullable disable
 
 namespace BankSystem.Account.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class MigrationName : Migration
+    [ExcludeFromCodeCoverage]
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
