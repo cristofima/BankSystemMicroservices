@@ -29,7 +29,7 @@ public class LoggingPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TR
 
         _logger.LogInformation("Handling {RequestName}", requestName);
 
-        var response = await next();
+        var response = await next(cancellationToken);
 
         _logger.LogInformation("Successfully handled {RequestName}", requestName);
 

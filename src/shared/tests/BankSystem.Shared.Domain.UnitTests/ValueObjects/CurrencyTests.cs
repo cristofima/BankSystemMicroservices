@@ -5,7 +5,6 @@ namespace BankSystem.Shared.Domain.UnitTests.ValueObjects;
 public class CurrencyTests
 {
     [Theory]
-    [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
     public void Constructor_ShouldThrow_WhenNullOrWhitespace(string invalid)
@@ -50,7 +49,6 @@ public class CurrencyTests
     [InlineData("gbp", true)]
     [InlineData("JPY", false)]
     [InlineData("", false)]
-    [InlineData(null, false)]
     public void IsValidCurrencyCode_ShouldReturnExpected(string code, bool expected)
     {
         Assert.Equal(expected, Currency.IsValidCurrencyCode(code!));

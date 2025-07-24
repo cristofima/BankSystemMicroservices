@@ -18,10 +18,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.7" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.6.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.6.4" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Account.Application\BankSystem.Account.Application.csproj" />
     <ProjectReference Include="..\Account.Infrastructure\BankSystem.Account.Infrastructure.csproj" />
   </ItemGroup>

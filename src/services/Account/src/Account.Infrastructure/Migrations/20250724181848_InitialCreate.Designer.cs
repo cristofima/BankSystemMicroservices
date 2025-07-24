@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BankSystem.Account.Infrastructure.Migrations
 {
     [DbContext(typeof(AccountDbContext))]
-    [Migration("20250722172659_MigrationName")]
-    partial class MigrationName
+    [Migration("20250724181848_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

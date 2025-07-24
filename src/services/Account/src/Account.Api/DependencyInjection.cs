@@ -3,10 +3,8 @@ using BankSystem.Account.Api.Middlewares;
 using BankSystem.Account.Api.Services;
 using BankSystem.Account.Application.Behaviours;
 using BankSystem.Account.Application.Interfaces;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using BankSystem.Shared.Infrastructure.Extensions;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace BankSystem.Account.Api;
 
@@ -39,35 +37,7 @@ public static class DependencyInjection
             setup.SubstituteApiVersionInUrl = true;
         });
 
-        // Get JWT options for authentication configuration
-        var jwtSection = configuration.GetSection("JWT");
-        var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("JWT Key not configured");
-
-        // Configure JWT Authentication with proper validation
-        services.AddAuthorization().AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = true;
-            options.SaveToken = false;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = jwtSection.GetValue("ValidateIssuer", true),
-                ValidateAudience = jwtSection.GetValue("ValidateAudience", true),
-                ValidateLifetime = jwtSection.GetValue("ValidateLifetime", true),
-                ValidateIssuerSigningKey = jwtSection.GetValue("ValidateIssuerSigningKey", true),
-                ValidIssuer = jwtSection["Issuer"],
-                ValidAudience = jwtSection["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                ClockSkew = TimeSpan.Zero, // No tolerance for clock skew
-                RequireExpirationTime = true,
-                RequireSignedTokens = true
-            };
-        });
+        services.AddJwtAuthentication(configuration);
 
         services.AddHttpContextAccessor();
         services.AddScoped<IAuthenticatedUserService, AuthenticatedUserService>();

@@ -13,6 +13,7 @@ public interface IRefreshTokenService
     /// </summary>
     Task<RefreshToken?> CreateRefreshTokenAsync(
         string userId,
+        string userName,
         string jwtId,
         string? ipAddress = null,
         string? deviceInfo = null,

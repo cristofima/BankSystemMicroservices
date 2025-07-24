@@ -28,7 +28,7 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineB
         CancellationToken cancellationToken)
     {
         if (!_validators.Any())
-            return await next();
+            return await next(cancellationToken);
 
         var context = new ValidationContext<TRequest>(request);
 
@@ -49,7 +49,7 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineB
                 })
             .ToDictionary(x => x.Key, x => x.Values);
 
-        if (errorsDictionary.Count == 0) return await next();
+        if (errorsDictionary.Count == 0) return await next(cancellationToken);
 
         var title = request is IValidationRequest validationRequest
             ? validationRequest.ValidationErrorTitle()

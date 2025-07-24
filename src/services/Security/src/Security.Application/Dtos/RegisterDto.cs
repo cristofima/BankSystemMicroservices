@@ -12,7 +12,7 @@ public record RegisterDto
     /// </summary>
     /// <example>john.doe</example>
     [Required(ErrorMessage = "Username is required")]
-    [StringLength(256, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 256 characters")]
+    [StringLength(30, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 30 characters")]
     [RegularExpression(@"^[a-zA-Z0-9._-]+$", ErrorMessage = "Username can only contain letters, numbers, dots, underscores, and hyphens")]
     public string UserName { get; init; } = string.Empty;
 

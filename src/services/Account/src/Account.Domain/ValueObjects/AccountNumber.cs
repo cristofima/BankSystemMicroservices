@@ -64,11 +64,11 @@ public record AccountNumber
     /// <summary>
     /// Gets a masked version of the account number for display purposes.
     /// </summary>
-    /// <returns>Masked account number (e.g., ****5678)</returns>
+    /// <returns>Masked account number (e.g., ******5678)</returns>
     public string GetMaskedValue()
     {
         var suffix = Value[^4..]; // Last 4 digits
-        var maskedMiddle = new string('*', Value.Length - 7);
+        var maskedMiddle = new string('*', Value.Length - 4);
 
         return maskedMiddle + suffix;
     }

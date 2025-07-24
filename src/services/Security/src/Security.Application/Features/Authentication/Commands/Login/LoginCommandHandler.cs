@@ -41,10 +41,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
+
         try
         {
-            _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}", 
+            _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}",
                 request.UserName, request.IpAddress);
 
             var userValidationResult = await ValidateUserForLoginAsync(request);
@@ -63,8 +63,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
                 return Result<LoginResponse>.Failure(tokenResult.Error);
 
             await _auditService.LogSuccessfulAuthenticationAsync(user.Id, request.IpAddress);
-            
-            _logger.LogInformation("User {UserId} successfully authenticated from IP {IpAddress}", 
+
+            _logger.LogInformation("User {UserId} successfully authenticated from IP {IpAddress}",
                 user.Id, request.IpAddress);
 
             return Result<LoginResponse>.Success(tokenResult.Value!);
@@ -133,7 +133,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
     {
         var accessToken = await GenerateAccessTokenAsync(user);
         var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
-            user.Id, 
+            user.Id,
+            user.UserName!,
             accessToken.JwtId,
             request.IpAddress,
             request.DeviceInfo,

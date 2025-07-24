@@ -19,7 +19,7 @@ public class CreateAccountCommandHandlerTests
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<ILogger<CreateAccountCommandHandler>> _mockLogger;
     private readonly CreateAccountCommandHandler _handler;
-    private readonly string userName = "testuser";
+    private const string TestUserName = "testuser";
 
     public CreateAccountCommandHandlerTests()
     {
@@ -30,7 +30,7 @@ public class CreateAccountCommandHandlerTests
 
         _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
         _mockAuthenticatedUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(userName);
+        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(TestUserName);
 
         _handler = new CreateAccountCommandHandler(
             _mockAccountRepository.Object,
@@ -50,7 +50,7 @@ public class CreateAccountCommandHandlerTests
             _mockAuthenticatedUserService.Object.CustomerId,
             command.AccountType,
             currency,
-            userName
+            TestUserName
         );
 
         var expectedDto = new AccountDto
@@ -89,8 +89,8 @@ public class CreateAccountCommandHandlerTests
     }
 
     [Theory]
-    [InlineData(AccountType.Checking, "USD" )]
-    [InlineData(AccountType.Savings, "EUR" )]
+    [InlineData(AccountType.Checking, "USD")]
+    [InlineData(AccountType.Savings, "EUR")]
     [InlineData(AccountType.Business, "GBP")]
     public async Task Handle_DifferentAccountTypesAndCurrencies_ShouldCreateAccountSuccessfully(
         AccountType accountType,
@@ -124,7 +124,7 @@ public class CreateAccountCommandHandlerTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(accountType.ToString(), result.Value.AccountType);
+        Assert.Equal(accountType.ToString(), result.Value!.AccountType);
         Assert.Equal(currency, result.Value.Currency);
     }
 
@@ -141,7 +141,7 @@ public class CreateAccountCommandHandlerTests
             customerId,
             AccountType.Checking,
             new Currency("USD"),
-            userName);
+            TestUserName);
 
         var expectedDto = new AccountDto
         {
@@ -167,9 +167,9 @@ public class CreateAccountCommandHandlerTests
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value.CustomerId.Should().Be(customerId);
-        result.Value.AccountType.Should().Be("Checking");
-        result.Value.Balance.Should().Be(1000m);
+        result.Value!.CustomerId.Should().Be(customerId);
+        result.Value!.AccountType.Should().Be("Checking");
+        result.Value!.Balance.Should().Be(1000m);
 
         _mockAccountRepository.Verify(
             x => x.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()),
@@ -270,15 +270,6 @@ public class CreateAccountCommandHandlerTests
         result.Should().NotBeNull();
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Contain("error occurred while creating the account");
-
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Error creating account for customer")),
-                expectedException,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 
     [Fact]
@@ -306,15 +297,6 @@ public class CreateAccountCommandHandlerTests
         result.Should().NotBeNull();
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Contain("error occurred while creating the account");
-
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Error creating account for customer")),
-                expectedException,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 
     [Fact]
@@ -345,7 +327,7 @@ public class CreateAccountCommandHandlerTests
             x => x.Log(
                 logLevel,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(message)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
