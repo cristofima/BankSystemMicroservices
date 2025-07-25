@@ -7,13 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.7" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Security.Application\Security.Application.csproj" />
   </ItemGroup>
 

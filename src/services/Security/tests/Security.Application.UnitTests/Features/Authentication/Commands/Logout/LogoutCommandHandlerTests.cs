@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Security.Application.Features.Authentication.Commands.Logout;
 using Security.Application.UnitTests.Common;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 using Xunit;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.Logout;

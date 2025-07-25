@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using BankSystem.Shared.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Entities;
@@ -12,7 +10,6 @@ using Security.Infrastructure.Data;
 using Security.Infrastructure.Services;
 using Security.Infrastructure.Validators;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace Security.Infrastructure;
 
@@ -80,72 +77,21 @@ public static class DependencyInjection
         .AddDefaultTokenProviders()
         .AddPasswordValidator<CustomPasswordValidator>();
 
-        // Get JWT options for authentication configuration
-        var jwtSection = configuration.GetSection(JwtOptions.SectionName);
-        var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("JWT Key not configured");
+        services.AddJwtAuthentication(configuration);
 
-        // Configure JWT Authentication with proper validation
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = true;
-            options.SaveToken = false;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = jwtSection.GetValue("ValidateIssuer", true),
-                ValidateAudience = jwtSection.GetValue("ValidateAudience", true),
-                ValidateLifetime = jwtSection.GetValue("ValidateLifetime", true),
-                ValidateIssuerSigningKey = jwtSection.GetValue("ValidateIssuerSigningKey", true),
-                ValidIssuer = jwtSection["Issuer"],
-                ValidAudience = jwtSection["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                ClockSkew = TimeSpan.Zero, // No tolerance for clock skew
-                RequireExpirationTime = true,
-                RequireSignedTokens = true
-            };
-
-            // Add event handlers for enhanced security
-            options.Events = new JwtBearerEvents
-            {
-                OnAuthenticationFailed = context =>
-                {
-                    // Log authentication failures
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
-                    logger.LogWarning("JWT authentication failed: {Error}", context.Exception.Message);
-                    return Task.CompletedTask;
-                },
-                OnTokenValidated = context =>
-                {
-                    // Additional token validation logic can be added here
-                    return Task.CompletedTask;
-                }
-            };
-        });
-
-        // Configure Authorization policies
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy("RequireAuthenticatedUser", policy =>
-                policy.RequireAuthenticatedUser());
-
-            options.AddPolicy("RequireAdminRole", policy =>
-                policy.RequireRole("Admin"));
-
-            options.AddPolicy("RequireManagerRole", policy =>
+        // Configure Authorization policies using AddAuthorizationBuilder
+        services.AddAuthorizationBuilder()
+            .AddPolicy("RequireAuthenticatedUser", policy =>
+                policy.RequireAuthenticatedUser())
+            .AddPolicy("RequireAdminRole", policy =>
+                policy.RequireRole("Admin"))
+            .AddPolicy("RequireManagerRole", policy =>
                 policy.RequireRole("Manager", "Admin"));
-        });
 
         // Register application services
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ISecurityAuditService, SecurityAuditService>();
-
-        // Remove the old IUserService registration as we're using MediatR now
 
         return services;
     }

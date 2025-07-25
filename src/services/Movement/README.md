@@ -1,25 +1,150 @@
 # Movement Service
 
-The Movement Service provides transaction history and reporting capabilities within the Bank System Microservices architecture. It implements the Query side of the CQRS pattern, maintaining optimized read models for transaction history, account statements, and financial reporting.
+## Overview
 
-## 🎯 Service Overview
+The Movement Service is responsible for managing and tracking all financial movements (transactions) within the Bank System Microservices architecture. It provides comprehensive transaction management, real-time processing, audit trails, and ensures compliance with banking regulations and security standards.
 
-### Responsibilities
+## Service Responsibilities
 
-- **Transaction History**: Maintain comprehensive transaction movement records
-- **Account Statements**: Generate account statements and summaries
-- **Financial Reporting**: Provide data for reports and analytics
-- **Movement Queries**: Handle all read operations for transaction data
-- **Data Aggregation**: Create summarized views for dashboards
+### What the Movement Service SHOULD Do:
 
-### Domain Boundaries
+1. **Transaction Processing**
 
-- Transaction movement history
-- Account statement generation
-- Financial reporting and analytics
-- Read-optimized data models
+   - Process deposits, withdrawals, and transfers
+   - Validate transaction requests against business rules
+   - Ensure transaction atomicity and consistency
+   - Handle transaction failures and rollbacks
 
-## 🏗️ Architecture
+2. **Transaction History Management**
+
+   - Maintain complete transaction history
+   - Provide transaction search and filtering capabilities
+   - Generate transaction reports and statements
+   - Ensure audit trail compliance
+
+3. **Real-time Transaction Processing**
+
+   - Process transactions in real-time
+   - Provide immediate transaction status updates
+   - Handle concurrent transaction requests
+   - Manage transaction queuing and processing
+
+4. **Balance Management**
+
+   - Calculate and maintain account balances
+   - Ensure balance accuracy across all transactions
+   - Handle balance inquiries and updates
+   - Provide real-time balance information
+
+5. **Compliance and Auditing**
+
+   - Maintain detailed audit logs for all transactions
+   - Ensure regulatory compliance (AML, KYC)
+   - Generate compliance reports
+   - Track suspicious transaction patterns
+
+6. **Transaction Validation**
+   - Validate transaction amounts and limits
+   - Check account status and permissions
+   - Enforce daily/monthly transaction limits
+   - Validate currency and exchange rates
+
+### What the Movement Service SHOULD NOT Do:
+
+1. **Account Management**
+
+   - Should not create, modify, or delete accounts
+   - Should not manage account details or customer information
+   - Should not handle account opening/closing processes
+
+2. **User Authentication/Authorization**
+
+   - Should not authenticate users or manage sessions
+   - Should not handle password management or security tokens
+   - Should rely on Security Service for authentication
+
+3. **Customer Management**
+
+   - Should not manage customer profiles or personal information
+   - Should not handle customer onboarding processes
+   - Should communicate with Account Service for customer-related data
+
+4. **Notification Services**
+
+   - Should not send emails, SMS, or push notifications directly
+   - Should publish events for Notification Service to handle
+   - Should not manage communication preferences
+
+5. **Reporting and Analytics**
+   - Should not generate complex business reports
+   - Should not perform data analytics or business intelligence
+   - Should provide data to Reporting Service for analysis
+
+## Service Communication
+
+### Inbound Communications (What calls Movement Service):
+
+1. **Account Service**
+
+   - Requests transaction processing for account operations
+   - Queries transaction history for account statements
+   - Requests balance information for account inquiries
+
+2. **External Payment Gateways**
+
+   - Sends transaction requests from external sources
+   - Provides transaction status updates
+   - Handles payment confirmations
+
+3. **API Gateway/Client Applications**
+   - Direct transaction requests from mobile/web applications
+   - Balance inquiry requests
+   - Transaction history requests
+
+### Outbound Communications (What Movement Service calls):
+
+1. **Account Service**
+
+   - Validates account existence and status
+   - Retrieves account information for transaction processing
+   - Updates account metadata (last transaction date, etc.)
+
+2. **Security Service**
+
+   - Validates JWT tokens for authentication
+   - Performs authorization checks for transactions
+   - Logs security events for suspicious activities
+
+3. **Notification Service (via Events)**
+
+   - Publishes TransactionProcessed events
+   - Sends LimitExceeded events for compliance
+   - Publishes SuspiciousActivity events for monitoring
+
+4. **Reporting Service (via Events)**
+   - Sends TransactionCompleted events for analytics
+   - Provides real-time transaction data
+   - Publishes compliance-related events
+
+### Event-Driven Communication:
+
+**Published Events:**
+
+- `TransactionProcessed` - When a transaction is completed
+- `TransactionFailed` - When a transaction fails
+- `LimitExceeded` - When transaction limits are breached
+- `SuspiciousActivity` - When suspicious patterns are detected
+- `BalanceUpdated` - When account balance changes
+- `ComplianceAlert` - For regulatory compliance issues
+
+**Subscribed Events:**
+
+- `AccountStatusChanged` - From Account Service
+- `AccountClosed` - From Account Service
+- `SecurityAlert` - From Security Service
+- `ComplianceRuleUpdated` - From configuration services
+
+## Architecture
 
 ### Clean Architecture Layers
 
@@ -51,6 +176,23 @@ Movement.Infrastructure/   # Infrastructure Layer
 ├── Services/          # External Service Integrations
 └── Reporting/        # Report generation services
 ```
+
+## 🎯 Service Overview
+
+### Responsibilities
+
+- **Transaction History**: Maintain comprehensive transaction movement records
+- **Account Statements**: Generate account statements and summaries
+- **Financial Reporting**: Provide data for reports and analytics
+- **Movement Queries**: Handle all read operations for transaction data
+- **Data Aggregation**: Create summarized views for dashboards
+
+### Domain Boundaries
+
+- Transaction movement history
+- Account statement generation
+- Financial reporting and analytics
+- Read-optimized data models
 
 ## 🔧 Features
 
@@ -457,10 +599,9 @@ public class CsvExportService : IExportService
 ### Query Handler Tests
 
 ```csharp
-[TestFixture]
 public class GetMovementsQueryHandlerTests
 {
-    [Test]
+    [Fact]
     public async Task Handle_ValidQuery_ShouldReturnPagedMovements()
     {
         // Arrange
@@ -476,18 +617,18 @@ public class GetMovementsQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Data, Has.Count.LessThanOrEqualTo(10));
-        Assert.That(result.Pagination.CurrentPage, Is.EqualTo(1));
+        Assert.NotNull(result);
+        Assert.True(result.Data.Count <= 10);
+        Assert.Equal(1, result.Pagination.CurrentPage);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_FilterByAmount_ShouldReturnFilteredResults()
     {
         // Test amount filtering
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_SearchByText_ShouldReturnMatchingResults()
     {
         // Test text search functionality
@@ -495,22 +636,463 @@ public class GetMovementsQueryHandlerTests
 }
 ```
 
-### Integration Tests
+### Domain Tests
+
+### Core Entity Tests
 
 ```csharp
-[TestFixture]
-public class MovementControllerTests
+public class TransferTests
 {
-    [Test]
-    public async Task GetMovements_ValidParameters_ShouldReturnOk()
+    [Fact]
+    public void CreateTransfer_ValidData_ShouldCreateSuccessfully()
     {
-        // Test API endpoints
+        // Arrange
+        var sourceAccountId = Guid.NewGuid();
+        var destinationAccountId = Guid.NewGuid();
+        var amount = new Money(100m, Currency.USD);
+        var description = "Transfer to savings";
+
+        // Act
+        var transfer = Transfer.Create(sourceAccountId, destinationAccountId, amount, description);
+
+        // Assert
+        Assert.NotNull(transfer);
+        Assert.Equal(sourceAccountId, transfer.SourceAccountId);
+        Assert.Equal(destinationAccountId, transfer.DestinationAccountId);
+        Assert.Equal(amount, transfer.Amount);
+        Assert.Equal(description, transfer.Description);
+        Assert.Equal(TransferStatus.Pending, transfer.Status);
     }
 
-    [Test]
-    public async Task GenerateStatement_ValidPeriod_ShouldReturnPdf()
+    [Fact]
+    public void CreateTransfer_SameAccount_ShouldThrowException()
     {
-        // Test statement generation
+        // Arrange
+        var accountId = Guid.NewGuid();
+        var amount = new Money(100m, Currency.USD);
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() =>
+            Transfer.Create(accountId, accountId, amount, "Invalid transfer"));
+    }
+
+    [Fact]
+    public void CreateTransfer_ZeroAmount_ShouldThrowException()
+    {
+        // Arrange
+        var sourceAccountId = Guid.NewGuid();
+        var destinationAccountId = Guid.NewGuid();
+        var amount = new Money(0m, Currency.USD);
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() =>
+            Transfer.Create(sourceAccountId, destinationAccountId, amount, "Zero amount"));
+    }
+
+    [Fact]
+    public void MarkAsCompleted_PendingTransfer_ShouldUpdateStatus()
+    {
+        // Arrange
+        var transfer = CreateValidTransfer();
+
+        // Act
+        transfer.MarkAsCompleted();
+
+        // Assert
+        Assert.Equal(TransferStatus.Completed, transfer.Status);
+        Assert.True(transfer.CompletedAt.HasValue);
+    }
+
+    [Fact]
+    public void MarkAsFailed_PendingTransfer_ShouldUpdateStatusWithReason()
+    {
+        // Arrange
+        var transfer = CreateValidTransfer();
+        var failureReason = "Insufficient funds";
+
+        // Act
+        transfer.MarkAsFailed(failureReason);
+
+        // Assert
+        Assert.Equal(TransferStatus.Failed, transfer.Status);
+        Assert.Equal(failureReason, transfer.FailureReason);
+    }
+
+    private static Transfer CreateValidTransfer()
+    {
+        return Transfer.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new Money(100m, Currency.USD),
+            "Test transfer");
+    }
+}
+```
+
+## Application Tests
+
+### Command Handler Tests
+
+```csharp
+public class CreateTransferCommandHandlerTests
+{
+    private readonly Mock<ITransferRepository> _mockTransferRepository;
+    private readonly Mock<IAccountService> _mockAccountService;
+    private readonly Mock<IEventPublisher> _mockEventPublisher;
+    private readonly Mock<ILogger<CreateTransferCommandHandler>> _mockLogger;
+    private readonly CreateTransferCommandHandler _handler;
+
+    public CreateTransferCommandHandlerTests()
+    {
+        _mockTransferRepository = new Mock<ITransferRepository>();
+        _mockAccountService = new Mock<IAccountService>();
+        _mockEventPublisher = new Mock<IEventPublisher>();
+        _mockLogger = new Mock<ILogger<CreateTransferCommandHandler>>();
+
+        _handler = new CreateTransferCommandHandler(
+            _mockTransferRepository.Object,
+            _mockAccountService.Object,
+            _mockEventPublisher.Object,
+            _mockLogger.Object);
+    }
+
+    [Fact]
+    public async Task Handle_ValidCommand_ShouldCreateTransfer()
+    {
+        // Arrange
+        var command = new CreateTransferCommand
+        {
+            SourceAccountId = Guid.NewGuid(),
+            DestinationAccountId = Guid.NewGuid(),
+            Amount = 100m,
+            Currency = "USD",
+            Description = "Test transfer"
+        };
+
+        _mockAccountService.Setup(x => x.AccountExistsAsync(command.SourceAccountId))
+            .ReturnsAsync(true);
+        _mockAccountService.Setup(x => x.AccountExistsAsync(command.DestinationAccountId))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        _mockTransferRepository.Verify(x => x.AddAsync(It.IsAny<Transfer>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockEventPublisher.Verify(x => x.PublishAsync(It.IsAny<TransferCreatedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_NonExistentSourceAccount_ShouldReturnFailure()
+    {
+        // Arrange
+        var command = new CreateTransferCommand
+        {
+            SourceAccountId = Guid.NewGuid(),
+            DestinationAccountId = Guid.NewGuid(),
+            Amount = 100m,
+            Currency = "USD",
+            Description = "Test transfer"
+        };
+
+        _mockAccountService.Setup(x => x.AccountExistsAsync(command.SourceAccountId))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Source account not found", result.Error);
+        _mockTransferRepository.Verify(x => x.AddAsync(It.IsAny<Transfer>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_NonExistentDestinationAccount_ShouldReturnFailure()
+    {
+        // Arrange
+        var command = new CreateTransferCommand
+        {
+            SourceAccountId = Guid.NewGuid(),
+            DestinationAccountId = Guid.NewGuid(),
+            Amount = 100m,
+            Currency = "USD",
+            Description = "Test transfer"
+        };
+
+        _mockAccountService.Setup(x => x.AccountExistsAsync(command.SourceAccountId))
+            .ReturnsAsync(true);
+        _mockAccountService.Setup(x => x.AccountExistsAsync(command.DestinationAccountId))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Destination account not found", result.Error);
+        _mockTransferRepository.Verify(x => x.AddAsync(It.IsAny<Transfer>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+}
+```
+
+### Query Handler Tests
+
+```csharp
+public class GetTransferQueryHandlerTests
+{
+    private readonly Mock<ITransferRepository> _mockRepository;
+    private readonly Mock<IMapper> _mockMapper;
+    private readonly GetTransferQueryHandler _handler;
+
+    public GetTransferQueryHandlerTests()
+    {
+        _mockRepository = new Mock<ITransferRepository>();
+        _mockMapper = new Mock<IMapper>();
+        _handler = new GetTransferQueryHandler(_mockRepository.Object, _mockMapper.Object);
+    }
+
+    [Fact]
+    public async Task Handle_ExistingTransfer_ShouldReturnTransferDto()
+    {
+        // Arrange
+        var transferId = Guid.NewGuid();
+        var query = new GetTransferQuery(transferId);
+        var transfer = CreateValidTransfer();
+        var transferDto = new TransferDto { Id = transferId };
+
+        _mockRepository.Setup(x => x.GetByIdAsync(transferId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(transfer);
+        _mockMapper.Setup(x => x.Map<TransferDto>(transfer))
+            .Returns(transferDto);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(transferDto, result.Value);
+    }
+
+    [Fact]
+    public async Task Handle_NonExistentTransfer_ShouldReturnFailure()
+    {
+        // Arrange
+        var transferId = Guid.NewGuid();
+        var query = new GetTransferQuery(transferId);
+
+        _mockRepository.Setup(x => x.GetByIdAsync(transferId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Transfer)null);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Transfer not found", result.Error);
+    }
+
+    private static Transfer CreateValidTransfer()
+    {
+        return Transfer.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new Money(100m, Currency.USD),
+            "Test transfer");
+    }
+}
+```
+
+## Integration Tests
+
+### API Controller Tests
+
+```csharp
+public class TransferControllerTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
+
+    public TransferControllerTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = _factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task CreateTransfer_ValidRequest_ShouldReturnCreated()
+    {
+        // Arrange
+        var request = new CreateTransferRequest
+        {
+            SourceAccountId = Guid.NewGuid(),
+            DestinationAccountId = Guid.NewGuid(),
+            Amount = 100m,
+            Currency = "USD",
+            Description = "Integration test transfer"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/transfers", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<TransferDto>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.NotNull(result);
+        Assert.Equal(request.SourceAccountId, result.SourceAccountId);
+        Assert.Equal(request.DestinationAccountId, result.DestinationAccountId);
+        Assert.Equal(request.Amount, result.Amount);
+    }
+
+    [Fact]
+    public async Task CreateTransfer_InvalidRequest_ShouldReturnBadRequest()
+    {
+        // Arrange
+        var request = new CreateTransferRequest
+        {
+            SourceAccountId = Guid.Empty, // Invalid
+            DestinationAccountId = Guid.NewGuid(),
+            Amount = -100m, // Invalid
+            Currency = "USD",
+            Description = "Invalid transfer"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/transfers", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTransfer_ExistingId_ShouldReturnTransfer()
+    {
+        // Arrange
+        var transferId = await CreateTestTransferAsync();
+
+        // Act
+        var response = await _client.GetAsync($"/api/transfers/{transferId}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<TransferDto>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.NotNull(result);
+        Assert.Equal(transferId, result.Id);
+    }
+
+    [Fact]
+    public async Task GetTransfer_NonExistentId_ShouldReturnNotFound()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+
+        // Act
+        var response = await _client.GetAsync($"/api/transfers/{nonExistentId}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private async Task<Guid> CreateTestTransferAsync()
+    {
+        var request = new CreateTransferRequest
+        {
+            SourceAccountId = Guid.NewGuid(),
+            DestinationAccountId = Guid.NewGuid(),
+            Amount = 50m,
+            Currency = "USD",
+            Description = "Test transfer for retrieval"
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/transfers", request);
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<TransferDto>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        return result.Id;
+    }
+}
+```
+
+### Event Publisher Tests
+
+```csharp
+public class TransferEventPublisherTests
+{
+    private readonly Mock<IServiceBusClient> _mockServiceBusClient;
+    private readonly Mock<ILogger<TransferEventPublisher>> _mockLogger;
+    private readonly TransferEventPublisher _eventPublisher;
+
+    public TransferEventPublisherTests()
+    {
+        _mockServiceBusClient = new Mock<IServiceBusClient>();
+        _mockLogger = new Mock<ILogger<TransferEventPublisher>>();
+        _eventPublisher = new TransferEventPublisher(_mockServiceBusClient.Object, _mockLogger.Object);
+    }
+
+    [Fact]
+    public async Task PublishAsync_TransferCreatedEvent_ShouldSendMessage()
+    {
+        // Arrange
+        var transferEvent = new TransferCreatedEvent
+        {
+            TransferId = Guid.NewGuid(),
+            SourceAccountId = Guid.NewGuid(),
+            DestinationAccountId = Guid.NewGuid(),
+            Amount = 100m,
+            Currency = "USD"
+        };
+
+        var mockSender = new Mock<ServiceBusSender>();
+        _mockServiceBusClient.Setup(x => x.CreateSender("transfer-events"))
+            .Returns(mockSender.Object);
+
+        // Act
+        await _eventPublisher.PublishAsync(transferEvent, CancellationToken.None);
+
+        // Assert
+        mockSender.Verify(x => x.SendMessageAsync(
+            It.Is<ServiceBusMessage>(m => m.Subject == "TransferCreated"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PublishAsync_TransferCompletedEvent_ShouldSendMessage()
+    {
+        // Arrange
+        var transferEvent = new TransferCompletedEvent
+        {
+            TransferId = Guid.NewGuid(),
+            CompletedAt = DateTime.UtcNow
+        };
+
+        var mockSender = new Mock<ServiceBusSender>();
+        _mockServiceBusClient.Setup(x => x.CreateSender("transfer-events"))
+            .Returns(mockSender.Object);
+
+        // Act
+        await _eventPublisher.PublishAsync(transferEvent, CancellationToken.None);
+
+        // Assert
+        mockSender.Verify(x => x.SendMessageAsync(
+            It.Is<ServiceBusMessage>(m => m.Subject == "TransferCompleted"),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }
 ```

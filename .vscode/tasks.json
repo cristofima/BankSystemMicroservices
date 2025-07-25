@@ -5,7 +5,10 @@
             "label": "build-all",
             "type": "shell",
             "command": "dotnet",
-            "args": ["build"],
+            "args": [
+                "build",
+                "src/BankSystem.sln"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -24,7 +27,10 @@
             "label": "clean-all",
             "type": "shell",
             "command": "dotnet",
-            "args": ["clean"],
+            "args": [
+                "clean",
+                "src/BankSystem.sln"
+            ],
             "group": "build",
             "problemMatcher": "$msCompile"
         },
@@ -32,19 +38,30 @@
             "label": "restore-all",
             "type": "shell",
             "command": "dotnet",
-            "args": ["restore"],
+            "args": [
+                "restore",
+                "src/BankSystem.sln"
+            ],
             "group": "build",
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "test-all",
+            "label": "unit-test-all",
             "type": "shell",
             "command": "dotnet",
             "args": [
                 "test",
-                "--collect:\"XPlat Code Coverage\"",
-                "--results-directory:\"./TestResults\"",
-                "--logger:\"html;logfilename=testResults.html\""
+                "src/BankSystem.sln",
+                "--collect",
+                "\"XPlat Code Coverage\"",
+                "--results-directory",
+                "./TestResults",
+                "--logger",
+                "trx",
+                "--settings",
+                "src/coverlet.runsettings",
+                "--filter",
+                "\"FullyQualifiedName~UnitTests\""
             ],
             "group": {
                 "kind": "test",

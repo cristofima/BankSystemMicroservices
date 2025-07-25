@@ -1,0 +1,93 @@
+using BankSystem.Account.Domain.Enums;
+using BankSystem.Account.Domain.Events;
+using BankSystem.Shared.Domain.ValueObjects;
+using FluentAssertions;
+using AccountEntity = BankSystem.Account.Domain.Entities.Account;
+
+namespace BankSystem.Account.Domain.UnitTests.Entities;
+
+public class AccountTests
+{
+    private static AccountEntity CreateTestAccount(Guid customerId, AccountType accountType, Currency? currency = null)
+    {
+        currency ??= Currency.USD;
+        return AccountEntity.CreateNew(customerId, accountType, currency, "test");
+    }
+
+    [Fact]
+    public void CreateNew_ValidParameters_ShouldCreateAccount()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        const AccountType accountType = AccountType.Checking;
+
+        // Act
+        var account = CreateTestAccount(customerId, accountType);
+
+        // Assert
+        account.Should().NotBeNull();
+        account.CustomerId.Should().Be(customerId);
+        account.Type.Should().Be(accountType);
+        account.Balance.Amount.Should().Be(0);
+        account.Status.Should().Be(AccountStatus.PendingActivation);
+        account.DomainEvents.Should().ContainSingle(e => e is AccountCreatedEvent);
+    }
+
+    [Fact]
+    public void Activate_ValidAccount_ShouldActivateAccount()
+    {
+        // Arrange
+        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
+
+        // Act
+        account.Activate("test");
+
+        // Assert
+        account.Status.Should().Be(AccountStatus.Active);
+        account.DomainEvents.Should().ContainSingle(e => e is AccountActivatedEvent);
+    }
+
+    [Fact]
+    public void Suspend_ValidAccount_ShouldSuspendAccount()
+    {
+        // Arrange
+        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
+
+        // Act
+        account.Suspend("Suspicious activity", "test");
+
+        // Assert
+        account.Status.Should().Be(AccountStatus.Suspended);
+        account.DomainEvents.Should().ContainSingle(e => e is AccountSuspendedEvent);
+    }
+
+    [Fact]
+    public void Freeze_ValidAccount_ShouldFreezeAccount()
+    {
+        // Arrange
+        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
+
+        // Act
+        account.Freeze("Suspicious activity", "test");
+
+        // Assert
+        account.Status.Should().Be(AccountStatus.Frozen);
+        account.DomainEvents.Should().ContainSingle(e => e is AccountFrozenEvent);
+    }
+
+    [Fact]
+    public void Close_ValidAccount_ShouldCloseAccount()
+    {
+        // Arrange
+        var currency = Currency.EUR;
+        var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking, currency);
+        account.Activate("test");
+
+        // Act
+        account.Close("Customer request", "test");
+
+        // Assert
+        account.Status.Should().Be(AccountStatus.Closed);
+        account.DomainEvents.Should().ContainSingle(e => e is AccountClosedEvent);
+    }
+}

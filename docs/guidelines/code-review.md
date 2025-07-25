@@ -477,18 +477,16 @@ public async Task<List<TransactionDto>> GetTransactionHistory(Guid accountId)
 
 ```csharp
 // ✅ Good: Well-structured unit test
-[TestFixture]
 public class AccountTests
 {
-    private Account _account;
+    private readonly Account _account;
 
-    [SetUp]
-    public void Setup()
+    public AccountTests()
     {
         _account = Account.CreateNew("12345", Guid.NewGuid(), new Money(1000m, Currency.USD));
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_SufficientFunds_ShouldSucceed()
     {
         // Arrange
@@ -499,13 +497,13 @@ public class AccountTests
         var result = _account.Withdraw(withdrawAmount, description);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(_account.Balance.Amount, Is.EqualTo(500m));
-        Assert.That(_account.Transactions.Count, Is.EqualTo(1));
-        Assert.That(_account.Transactions.First().Type, Is.EqualTo(TransactionType.Withdrawal));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(500m, _account.Balance.Amount);
+        Assert.Equal(1, _account.Transactions.Count);
+        Assert.Equal(TransactionType.Withdrawal, _account.Transactions.First().Type);
     }
 
-    [Test]
+    [Fact]
     public void Withdraw_InsufficientFunds_ShouldFail()
     {
         // Arrange
@@ -516,14 +514,14 @@ public class AccountTests
         var result = _account.Withdraw(withdrawAmount, description);
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
-        Assert.That(result.Error, Contains.Substring("Insufficient funds"));
-        Assert.That(_account.Balance.Amount, Is.EqualTo(1000m)); // Balance unchanged
+        Assert.True(result.IsFailure);
+        Assert.Contains("Insufficient funds", result.Error);
+        Assert.Equal(1000m, _account.Balance.Amount); // Balance unchanged
     }
 }
 
 // ❌ Bad: Poor test structure
-[Test]
+[Fact]
 public void TestWithdraw()
 {
     var account = new Account { Balance = 1000 };

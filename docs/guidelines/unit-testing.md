@@ -86,7 +86,7 @@ public abstract class DomainTestBase : TestBase
 {
     protected Money CreateMoney(decimal amount = 1000m, string currencyCode = "USD")
     {
-        return new Money(amount, Currency.FromCode(currencyCode));
+        return new Money(amount, new Currency(currencyCode));
     }
 
     protected Account CreateTestAccount(
@@ -1030,7 +1030,7 @@ public class AccountBuilder
 
     public Account Build()
     {
-        var account = Account.CreateNew(_accountNumber, _customerId, new Money(_balance, Currency.FromCode(_currency)));
+        var account = Account.CreateNew(_accountNumber, _customerId, new Money(_balance, new Currency(_currency)));
 
         // Use reflection to set status if needed
         if (_status != AccountStatus.Active)
@@ -1100,9 +1100,9 @@ public class TransactionBuilder
     {
         return _type switch
         {
-            TransactionType.Deposit => Transaction.CreateDeposit(_accountId, new Money(_amount, Currency.FromCode(_currency)), _description),
-            TransactionType.Withdrawal => Transaction.CreateWithdrawal(_accountId, new Money(_amount, Currency.FromCode(_currency)), _description),
-            TransactionType.Transfer => Transaction.CreateTransfer(_accountId, Guid.NewGuid(), new Money(_amount, Currency.FromCode(_currency)), _description),
+            TransactionType.Deposit => Transaction.CreateDeposit(_accountId, new Money(_amount, new Currency(_currency)), _description),
+            TransactionType.Withdrawal => Transaction.CreateWithdrawal(_accountId, new Money(_amount, new Currency(_currency)), _description),
+            TransactionType.Transfer => Transaction.CreateTransfer(_accountId, Guid.NewGuid(), new Money(_amount, new Currency(_currency)), _description),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -1194,32 +1194,35 @@ public class AccountTestsBad
 ### Test Categories and Traits
 
 ```csharp
-// ✅ Good: Using categories for test organization
-[TestFixture]
-[Category("Unit")]
-[Category("Domain")]
+// ✅ Good: Using Trait categories for test organization
+[Trait("Category", "Unit")]
+[Trait("Category", "Domain")]
 public class AccountTests : DomainTestBase
 {
-    [Test]
-    [Category("BusinessRules")]
+    [Fact]
+    [Trait("Category", "BusinessRules")]
     public void Withdraw_ExceedsDailyLimit_ShouldReturnFailure()
     {
         // Test implementation
     }
 
-    [Test]
-    [Category("Validation")]
+    [Fact]
+    [Trait("Category", "Validation")]
     public void Withdraw_NegativeAmount_ShouldReturnFailure()
     {
         // Test implementation
     }
 
-    [Test]
-    [Category("Performance")]
-    [Timeout(100)] // Should complete within 100ms
+    [Fact]
+    [Trait("Category", "Performance")]
     public void GetBalance_LargeTransactionHistory_ShouldCompleteQuickly()
     {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
         // Test implementation
+
+        stopwatch.Stop();
+        Assert.True(stopwatch.ElapsedMilliseconds <= 100, "Test exceeded 100ms timeout");
     }
 }
 ```

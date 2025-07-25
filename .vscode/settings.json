@@ -49,7 +49,7 @@
       "file": "./docs/guidelines/static-methods-best-practices.md"
     }
   ],
-  "github.copilot.chat.codeReview.instructions": [
+  "github.copilot.chat.reviewSelection.instructions": [
     {
       "file": "./docs/guidelines/code-review.md"
     },
@@ -60,7 +60,7 @@
       "file": "./docs/guidelines/performance-review.md"
     }
   ],
-  "github.copilot.chat.unitTest.instructions": [
+  "github.copilot.chat.testGeneration.instructions": [
     {
       "file": "./docs/guidelines/unit-testing.md"
     },
@@ -71,6 +71,11 @@
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": "./.github/git-commit-messages-instructions.md"
+    }
+  ],
+  "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
+    {
+      "text": "Always include a list of key changes."
     }
   ]
 }

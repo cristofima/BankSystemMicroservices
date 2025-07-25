@@ -1,5 +1,5 @@
 using Security.Domain.Entities;
-using Security.Domain.Common;
+using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.Interfaces;
 
@@ -13,6 +13,7 @@ public interface IRefreshTokenService
     /// </summary>
     Task<RefreshToken?> CreateRefreshTokenAsync(
         string userId,
+        string userName,
         string jwtId,
         string? ipAddress = null,
         string? deviceInfo = null,

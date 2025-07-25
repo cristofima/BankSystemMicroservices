@@ -539,7 +539,6 @@ Content-Type: application/json
 
 - Daily withdrawal limit: $5,000
 - Monthly transfer limit: $50,000
-- Overdraft protection: Optional, up to $1,000
 
 ## Error Handling
 

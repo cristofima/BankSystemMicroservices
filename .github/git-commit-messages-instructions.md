@@ -14,22 +14,25 @@ These instructions guide GitHub Copilot in generating Git commit messages that a
   - **Type:**
     - "Use one of the following types (in lowercase) based on these specific criteria:"
       - `feat`: **NEW FUNCTIONALITY** - Adding new features, endpoints, business logic, or capabilities that provide value to users. Examples:
-        - Adding a new API endpoint
-        - Implementing new business rules
-        - Adding new authentication methods
-        - Creating new domain entities or services
+        - Adding a new API endpoint (`/api/users/{id}/profile`)
+        - Implementing new business rules (e.g., transaction fee calculation)
+        - Adding new authentication methods (e.g., OAuth2 support)
+        - Creating new domain entities or services (e.g., `Account` entity, `TransferService`)
+        - Adding new CQRS commands or queries (e.g., `CreateAccountCommand`, `GetAccountBalanceQuery`)
       - `fix`: **BUG RESOLUTION** - Correcting existing functionality that was not working as intended. Examples:
-        - Fixing incorrect business logic
-        - Resolving API response errors
-        - Correcting data validation issues
-        - Fixing security vulnerabilities
+        - Fixing incorrect business logic (e.g., interest calculation error)
+        - Resolving API response errors (e.g., returning 500 instead of 404)
+        - Correcting data validation issues (e.g., allowing negative transaction amounts)
+        - Fixing security vulnerabilities (e.g., SQL injection, XSS)
+        - Correcting a typo in an error message that affects user experience
       - `refactor`: **CODE IMPROVEMENT WITHOUT BEHAVIOR CHANGE** - Restructuring existing code without changing its external behavior or adding new features. Examples:
-        - Extracting methods or classes for better organization
-        - Renaming variables/methods for clarity
+        - Extracting methods or classes for better organization (e.g., creating a `PasswordHasher` class)
+        - Renaming variables/methods for clarity (e.g., `ProcessTxn` to `ProcessTransaction`)
         - Simplifying complex logic while maintaining same functionality
-        - Moving code between files/namespaces for better architecture
+        - Moving code between files/namespaces for better architecture (e.g., moving entities to `Domain` project)
         - Applying design patterns (Repository, Factory, etc.)
         - Converting synchronous code to asynchronous without adding features
+        - Removing unused code or dependencies
       - `perf`: **PERFORMANCE OPTIMIZATION** - Code changes that specifically improve performance without adding new features. Examples:
         - Adding database indexes
         - Optimizing queries (Entity Framework)
@@ -38,7 +41,7 @@ These instructions guide GitHub Copilot in generating Git commit messages that a
         - Improving algorithm efficiency
       - `build`: Changes that affect the build system or external dependencies (e.g., NuGet packages, MSBuild, Docker).
       - `ci`: Changes to CI/CD configuration files and scripts (e.g., Azure Pipelines, GitHub Actions, YML files).
-      - `docs`: Documentation only changes.
+      - `docs`: Documentation only changes such as in Markdown (.md) files, comments for APIs or code in general.
       - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semicolons, etc.).
       - `test`: Adding missing tests or correcting existing tests.
       - `op`: Changes that affect operational components like infrastructure, deployment, backup, recovery, etc.
@@ -115,6 +118,16 @@ Reduces database calls by 80% for user authentication flows.
 - `feat: add distributed transaction support across services`
 - `fix: resolve authentication token sharing between services`
 - `refactor: standardize error handling across all microservices`
+
+**Handling Commits with Multiple Change Types:**
+
+- "Each commit should be as atomic as possible, addressing a single concern. A single commit must only have one type."
+- "If a commit includes multiple types of changes (e.g., a new feature and a refactor), choose the type that represents the primary purpose of the commit. The hierarchy is generally `feat` > `fix` > `perf` > `refactor`."
+- "**Example**: If you add a new feature and also refactor some old code in the same file, the commit type must be `feat`."
+  - `feat(Security.Application): add password reset feature` (even if it involved refactoring)
+- "**AVOID** creating a single commit message that lists multiple types. A commit has ONE type."
+- "**INCORRECT**: `feat: add query, refactor: simplify entity`"
+- "**CORRECT**: `feat(Account.Application): add account retrieval by number` (This is the main change, even if refactoring was done)
 
 **IV. Instructions for Copilot:**
 

@@ -202,6 +202,7 @@ public abstract class CommandHandlerTestBase : TestBase
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(refreshToken);
     }

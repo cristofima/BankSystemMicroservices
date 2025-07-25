@@ -1,294 +1,432 @@
 # Account Service
 
-The Account Service manages customer accounts, balances, and account-related operations within the Bank System Microservices architecture. It handles account creation, balance management, and account status operations while maintaining data consistency through event-driven communication.
+## Overview
 
-## 🎯 Service Overview
+The Account Service is responsible for managing customer bank accounts within the Bank System Microservices architecture. It handles the complete lifecycle of bank accounts including creation, status management, balance tracking, and account-related operations while ensuring regulatory compliance and business rule enforcement.
 
-### Responsibilities
+## Core Responsibilities
+
+### What the Account Service DOES:
+
+- **Account Lifecycle Management**: Create, activate, suspend, and close customer accounts
+- **Account Information Management**: Store and retrieve account details (account number, type, status, metadata)
+- **Account Status Management**: Handle account status transitions (Active, Suspended, Frozen, Closed)
+- **Account Type Management**: Support different account types (Checking, Savings, Business)
+- **Customer Account Relationships**: Manage relationships between customers and their accounts
+- **Account Validation**: Enforce business rules for account creation and modifications
+- **Account History**: Maintain audit trails for account changes
+- **Regulatory Compliance**: Ensure accounts comply with banking regulations
+- **Account Limits**: Manage account-specific limits and restrictions
+
+### What the Account Service DOES NOT DO:
+
+- **Balance Calculations**: Does not calculate or store actual account balances (delegated to Movement Service)
+- **Transaction Processing**: Does not process financial transactions (handled by Transaction Service)
+- **Customer Management**: Does not manage customer personal information (handled by Customer Service)
+- **Payment Processing**: Does not handle payment operations (handled by Payment Service)
+- **Notifications**: Does not send notifications directly (uses Notification Service)
+- **Reporting**: Does not generate reports (uses Reporting Service)
+- **Authentication**: Does not handle user authentication (handled by Security Service)
+
+## Service Communication
+
+### Synchronous Communication (HTTP/REST):
+
+- **Receives calls from**:
+
+  - Transaction Service: Account validation for transactions
+  - Movement Service: Account existence validation
+  - Customer Service: Account creation requests
+  - Reporting Service: Account data queries
+  - API Gateway: Direct account operations
+
+- **Makes calls to**:
+  - Security Service: Token validation and authorization
+  - Customer Service: Customer existence validation
+  - Notification Service: Account status change notifications
+
+### Asynchronous Communication (Events):
+
+- **Publishes Events**:
+
+  - `AccountCreatedEvent`: When a new account is created
+  - `AccountStatusChangedEvent`: When account status changes
+  - `AccountUpdatedEvent`: When account details are modified
+  - `AccountClosedEvent`: When an account is closed
+
+- **Subscribes to Events**:
+  - `CustomerCreatedEvent`: To enable account creation for new customers
+  - `CustomerStatusChangedEvent`: To update related accounts when customer status changes
+  - `TransactionCompletedEvent`: To track account activity patterns
+  - `MovementCreatedEvent`: For account activity monitoring
+
+## Architecture
+
+This service follows Clean Architecture principles with the following layers:
+
+- **API Layer**: REST controllers and middleware
+- **Application Layer**: Command/query handlers and business logic orchestration
+- **Domain Layer**: Account entities, value objects, business rules, and domain events
+- **Infrastructure Layer**: Data access, external integrations, and event publishing
+
+## Features
 
 - **Account Management**: Create, update, and manage customer accounts
-- **Balance Management**: Track and update account balances
-- **Account Status**: Handle account activation, deactivation, and suspension
-- **Account Validation**: Validate account operations and business rules
-- **Event Handling**: Process transaction events to update balances
+- **Status Tracking**: Real-time account status management with business rule enforcement
+- **Account Types**: Support for checking, savings, business, and specialized accounts
+- **Compliance**: Built-in regulatory compliance and audit trails
+- **Security**: Role-based access control and data encryption
+- **Event-Driven**: Publishes domain events for system integration
+- **Validation**: Comprehensive business rule validation
+- **Audit Trail**: Complete history of account changes
 
-### Domain Boundaries
+## Business Rules
 
-- Customer account information
-- Account balances and financial state
-- Account status and lifecycle
-- Account-related business rules
+### Account Creation
 
-## 🏗️ Architecture
+- Customer must exist and be in good standing
+- Minimum initial deposit requirements vary by account type:
+  - Checking: $25.00
+  - Savings: $100.00
+  - Business: $500.00
+- Maximum accounts per customer: 10
+- Account numbers are auto-generated (10 digits) and unique
+- Supported account types: Checking, Savings, Business
 
-### Clean Architecture Layers
+### Account Status Management
+
+- **Active**: Account can receive all operations
+- **Suspended**: Temporary restriction, limited operations allowed
+- **Frozen**: All operations blocked except viewing
+- **Closed**: No operations allowed, account is archived
+
+### Account Limits
+
+- Daily withdrawal limit: Configurable per account type
+- Monthly transfer limit: Configurable per account type
+
+### Compliance Requirements
+
+- KYC (Know Your Customer) validation required
+- AML (Anti-Money Laundering) monitoring integration
+- Regulatory reporting for account activities
+- Data retention policies for closed accounts
+
+## API Documentation
+
+### Base URL
+
+- Development: `https://localhost:5002/api/v1`
+- Production: `https://api.banksystem.com/accounts/v1`
+
+### Authentication
+
+All endpoints require JWT authentication with appropriate scopes:
 
 ```
-Account.Api/               # Presentation Layer
-├── Controllers/           # API Controllers
-├── Middleware/           # Custom middleware
-├── Extensions/           # Service extensions
-└── Program.cs           # Application startup
-
-Account.Application/       # Application Layer
-├── Commands/            # CQRS Commands (CreateAccount, UpdateBalance)
-├── Queries/            # CQRS Queries (GetAccount, GetAccountBalance)
-├── Handlers/           # Command & Query Handlers
-├── DTOs/              # Data Transfer Objects
-├── Interfaces/        # Application Interfaces
-├── Validators/        # FluentValidation Validators
-└── Mappers/          # AutoMapper Profiles
-
-Account.Domain/           # Domain Layer
-├── Entities/            # Domain Entities (Account, Customer)
-├── ValueObjects/       # Value Objects (AccountNumber, Money)
-├── Events/            # Domain Events (AccountCreated, BalanceUpdated)
-├── Enums/            # Domain Enumerations (AccountType, AccountStatus)
-└── Exceptions/       # Domain Exceptions
-
-Account.Infrastructure/   # Infrastructure Layer
-├── Data/              # EF Core DbContext
-├── Repositories/      # Repository Implementations
-├── EventHandlers/     # Domain Event Handlers
-└── Services/          # External Service Integrations
+Authorization: Bearer {your-jwt-token}
 ```
 
-## 🔧 Features
+### Core Endpoints
 
-### Account Management
+#### Create Account
 
-- **Account Creation**: Create new customer accounts with validation
-- **Account Updates**: Modify account information and settings
-- **Account Closure**: Close accounts with proper validation
-- **Account Types**: Support for different account types (Checking, Savings)
+```http
+POST /accounts
+Content-Type: application/json
+Authorization: Bearer {token}
 
-### Balance Management
-
-- **Real-time Balances**: Maintain up-to-date account balances
-- **Balance Validation**: Prevent overdrafts and invalid operations
-- **Balance History**: Track balance changes over time
-- **Multiple Currencies**: Support for different currency types
-
-### Event Processing
-
-- **Transaction Events**: Process events from Transaction Service
-- **Balance Updates**: Update balances based on transaction events
-- **Event Sourcing**: Maintain audit trail of all changes
-- **Idempotency**: Handle duplicate events gracefully
-
-## 🔌 API Endpoints
-
-### Account Management Endpoints
-
-#### POST /api/accounts
-
-Create a new customer account.
-
-**Request Body:**
-
-```json
 {
-  "customerId": "guid",
+  "customerId": "123e4567-e89b-12d3-a456-426614174000",
   "accountType": "Checking",
-  "initialDeposit": 100.0,
+  "initialDeposit": 100.00,
   "currency": "USD"
 }
 ```
 
-#### GET /api/accounts/{accountId}
+#### Get Account
 
-Get account details by ID.
+```http
+GET /accounts/{accountId}
+Authorization: Bearer {token}
+```
 
-**Response:**
+#### Update Account Status
 
-```json
+```http
+PATCH /accounts/{accountId}/status
+Content-Type: application/json
+Authorization: Bearer {token}
+
 {
-  "id": "guid",
-  "accountNumber": "1234567890",
-  "customerId": "guid",
-  "accountType": "Checking",
-  "balance": 1500.0,
-  "currency": "USD",
-  "status": "Active",
-  "createdAt": "2024-01-01T00:00:00Z",
-  "updatedAt": "2024-01-15T10:30:00Z"
+  "status": "Suspended",
+  "reason": "Suspicious activity detected",
+  "effectiveDate": "2025-07-09T00:00:00Z"
 }
 ```
 
-#### GET /api/accounts/customer/{customerId}
+#### Get Customer Accounts
 
-Get all accounts for a customer.
+```http
+GET /accounts/customer/{customerId}
+Authorization: Bearer {token}
+```
 
-#### PUT /api/accounts/{accountId}/status
+#### Close Account
 
-Update account status (activate, deactivate, suspend).
+```http
+DELETE /accounts/{accountId}
+Content-Type: application/json
+Authorization: Bearer {token}
 
-#### GET /api/accounts/{accountId}/balance
-
-Get current account balance.
-
-**Response:**
-
-```json
 {
-  "accountId": "guid",
-  "balance": 1500.0,
-  "availableBalance": 1500.0,
-  "currency": "USD",
-  "lastUpdated": "2024-01-15T10:30:00Z"
+  "reason": "Customer request",
+  "transferToAccountId": "456e7890-e89b-12d3-a456-426614174000"
 }
 ```
 
-## 🗄️ Data Model
+## Development
 
-### Account Entity
+### Running Tests
+
+```bash
+# Unit tests
+dotnet test tests/Account.Application.UnitTests
+
+# Integration tests
+dotnet test tests/Account.Infrastructure.IntegrationTests
+
+# All tests
+dotnet test
+```
+
+### Unit Testing Examples (xUnit)
 
 ```csharp
-public class Account : AggregateRoot<Guid>
+[Fact]
+public async Task CreateAccount_WithValidData_ShouldReturnSuccess()
 {
-    public string AccountNumber { get; private set; }
-    public Guid CustomerId { get; private set; }
-    public AccountType AccountType { get; private set; }
-    public Money Balance { get; private set; }
-    public AccountStatus Status { get; private set; }
+    // Arrange
+    var command = new CreateAccountCommand
+    {
+        CustomerId = Guid.NewGuid(),
+        AccountType = AccountType.Checking,
+        InitialDeposit = 100m
+    };
 
-    // Domain methods
-    public void Deposit(Money amount, string reference);
-    public void Withdraw(Money amount, string reference);
-    public void UpdateStatus(AccountStatus newStatus);
+    var mockRepository = new Mock<IAccountRepository>();
+    var mockCustomerService = new Mock<ICustomerService>();
+
+    mockCustomerService.Setup(x => x.CustomerExistsAsync(command.CustomerId))
+        .ReturnsAsync(true);
+
+    mockRepository.Setup(x => x.GetAccountCountByCustomerAsync(command.CustomerId))
+        .ReturnsAsync(2);
+
+    var handler = new CreateAccountCommandHandler(
+        mockRepository.Object,
+        mockCustomerService.Object,
+        Mock.Of<ILogger<CreateAccountCommandHandler>>());
+
+    // Act
+    var result = await handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    Assert.True(result.IsSuccess);
+    Assert.NotNull(result.Value);
+    Assert.Equal(command.CustomerId, result.Value.CustomerId);
+    mockRepository.Verify(x => x.AddAsync(It.IsAny<Account>()), Times.Once);
+}
+
+[Fact]
+public async Task CreateAccount_WithExistingCustomer_ShouldCreateAccount()
+{
+    // Arrange
+    var customerId = Guid.NewGuid();
+    var command = new CreateAccountCommand
+    {
+        CustomerId = customerId,
+        AccountType = AccountType.Savings,
+        InitialDeposit = 500m
+    };
+
+    var mockRepository = new Mock<IAccountRepository>();
+    var mockCustomerService = new Mock<ICustomerService>();
+
+    mockCustomerService.Setup(x => x.CustomerExistsAsync(customerId))
+        .ReturnsAsync(true);
+
+    mockRepository.Setup(x => x.GetAccountCountByCustomerAsync(customerId))
+        .ReturnsAsync(1);
+
+    var handler = new CreateAccountCommandHandler(
+        mockRepository.Object,
+        mockCustomerService.Object,
+        Mock.Of<ILogger<CreateAccountCommandHandler>>());
+
+    // Act
+    var result = await handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    Assert.True(result.IsSuccess);
+    Assert.Equal(AccountType.Savings, result.Value.AccountType);
+    Assert.Equal(500m, result.Value.InitialDeposit);
+}
+
+[Fact]
+public async Task UpdateAccountStatus_WithValidData_ShouldUpdateStatus()
+{
+    // Arrange
+    var accountId = Guid.NewGuid();
+    var command = new UpdateAccountStatusCommand
+    {
+        AccountId = accountId,
+        NewStatus = AccountStatus.Suspended,
+        Reason = "Security review"
+    };
+
+    var existingAccount = Account.CreateNew(
+        "1234567890",
+        Guid.NewGuid(),
+        AccountType.Checking,
+        100m);
+
+    var mockRepository = new Mock<IAccountRepository>();
+    mockRepository.Setup(x => x.GetByIdAsync(accountId))
+        .ReturnsAsync(existingAccount);
+
+    var handler = new UpdateAccountStatusCommandHandler(
+        mockRepository.Object,
+        Mock.Of<ILogger<UpdateAccountStatusCommandHandler>>());
+
+    // Act
+    var result = await handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    Assert.True(result.IsSuccess);
+    Assert.Equal(AccountStatus.Suspended, existingAccount.Status);
+    mockRepository.Verify(x => x.UpdateAsync(existingAccount), Times.Once);
+}
+
+[Theory]
+[InlineData(AccountType.Checking, 25.00)]
+[InlineData(AccountType.Savings, 100.00)]
+[InlineData(AccountType.Business, 500.00)]
+public void Account_MinimumDeposit_ShouldBeValidForAccountType(
+    AccountType accountType,
+    decimal expectedMinimum)
+{
+    // Arrange & Act
+    var minimumDeposit = Account.GetMinimumDeposit(accountType);
+
+    // Assert
+    Assert.Equal(expectedMinimum, minimumDeposit);
 }
 ```
 
-### Value Objects
+### Integration Testing Examples (xUnit)
 
 ```csharp
-public record Money(decimal Amount, Currency Currency)
+public class AccountControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
 {
-    public Money Add(Money other) => /* implementation */;
-    public Money Subtract(Money other) => /* implementation */;
-}
+    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
 
-public record AccountNumber(string Value)
-{
-    // Validation logic
+    public AccountControllerIntegrationTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = _factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task CreateAccount_WithValidRequest_ShouldReturnCreated()
+    {
+        // Arrange
+        var request = new CreateAccountRequest
+        {
+            CustomerId = Guid.NewGuid(),
+            AccountType = AccountType.Checking,
+            InitialDeposit = 100m,
+            Currency = "USD"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/v1/accounts", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<AccountDto>(content, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        Assert.NotNull(result);
+        Assert.Equal(request.CustomerId, result.CustomerId);
+        Assert.Equal(request.AccountType.ToString(), result.AccountType);
+    }
+
+    [Fact]
+    public async Task GetAccount_WithExistingId_ShouldReturnAccount()
+    {
+        // Arrange
+        var accountId = await CreateTestAccountAsync();
+
+        // Act
+        var response = await _client.GetAsync($"/api/v1/accounts/{accountId}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var account = JsonSerializer.Deserialize<AccountDto>(content, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        Assert.NotNull(account);
+        Assert.Equal(accountId, account.Id);
+    }
+
+    [Fact]
+    public async Task UpdateAccountStatus_WithValidData_ShouldReturnOk()
+    {
+        // Arrange
+        var accountId = await CreateTestAccountAsync();
+        var updateRequest = new UpdateAccountStatusRequest
+        {
+            Status = AccountStatus.Suspended,
+            Reason = "Integration test"
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync(
+            $"/api/v1/accounts/{accountId}/status",
+            updateRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    private async Task<Guid> CreateTestAccountAsync()
+    {
+        var request = new CreateAccountRequest
+        {
+            CustomerId = Guid.NewGuid(),
+            AccountType = AccountType.Checking,
+            InitialDeposit = 250m,
+            Currency = "USD"
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/v1/accounts", request);
+        var content = await response.Content.ReadAsStringAsync();
+        var account = JsonSerializer.Deserialize<AccountDto>(content, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        return account.Id;
+    }
 }
 ```
-
-### Domain Events
-
-```csharp
-public record AccountCreatedEvent(
-    Guid AccountId,
-    string AccountNumber,
-    Guid CustomerId,
-    AccountType AccountType) : DomainEvent;
-
-public record BalanceUpdatedEvent(
-    Guid AccountId,
-    Money PreviousBalance,
-    Money NewBalance,
-    string Reference) : DomainEvent;
-```
-
-## ⚙️ Configuration
-
-### Database Schema
-
-- **Accounts**: Main account information
-- **AccountBalances**: Current and historical balances
-- **AccountTransactions**: Account-level transaction history
-- **Customers**: Customer information (if not managed by separate service)
-
-### Event Subscriptions
-
-- **TransactionCreatedEvent**: Update account balance
-- **TransactionReversedEvent**: Reverse balance changes
-- **AccountStatusChangedEvent**: Handle status changes
-
-## 🧪 Testing Strategy
-
-### Unit Tests
-
-- Domain entity behavior
-- Value object validation
-- Command and query handlers
-- Event handler logic
-
-### Integration Tests
-
-- API endpoint testing
-- Database operations
-- Event processing
-- External service interactions
-
-## 📊 Monitoring & Metrics
-
-### Key Metrics
-
-- Account creation rate
-- Balance update frequency
-- Account status changes
-- Event processing latency
-- Balance validation failures
-
-### Health Checks
-
-- Database connectivity
-- Event subscription health
-- Balance consistency checks
-- External service availability
-
-## 🚀 Deployment Notes
-
-### Database Migrations
-
-- Account schema setup
-- Index optimization for queries
-- Data seeding for initial accounts
-
-### Azure Configuration
-
-- Container Apps deployment
-- Service Bus subscriptions
-- Database connection strings
-- Monitoring and logging setup
-
-## 🔄 Event Flow
-
-### Balance Update Flow
-
-1. Transaction Service creates transaction
-2. TransactionCreatedEvent published to Service Bus
-3. Account Service receives event
-4. Account balance updated
-5. BalanceUpdatedEvent published
-6. Movement Service receives event for history
-
-## 📚 Implementation Status
-
-🚧 **This service is planned for implementation**
-
-Key components to implement:
-
-- [ ] Domain entities and value objects
-- [ ] CQRS commands and queries
-- [ ] Event handlers for transaction events
-- [ ] API controllers and validation
-- [ ] Database context and repositories
-- [ ] Unit and integration tests
-
-## 🤝 Contributing
-
-When implementing this service, ensure:
-
-1. Follow Clean Architecture principles
-2. Implement proper domain validation
-3. Handle events idempotently
-4. Maintain data consistency
-5. Include comprehensive testing
-
-## 📖 Related Documentation
-
-- [Transaction Service](../Transaction/README.md) - For transaction event integration
-- [Movement Service](../Movement/README.md) - For movement history
-- [Security Service](../Security/README.md) - For authentication requirements

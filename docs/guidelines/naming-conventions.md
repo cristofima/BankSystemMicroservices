@@ -336,7 +336,6 @@ public class Transaction
 // ✅ Good: Business concepts as first-class objects
 public class InterestRate { }
 public class CreditLimit { }
-public class OverdraftProtection { }
 public class TransactionFee { }
 ```
 

@@ -264,10 +264,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
 ```csharp
 // ✅ Good: Comprehensive API integration tests
-[TestFixture]
 public class AccountControllerIntegrationTests : IntegrationTestBase
 {
-    [Test]
+    [Fact]
     public async Task GetAccount_ExistingAccount_ShouldReturnAccountDto()
     {
         // Arrange
@@ -291,7 +290,7 @@ public class AccountControllerIntegrationTests : IntegrationTestBase
         accountDto.Balance.Should().Be(account.Balance.Amount);
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccount_NonExistentAccount_ShouldReturnNotFound()
     {
         // Arrange
@@ -305,7 +304,7 @@ public class AccountControllerIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccount_Unauthenticated_ShouldReturnUnauthorized()
     {
         // Arrange
@@ -319,7 +318,7 @@ public class AccountControllerIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_ValidRequest_ShouldCreateAccountAndReturnCreated()
     {
         // Arrange
@@ -365,7 +364,7 @@ public class AccountControllerIntegrationTests : IntegrationTestBase
         response.Headers.Location!.ToString().Should().Contain($"/api/accounts/{createdAccount.Id}");
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_InvalidRequest_ShouldReturnBadRequest()
     {
         // Arrange
@@ -399,7 +398,7 @@ public class AccountControllerIntegrationTests : IntegrationTestBase
         problemDetails!.Errors.Should().ContainKeys("CustomerId", "InitialDeposit", "Currency");
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccountTransactions_WithPagination_ShouldReturnPagedResults()
     {
         // Arrange
@@ -445,10 +444,9 @@ public class AccountControllerIntegrationTests : IntegrationTestBase
 
 ```csharp
 // ✅ Good: Testing different content types and formats
-[TestFixture]
 public class AccountStatementIntegrationTests : IntegrationTestBase
 {
-    [Test]
+    [Fact]
     public async Task GetAccountStatement_JsonFormat_ShouldReturnJsonData()
     {
         // Arrange
@@ -475,7 +473,7 @@ public class AccountStatementIntegrationTests : IntegrationTestBase
         statement!.AccountId.Should().Be(account.Id);
     }
 
-    [Test]
+    [Fact]
     public async Task GetAccountStatement_PdfFormat_ShouldReturnPdfFile()
     {
         // Arrange
@@ -509,21 +507,37 @@ public class AccountStatementIntegrationTests : IntegrationTestBase
 
 ```csharp
 // ✅ Good: Repository integration tests
-[TestFixture]
 public class AccountRepositoryIntegrationTests : IntegrationTestBase
 {
     private IAccountRepository _repository;
 
-    [SetUp]
-    public async Task SetUp()
+    public async Task InitializeAsync()
     {
-        await InitializeAsync();
+        await InitializeAsync(); // from IntegrationTestBase
         _repository = Factory.Services.CreateScope().ServiceProvider.GetRequiredService<IAccountRepository>();
     }
 
-    [Test]
+    public AccountRepositoryIntegrationTests()
+    {
+        // xUnit does not support async SetUp directly,
+        // so call async initialization in constructor is tricky.
+        // Instead, use async Lazy initialization pattern or
+        // call InitializeAsync inside each test if needed.
+    }
+
+    private async Task EnsureRepositoryInitialized()
+    {
+        if (_repository == null)
+        {
+            await InitializeAsync();
+        }
+    }
+
+    [Fact]
     public async Task AddAsync_NewAccount_ShouldPersistToDatabase()
     {
+        await EnsureRepositoryInitialized();
+
         // Arrange
         var customer = await CreateTestCustomerAsync();
         var account = Account.CreateNew(
@@ -542,9 +556,11 @@ public class AccountRepositoryIntegrationTests : IntegrationTestBase
         savedAccount.Balance.Amount.Should().Be(1000m);
     }
 
-    [Test]
+    [Fact]
     public async Task GetByIdAsync_ExistingAccount_ShouldReturnAccountWithTransactions()
     {
+        await EnsureRepositoryInitialized();
+
         // Arrange
         var account = await CreateTestAccountAsync();
 
@@ -566,9 +582,11 @@ public class AccountRepositoryIntegrationTests : IntegrationTestBase
         retrievedAccount.Transactions.Should().Contain(t => t.Amount.Amount == 200m);
     }
 
-    [Test]
+    [Fact]
     public async Task GetByAccountNumberAsync_ExistingAccount_ShouldReturnAccount()
     {
+        await EnsureRepositoryInitialized();
+
         // Arrange
         var account = await CreateTestAccountAsync();
 
@@ -581,9 +599,11 @@ public class AccountRepositoryIntegrationTests : IntegrationTestBase
         retrievedAccount.AccountNumber.Should().Be(account.AccountNumber);
     }
 
-    [Test]
+    [Fact]
     public async Task GetByCustomerIdAsync_MultipleAccounts_ShouldReturnAllCustomerAccounts()
     {
+        await EnsureRepositoryInitialized();
+
         // Arrange
         var customer = await CreateTestCustomerAsync();
         var account1 = await CreateTestAccountAsync(customer.Id, 1000m);
@@ -600,9 +620,11 @@ public class AccountRepositoryIntegrationTests : IntegrationTestBase
         customerAccounts.Should().NotContain(a => a.Id == account3.Id);
     }
 
-    [Test]
+    [Fact]
     public async Task UpdateAsync_ModifiedAccount_ShouldPersistChanges()
     {
+        await EnsureRepositoryInitialized();
+
         // Arrange
         var account = await CreateTestAccountAsync(balance: 1000m);
 
@@ -623,9 +645,11 @@ public class AccountRepositoryIntegrationTests : IntegrationTestBase
         transactions.First().Amount.Amount.Should().Be(500m);
     }
 
-    [Test]
+    [Fact]
     public async Task DeleteAsync_ExistingAccount_ShouldRemoveFromDatabase()
     {
+        await EnsureRepositoryInitialized();
+
         // Arrange
         var account = await CreateTestAccountAsync();
 
@@ -643,10 +667,9 @@ public class AccountRepositoryIntegrationTests : IntegrationTestBase
 
 ```csharp
 // ✅ Good: Testing transaction behavior
-[TestFixture]
 public class TransactionIntegrationTests : IntegrationTestBase
 {
-    [Test]
+    [Fact]
     public async Task TransferMoney_BothAccountsUpdated_ShouldCommitAtomically()
     {
         // Arrange
@@ -685,7 +708,7 @@ public class TransactionIntegrationTests : IntegrationTestBase
         targetTransaction!.Amount.Amount.Should().Be(300m);
     }
 
-    [Test]
+    [Fact]
     public async Task TransferMoney_InsufficientFunds_ShouldRollbackChanges()
     {
         // Arrange
@@ -728,31 +751,30 @@ public class TransactionIntegrationTests : IntegrationTestBase
 
 ```csharp
 // ✅ Good: Testing external service integration with WireMock
-[TestFixture]
-public class ExternalBankServiceIntegrationTests : IntegrationTestBase
+public class ExternalBankServiceIntegrationTests : IntegrationTestBase, IAsyncLifetime
 {
     private WireMockServer _wireMockServer;
 
-    [SetUp]
-    public async Task SetUp()
+    public async Task InitializeAsync()
     {
-        await InitializeAsync();
+        await base.InitializeAsync();
 
         _wireMockServer = WireMockServer.Start();
 
-        // Configure the test to use our mock server
-        var configuration = Factory.Services.GetRequiredService<IConfiguration>();
-        configuration["ExternalServices:BankApi:BaseUrl"] = _wireMockServer.Url;
+        // Override the ExternalServices:BankApi:BaseUrl config to point to WireMock
+        var configuration = Factory.Services.GetRequiredService<IConfiguration>() as IConfigurationRoot;
+        var bankApiSection = configuration.GetSection("ExternalServices:BankApi");
+        bankApiSection["BaseUrl"] = _wireMockServer.Url;
     }
 
-    [TearDown]
-    public void TearDown()
+    public Task DisposeAsync()
     {
         _wireMockServer?.Stop();
         _wireMockServer?.Dispose();
+        return Task.CompletedTask;
     }
 
-    [Test]
+    [Fact]
     public async Task ValidateAccount_ExternalServiceReturnsValid_ShouldReturnSuccess()
     {
         // Arrange
@@ -779,12 +801,11 @@ public class ExternalBankServiceIntegrationTests : IntegrationTestBase
         result.Value.IsValid.Should().BeTrue();
         result.Value.BankName.Should().Be("Test Bank");
 
-        // Verify the request was made
         var requests = _wireMockServer.LogEntries.Select(e => e.RequestMessage).ToList();
         requests.Should().ContainSingle(r => r.Path == "/api/validate-account");
     }
 
-    [Test]
+    [Fact]
     public async Task ValidateAccount_ExternalServiceFails_ShouldReturnFailure()
     {
         // Arrange
@@ -810,7 +831,7 @@ public class ExternalBankServiceIntegrationTests : IntegrationTestBase
         result.Error.Should().Contain("External service error");
     }
 
-    [Test]
+    [Fact]
     public async Task ValidateAccount_ExternalServiceTimeout_ShouldReturnFailureAfterRetries()
     {
         // Arrange
@@ -829,16 +850,15 @@ public class ExternalBankServiceIntegrationTests : IntegrationTestBase
         var externalBankService = Factory.Services.CreateScope().ServiceProvider
             .GetRequiredService<IExternalBankService>();
 
-        // Act & Assert
+        // Act
         var stopwatch = Stopwatch.StartNew();
         var result = await externalBankService.ValidateAccountAsync(accountNumber, routingNumber);
         stopwatch.Stop();
 
+        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Contain("timeout");
-
-        // Should have failed before the full 10 second delay due to timeout and retries
-        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(8));
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(8)); // should fail before full delay
     }
 }
 ```
@@ -847,15 +867,13 @@ public class ExternalBankServiceIntegrationTests : IntegrationTestBase
 
 ```csharp
 // ✅ Good: Testing message publishing and handling
-[TestFixture]
-public class EventPublishingIntegrationTests : IntegrationTestBase
+public class EventPublishingIntegrationTests : IntegrationTestBase, IAsyncLifetime
 {
     private readonly List<IDomainEvent> _publishedEvents = new();
 
-    [SetUp]
-    public async Task SetUp()
+    public async Task InitializeAsync()
     {
-        await InitializeAsync();
+        await base.InitializeAsync();
 
         // Replace event publisher with test implementation
         var eventPublisherDescriptor = Factory.Services.SingleOrDefault(
@@ -867,7 +885,13 @@ public class EventPublishingIntegrationTests : IntegrationTestBase
         Factory.Services.AddScoped<IEventPublisher>(_ => new TestEventPublisher(_publishedEvents));
     }
 
-    [Test]
+    public Task DisposeAsync()
+    {
+        // Nothing to dispose explicitly
+        return Task.CompletedTask;
+    }
+
+    [Fact]
     public async Task CreateAccount_ShouldPublishAccountCreatedEvent()
     {
         // Arrange
@@ -898,7 +922,7 @@ public class EventPublishingIntegrationTests : IntegrationTestBase
             .Which.CustomerId.Should().Be(customer.Id);
     }
 
-    [Test]
+    [Fact]
     public async Task ProcessTransfer_ShouldPublishTransferEvents()
     {
         // Arrange
@@ -954,10 +978,9 @@ public class TestEventPublisher : IEventPublisher
 
 ```csharp
 // ✅ Good: Performance integration tests
-[TestFixture]
 public class PerformanceIntegrationTests : IntegrationTestBase
 {
-    [Test]
+    [Fact]
     public async Task GetAccount_Under100ConcurrentRequests_ShouldMaintainPerformance()
     {
         // Arrange
@@ -991,7 +1014,7 @@ public class PerformanceIntegrationTests : IntegrationTestBase
             "Average response time should be under 100ms");
     }
 
-    [Test]
+    [Fact]
     public async Task CreateAccount_MultipleSimultaneousRequests_ShouldNotCreateDuplicates()
     {
         // Arrange
@@ -1043,10 +1066,9 @@ public class PerformanceIntegrationTests : IntegrationTestBase
 
 ```csharp
 // ✅ Good: Database performance integration tests
-[TestFixture]
 public class DatabasePerformanceIntegrationTests : IntegrationTestBase
 {
-    [Test]
+    [Fact]
     public async Task GetTransactionHistory_LargeDataset_ShouldCompleteQuickly()
     {
         // Arrange
@@ -1083,6 +1105,7 @@ public class DatabasePerformanceIntegrationTests : IntegrationTestBase
             responseContent,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
+        pagedResult.Should().NotBeNull();
         pagedResult!.Data.Should().HaveCount(50);
         pagedResult.TotalCount.Should().Be(10000);
     }
@@ -1095,15 +1118,21 @@ public class DatabasePerformanceIntegrationTests : IntegrationTestBase
 
 ```csharp
 // ✅ Good: Security integration tests
-[TestFixture]
-public class SecurityIntegrationTests : IntegrationTestBase
+public class SecurityIntegrationTests : IntegrationTestBase, IAsyncLifetime
 {
-    [Test]
+    public async Task InitializeAsync()
+    {
+        await InitializeAsync(); // Assuming IntegrationTestBase has this method
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    [Fact]
     public async Task AccessProtectedEndpoint_WithoutAuthentication_ShouldReturnUnauthorized()
     {
         // Arrange
         var account = await CreateTestAccountAsync();
-        // No authentication header set
+        Client.DefaultRequestHeaders.Authorization = null; // Clear auth header
 
         // Act
         var response = await Client.GetAsync($"/api/accounts/{account.Id}");
@@ -1112,7 +1141,7 @@ public class SecurityIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    [Test]
+    [Fact]
     public async Task AccessProtectedEndpoint_WithInvalidToken_ShouldReturnUnauthorized()
     {
         // Arrange
@@ -1127,7 +1156,7 @@ public class SecurityIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    [Test]
+    [Fact]
     public async Task AccessOtherUserAccount_ShouldReturnForbidden()
     {
         // Arrange
@@ -1136,7 +1165,6 @@ public class SecurityIntegrationTests : IntegrationTestBase
         var customer1 = await CreateTestCustomerAsync();
         var account1 = await CreateTestAccountAsync(customer1.Id);
 
-        // Create another user's account
         var user2 = await CreateTestUserAsync("user2@example.com");
         var customer2 = await CreateTestCustomerAsync();
         var account2 = await CreateTestAccountAsync(customer2.Id);
@@ -1179,11 +1207,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 }
 
 // For tests that need isolation
-[TestFixture]
-public class IsolatedIntegrationTests : IntegrationTestBase
+public class IsolatedIntegrationTests : IntegrationTestBase, IAsyncLifetime
 {
-    [TearDown]
-    public async Task TearDown()
+    public Task InitializeAsync() => Task.CompletedTask; // No setup needed here
+
+    public async Task DisposeAsync()
     {
         await CleanupDatabaseAsync();
     }

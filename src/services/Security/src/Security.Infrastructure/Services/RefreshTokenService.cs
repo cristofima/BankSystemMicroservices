@@ -1,9 +1,9 @@
+using BankSystem.Shared.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
-using Security.Domain.Common;
 using Security.Domain.Entities;
 using Security.Infrastructure.Data;
 using System.Security.Cryptography;
@@ -34,6 +34,7 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<RefreshToken?> CreateRefreshTokenAsync(
         string userId,
+        string userName,
         string jwtId,
         string? ipAddress = null,
         string? deviceInfo = null,
@@ -42,9 +43,9 @@ public class RefreshTokenService : IRefreshTokenService
         try
         {
             await EnforceSessionLimitAsync(userId, ipAddress, cancellationToken);
-            
-            var refreshToken = CreateRefreshTokenEntity(userId, jwtId, ipAddress, deviceInfo);
-            
+
+            var refreshToken = CreateRefreshTokenEntity(userId, userName, jwtId, ipAddress, deviceInfo);
+
             _context.RefreshTokens.Add(refreshToken);
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -92,7 +93,7 @@ public class RefreshTokenService : IRefreshTokenService
         }
     }
 
-    private RefreshToken CreateRefreshTokenEntity(string userId, string jwtId, string? ipAddress, string? deviceInfo)
+    private RefreshToken CreateRefreshTokenEntity(string userId, string userName, string jwtId, string? ipAddress, string? deviceInfo)
     {
         return new RefreshToken
         {
@@ -103,7 +104,7 @@ public class RefreshTokenService : IRefreshTokenService
             CreatedByIp = ipAddress,
             DeviceInfo = deviceInfo,
             CreatedAt = DateTime.UtcNow,
-            CreatedBy = userId
+            CreatedBy = userName
         };
     }
 
@@ -203,7 +204,7 @@ public class RefreshTokenService : IRefreshTokenService
                 DeviceInfo = deviceInfo ?? oldToken.DeviceInfo,
                 ReplacedByToken = null, // Will be set when this token is replaced
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = oldToken.UserId
+                CreatedBy = oldToken.CreatedBy
             };
 
             // Set the replacement chain
@@ -212,7 +213,7 @@ public class RefreshTokenService : IRefreshTokenService
             _context.RefreshTokens.Add(newToken);
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Refreshed token for user {UserId} from IP {IpAddress}", 
+            _logger.LogInformation("Refreshed token for user {UserId} from IP {IpAddress}",
                 oldToken.UserId, ipAddress);
 
             return newToken;
@@ -250,7 +251,7 @@ public class RefreshTokenService : IRefreshTokenService
             refreshToken.Revoke(ipAddress, reason ?? "Manual revocation");
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Revoked token for user {UserId} from IP {IpAddress}. Reason: {Reason}", 
+            _logger.LogInformation("Revoked token for user {UserId} from IP {IpAddress}. Reason: {Reason}",
                 refreshToken.UserId, ipAddress, reason);
 
             return Result.Success();
@@ -287,7 +288,7 @@ public class RefreshTokenService : IRefreshTokenService
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Revoked {TokenCount} tokens for user {UserId} from IP {IpAddress}. Reason: {Reason}", 
+            _logger.LogInformation("Revoked {TokenCount} tokens for user {UserId} from IP {IpAddress}. Reason: {Reason}",
                 activeTokens.Count, userId, ipAddress, reason);
 
             return Result.Success();
@@ -306,7 +307,7 @@ public class RefreshTokenService : IRefreshTokenService
             var cutoffDate = DateTime.UtcNow.AddDays(-_securityOptions.TokenSecurity.CleanupExpiredTokensAfterDays);
 
             var expiredTokens = await _context.RefreshTokens
-                .Where(rt => rt.ExpiryDate < cutoffDate || 
+                .Where(rt => rt.ExpiryDate < cutoffDate ||
                            (rt.IsRevoked && rt.RevokedAt < cutoffDate))
                 .ToListAsync(cancellationToken);
 
