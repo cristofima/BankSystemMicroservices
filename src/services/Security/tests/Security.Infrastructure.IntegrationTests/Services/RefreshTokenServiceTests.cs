@@ -244,7 +244,7 @@ public class RefreshTokenServiceTests : BaseSecurityInfrastructureTest
 
         // Create a token for another user (should not be affected)
         var otherUser = await CreateTestUserAsync("otheruser@test.com");
-        var otherUserToken = await refreshTokenService.CreateRefreshTokenAsync(otherUser.Id, user.UserName!, Guid.NewGuid().ToString());
+        var otherUserToken = await refreshTokenService.CreateRefreshTokenAsync(otherUser.Id, otherUser.UserName!, Guid.NewGuid().ToString());
 
         // Act
         var result = await refreshTokenService.RevokeAllUserTokensAsync(user.Id);

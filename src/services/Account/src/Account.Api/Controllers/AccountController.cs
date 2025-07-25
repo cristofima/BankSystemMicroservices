@@ -1,7 +1,6 @@
 using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Queries;
-using BankSystem.Shared.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -235,7 +234,7 @@ public class AccountController : ApiControllerBase
         string actionVerb,
         string actionPastTense,
         CancellationToken cancellationToken)
-        where TCommand : IAccountActionCommand, IRequest<Result>
+        where TCommand : IAccountActionCommand
     {
         _logger.LogInformation("{Action} account {AccountId}", actionPresentTense, command.AccountId);
 
