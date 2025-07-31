@@ -5,6 +5,7 @@ using BankSystem.Account.Application.Behaviours;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Shared.Infrastructure.Extensions;
 using System.Diagnostics.CodeAnalysis;
+using BankSystem.Account.Infrastructure.Data;
 
 namespace BankSystem.Account.Api;
 
@@ -49,6 +50,10 @@ public static class DependencyInjection
             config.RegisterServicesFromAssembly(typeof(Application.IAssemblyReference).Assembly);
             config.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
         });
+
+        // Add health checks
+        services.AddHealthChecks()
+            .AddDbContextCheck<AccountDbContext>("database");
 
         return services;
     }

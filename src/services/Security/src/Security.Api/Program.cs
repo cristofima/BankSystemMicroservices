@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 using Security.Api;
 using Security.Api.Middleware;
 using Security.Application;
 using Security.Infrastructure;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,11 +15,6 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddWebApiServices(builder.Configuration);
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline with proper security
-
-// Security headers middleware (conditional based on path)
-app.UseMiddleware<SecurityHeadersMiddleware>();
 
 // Development-specific middleware
 if (app.Environment.IsDevelopment())
@@ -51,7 +48,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Health checks
-app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+app.MapHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
     {
@@ -68,11 +65,12 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
             }),
             duration = report.TotalDuration.ToString()
         };
-        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 });
 
 // Map controllers
+app.Map("/", () => Results.Redirect("/scalar"));
 app.MapControllers();
 
 await app.RunAsync();
