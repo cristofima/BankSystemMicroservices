@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Claims;
 using System.Text;
 
 namespace BankSystem.Shared.Infrastructure.Extensions;
@@ -53,7 +54,15 @@ public static class Authentication
                     logger.LogWarning("JWT authentication failed: {Error}", context.Exception.Message);
                     return Task.CompletedTask;
                 },
-                OnTokenValidated = _ => Task.CompletedTask
+                OnTokenValidated = context =>
+                {
+                    var claimsIdentity = context.Principal?.Identity as ClaimsIdentity;
+                    if (claimsIdentity?.Claims?.Any() != true)
+                    {
+                        context.Fail("Token has no claims");
+                    }
+                    return Task.CompletedTask;
+                }
             };
         });
 

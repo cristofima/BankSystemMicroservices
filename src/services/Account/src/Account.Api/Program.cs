@@ -2,35 +2,25 @@ using BankSystem.Account.Api;
 using BankSystem.Account.Api.Middlewares;
 using BankSystem.Account.Application;
 using BankSystem.Account.Infrastructure;
-using Scalar.AspNetCore;
+using BankSystem.Shared.ServiceDefaults.Extensions;
 using System.Diagnostics.CodeAnalysis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddWebApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-    {
-        options.WithTitle("Account API");
-    });
-}
+// Use service defaults middleware pipeline
+app.UseServiceDefaults("Account API");
 
+// Exception handling middleware (Account-specific)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.Map("/", () => Results.Redirect("/scalar"));
+// Map controllers
 app.MapControllers();
 
 await app.RunAsync();

@@ -1,4 +1,4 @@
-using Scalar.AspNetCore;
+using BankSystem.Shared.ServiceDefaults.Extensions;
 using Security.Api;
 using Security.Api.Middleware;
 using Security.Application;
@@ -14,63 +14,11 @@ builder.Services.AddWebApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline with proper security
+// Use service defaults middleware pipeline
+app.UseServiceDefaults("Security API");
 
-// Security headers middleware (conditional based on path)
-app.UseMiddleware<SecurityHeadersMiddleware>();
-
-// Development-specific middleware
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-    {
-        options.WithTitle("Security API");
-    });
-}
-else
-{
-    // Production-specific middleware
-    app.UseHsts(); // HTTP Strict Transport Security
-}
-
-// Core middleware pipeline
-app.UseHttpsRedirection();
-
-// CORS (if needed for browser clients)
-app.UseCors("DefaultPolicy");
-
-// Rate limiting
-app.UseRateLimiter();
-
-// Token revocation middleware (must be before authentication)
+// Token revocation middleware (must be before authentication but after service defaults)
 app.UseMiddleware<TokenRevocationMiddleware>();
-
-// Authentication & Authorization
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Health checks
-app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json";
-        var response = new
-        {
-            status = report.Status.ToString(),
-            checks = report.Entries.Select(x => new
-            {
-                name = x.Key,
-                status = x.Value.Status.ToString(),
-                exception = x.Value.Exception?.Message,
-                duration = x.Value.Duration.ToString()
-            }),
-            duration = report.TotalDuration.ToString()
-        };
-        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
-    }
-});
 
 // Map controllers
 app.MapControllers();

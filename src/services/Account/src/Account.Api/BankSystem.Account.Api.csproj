@@ -9,20 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
-    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.7" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.6.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.ServiceDefaults\BankSystem.Shared.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Account.Application\BankSystem.Account.Application.csproj" />
     <ProjectReference Include="..\Account.Infrastructure\BankSystem.Account.Infrastructure.csproj" />
   </ItemGroup>

@@ -1,4 +1,5 @@
-﻿using Asp.Versioning;
+﻿using BankSystem.Shared.ServiceDefaults.Extensions;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 using Security.Api.Filters;
 using Security.Api.Services;
@@ -13,32 +14,18 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddWebApiServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddControllers(options =>
-        {
-            // Global model validation
-            options.ModelValidatorProviders.Clear();
-            
-            // Add custom filters
-            options.Filters.Add<GlobalExceptionFilter>();
-        });
+        // Configure common services with Security-specific controller configuration
+        services.AddServiceDefaults(
+            configuration,
+            "Security API",
+            options =>
+            {
+                // Add global exception filter specific to Security service
+                options.Filters.Add<GlobalExceptionFilter>();
+            });
 
-        // Configure API versioning
-        services.AddApiVersioning(options =>
-        {
-            options.DefaultApiVersion = new ApiVersion(1, 0);
-            options.AssumeDefaultVersionWhenUnspecified = true;
-            options.ApiVersionReader = ApiVersionReader.Combine(
-                new UrlSegmentApiVersionReader(),
-                new QueryStringApiVersionReader("version"),
-                new HeaderApiVersionReader("X-Version"));
-        }).AddApiExplorer(setup =>
-        {
-            setup.GroupNameFormat = "'v'VVV";
-            setup.SubstituteApiVersionInUrl = true;
-        });
-
-        // Configure OpenAPI/Scalar
-        services.AddOpenApi();
+        // Add Security-specific health checks
+        services.AddDbContextHealthCheck<SecurityDbContext>("database");
 
         // Add memory cache for token revocation
         services.AddMemoryCache();
@@ -57,8 +44,8 @@ public static class DependencyInjection
         services.AddHostedService<RevokedTokensBackgroundService>();
         services.AddHostedService<TokenCleanupBackgroundService>();
 
-        // Add CORS
-        services.AddCors(options =>
+        // Override default CORS with Security-specific configuration
+        services.Configure<CorsOptions>(options =>
         {
             options.AddPolicy("DefaultPolicy", builder =>
             {
@@ -71,9 +58,10 @@ public static class DependencyInjection
             });
         });
 
-        // Add rate limiting
-        services.AddRateLimiter(options =>
+        // Add rate limiting with Security-specific policies (in addition to default)
+        services.Configure<RateLimiterOptions>(options =>
         {
+            // Security-specific authentication rate limiting
             options.AddFixedWindowLimiter("AuthPolicy", limiterOptions =>
             {
                 limiterOptions.PermitLimit = 5;
@@ -82,6 +70,7 @@ public static class DependencyInjection
                 limiterOptions.QueueLimit = 0;
             });
 
+            // Security-specific refresh token rate limiting
             options.AddFixedWindowLimiter("RefreshPolicy", limiterOptions =>
             {
                 limiterOptions.PermitLimit = 10;
@@ -90,10 +79,6 @@ public static class DependencyInjection
                 limiterOptions.QueueLimit = 2;
             });
         });
-
-        // Add health checks
-        services.AddHealthChecks()
-            .AddDbContextCheck<SecurityDbContext>("database");
 
         return services;
     }
