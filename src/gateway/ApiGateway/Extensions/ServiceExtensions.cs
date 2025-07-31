@@ -42,24 +42,7 @@ public static class ServiceExtensions
         var authSettings = configuration.GetSection("Authentication");
         services.AddJwtAuthentication(authSettings);
 
-        services.AddAuthorization(options =>
-        {
-            // Public endpoints - no authentication required
-            options.AddPolicy(AuthenticationPolicies.PublicEndpoints, policy =>
-                policy.RequireAssertion(_ => true)); // Always allow
-
-            // Authenticated users - basic authentication required
-            options.AddPolicy(AuthenticationPolicies.AuthenticatedUsers, policy =>
-                policy.RequireAuthenticatedUser());
-
-            // Admin only access
-            options.AddPolicy(AuthenticationPolicies.AdminOnly, policy =>
-                policy.RequireClaim("role", "Admin"));
-
-            // Manager or Admin access
-            options.AddPolicy(AuthenticationPolicies.ManagerOrAdmin, policy =>
-                policy.RequireClaim("role", "Manager", "Admin"));
-        });
+        services.ConfigureAuthorizationPolicies();
 
         return services;
     }

@@ -14,7 +14,7 @@ public class ExceptionHandlingMiddleware
     private readonly IWebHostEnvironment _environment;
 
     public ExceptionHandlingMiddleware(
-        RequestDelegate next, 
+        RequestDelegate next,
         ILogger<ExceptionHandlingMiddleware> logger,
         IWebHostEnvironment environment)
     {
@@ -31,11 +31,11 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, 
-                "Unhandled exception occurred. RequestPath: {RequestPath}, Method: {Method}", 
-                context.Request.Path, 
+            _logger.LogError(ex,
+                "Unhandled exception occurred. RequestPath: {RequestPath}, Method: {Method}",
+                context.Request.Path,
                 context.Request.Method);
-            
+
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -67,7 +67,7 @@ public class ExceptionHandlingMiddleware
     {
         return exception switch
         {
-            ArgumentException argumentEx => new ErrorResponse
+            ArgumentException => new ErrorResponse
             {
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
                 Title = "Bad Request",
@@ -75,7 +75,7 @@ public class ExceptionHandlingMiddleware
                 Detail = "The request contains invalid parameters",
                 Instance = GetInstancePath()
             },
-            
+
             UnauthorizedAccessException => new ErrorResponse
             {
                 Type = "https://tools.ietf.org/html/rfc7235#section-3.1",
@@ -84,7 +84,7 @@ public class ExceptionHandlingMiddleware
                 Detail = "Authentication is required to access this resource",
                 Instance = GetInstancePath()
             },
-            
+
             TaskCanceledException or OperationCanceledException => new ErrorResponse
             {
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
@@ -93,8 +93,8 @@ public class ExceptionHandlingMiddleware
                 Detail = "The request timed out",
                 Instance = GetInstancePath()
             },
-            
-            HttpRequestException httpEx => new ErrorResponse
+
+            HttpRequestException => new ErrorResponse
             {
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3",
                 Title = "Service Unavailable",
@@ -102,13 +102,13 @@ public class ExceptionHandlingMiddleware
                 Detail = "An upstream service is currently unavailable",
                 Instance = GetInstancePath()
             },
-            
+
             _ => new ErrorResponse
             {
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
                 Title = "Internal Server Error",
                 Status = (int)HttpStatusCode.InternalServerError,
-                Detail = _environment.IsDevelopment() 
+                Detail = _environment.IsDevelopment()
                     ? $"An unexpected error occurred: {exception.Message}"
                     : "An unexpected error occurred while processing your request",
                 Instance = GetInstancePath()

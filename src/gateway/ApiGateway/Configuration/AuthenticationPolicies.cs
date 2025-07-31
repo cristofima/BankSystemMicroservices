@@ -12,49 +12,29 @@ public static class AuthenticationPolicies
 
     public static void ConfigureAuthorizationPolicies(this IServiceCollection services)
     {
-        services.AddAuthorization(options =>
-        {
-            // Public endpoints - no authentication required
-            options.AddPolicy(PublicEndpoints, policy =>
-                policy.RequireAssertion(_ => true));
+        var defaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
 
-            // Authenticated users only
-            options.AddPolicy(AuthenticatedUsers, policy =>
-                policy.RequireAuthenticatedUser());
-
-            // Admin only access
-            options.AddPolicy(AdminOnly, policy =>
-                policy.RequireClaim("role", "Admin"));
-
-            // Manager or Admin access
-            options.AddPolicy(ManagerOrAdmin, policy =>
-                policy.RequireClaim("role", "Manager", "Admin"));
-
-            // Account owner or Admin access (allows user to access their own data or admin to access any)
-            options.AddPolicy(AccountOwnerOrAdmin, policy =>
+        services.AddAuthorizationBuilder()
+            .AddPolicy(PublicEndpoints, policy => policy.RequireAssertion(_ => true))
+            .AddPolicy(AuthenticatedUsers, policy => policy.RequireAuthenticatedUser())
+            .AddPolicy(AdminOnly, policy => policy.RequireClaim("role", "Admin"))
+            .AddPolicy(ManagerOrAdmin, policy => policy.RequireClaim("role", "Manager", "Admin"))
+            .AddPolicy(AccountOwnerOrAdmin, policy =>
                 policy.RequireAssertion(context =>
                 {
                     var userIdClaim = context.User.FindFirst("sub")?.Value ??
-                                     context.User.FindFirst("userId")?.Value;
+                                      context.User.FindFirst("userId")?.Value;
                     var resourceUserId = context.Resource as string;
                     var isAdmin = context.User.HasClaim("role", "Admin");
-
                     return isAdmin || (userIdClaim != null && userIdClaim == resourceUserId);
-                }));
-
-            // Default policy - require authentication
-            options.DefaultPolicy = new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .Build();
-
-            // Fallback policy for unmatched routes
-            options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .Build();
-        });
+                }))
+            .SetDefaultPolicy(defaultPolicy)
+            .SetFallbackPolicy(defaultPolicy);
     }
 
-    public static readonly Dictionary<string, string> RouteToPolicy = new()
+    public static readonly IReadOnlyDictionary<string, string> RouteToPolicy = new Dictionary<string, string>
     {
         // Public endpoints - no auth required
         { "/api/v1/auth/login", PublicEndpoints },

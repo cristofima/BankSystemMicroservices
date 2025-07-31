@@ -73,7 +73,7 @@ public static class SecurityHeadersExtensions
                     headers.ContentSecurityPolicy =
                         "default-src 'self'; " +
                         "script-src 'self'; " +
-                        "style-src 'self' 'unsafe-inline'; " +
+                        "style-src 'self'; " +
                         "img-src 'self' data:; " +
                         "font-src 'self'; " +
                         "connect-src 'self' https:; " +
@@ -166,7 +166,7 @@ public static class SecurityHeadersExtensions
         // Strict Transport Security (HSTS) - only for HTTPS
         if (context.Request.IsHttps)
         {
-            headers["Strict-Transport-Security"] = $"max-age={maxAge}; includeSubDomains; preload";
+            headers.StrictTransportSecurity = $"max-age={maxAge}; includeSubDomains; preload";
         }
 
         // Most restrictive Content Security Policy for production
