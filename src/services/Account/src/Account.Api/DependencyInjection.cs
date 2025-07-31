@@ -1,11 +1,10 @@
-﻿using Asp.Versioning;
-using BankSystem.Account.Api.Middlewares;
+﻿using BankSystem.Account.Api.Middlewares;
 using BankSystem.Account.Api.Services;
 using BankSystem.Account.Application.Behaviours;
 using BankSystem.Account.Application.Interfaces;
-using BankSystem.Shared.Infrastructure.Extensions;
-using System.Diagnostics.CodeAnalysis;
 using BankSystem.Account.Infrastructure.Data;
+using BankSystem.Shared.ServiceDefaults.Extensions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace BankSystem.Account.Api;
 
@@ -14,31 +13,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddWebApiServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddControllers(options =>
+        // Add shared service defaults with Controllers configuration
+        services.AddServiceDefaults(configuration,
+            "Account API",
+            configureControllers: options =>
         {
             // Global model validation
             options.ModelValidatorProviders.Clear();
         });
-
-        // Configure OpenAPI/Scalar
-        services.AddOpenApi();
-
-        // Configure API versioning
-        services.AddApiVersioning(options =>
-        {
-            options.DefaultApiVersion = new ApiVersion(1, 0);
-            options.AssumeDefaultVersionWhenUnspecified = true;
-            options.ApiVersionReader = ApiVersionReader.Combine(
-                new UrlSegmentApiVersionReader(),
-                new QueryStringApiVersionReader("version"),
-                new HeaderApiVersionReader("X-Version"));
-        }).AddApiExplorer(setup =>
-        {
-            setup.GroupNameFormat = "'v'VVV";
-            setup.SubstituteApiVersionInUrl = true;
-        });
-
-        services.AddJwtAuthentication(configuration);
 
         services.AddHttpContextAccessor();
         services.AddScoped<IAuthenticatedUserService, AuthenticatedUserService>();
@@ -52,8 +34,7 @@ public static class DependencyInjection
         });
 
         // Add health checks
-        services.AddHealthChecks()
-            .AddDbContextCheck<AccountDbContext>("database");
+        services.AddDbContextHealthCheck<AccountDbContext>();
 
         return services;
     }

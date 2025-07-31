@@ -1,5 +1,4 @@
-﻿using BankSystem.Shared.Infrastructure.Extensions;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,8 +75,6 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<SecurityDbContext>()
         .AddDefaultTokenProviders()
         .AddPasswordValidator<CustomPasswordValidator>();
-
-        services.AddJwtAuthentication(configuration);
 
         // Configure Authorization policies using AddAuthorizationBuilder
         services.AddAuthorizationBuilder()

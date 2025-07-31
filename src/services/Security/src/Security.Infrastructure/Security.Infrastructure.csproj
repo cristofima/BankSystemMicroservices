@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Security.Application\Security.Application.csproj" />
   </ItemGroup>
 
