@@ -14,11 +14,11 @@ builder.Services.AddWebApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-// Use service defaults middleware pipeline
-app.UseServiceDefaults("Account API");
-
 // Exception handling middleware (Account-specific)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Use service defaults middleware pipeline
+app.UseServiceDefaults("Account API");
 
 // Map controllers
 app.MapControllers();

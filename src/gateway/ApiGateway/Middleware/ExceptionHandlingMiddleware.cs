@@ -45,7 +45,7 @@ public class ExceptionHandlingMiddleware
     /// </summary>
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var response = CreateErrorResponse(exception);
+        var response = CreateErrorResponse(exception, context);
 
         context.Response.StatusCode = response.Status;
         context.Response.ContentType = "application/json";
@@ -63,8 +63,11 @@ public class ExceptionHandlingMiddleware
     /// Creates standardized error response based on exception type.
     /// Follows RFC 7807 Problem Details specification.
     /// </summary>
-    private ErrorResponse CreateErrorResponse(Exception exception)
+    private ErrorResponse CreateErrorResponse(Exception exception, HttpContext context)
     {
+        var correlationId = context.Response.Headers["X-Correlation-Id"].FirstOrDefault()
+                                 ?? context.Request.Headers["X-Correlation-Id"].FirstOrDefault();
+
         return exception switch
         {
             ArgumentException => new ErrorResponse
@@ -73,7 +76,8 @@ public class ExceptionHandlingMiddleware
                 Title = "Bad Request",
                 Status = (int)HttpStatusCode.BadRequest,
                 Detail = "The request contains invalid parameters",
-                Instance = GetInstancePath()
+                Instance = GetInstancePath(),
+                CorrelationId = correlationId
             },
 
             UnauthorizedAccessException => new ErrorResponse

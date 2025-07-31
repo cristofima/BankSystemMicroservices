@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
-
 namespace BankSystem.ApiGateway.Configuration;
 
 public static class AuthenticationPolicies
@@ -12,10 +10,6 @@ public static class AuthenticationPolicies
 
     public static void ConfigureAuthorizationPolicies(this IServiceCollection services)
     {
-        var defaultPolicy = new AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .Build();
-
         services.AddAuthorizationBuilder()
             .AddPolicy(PublicEndpoints, policy => policy.RequireAssertion(_ => true))
             .AddPolicy(AuthenticatedUsers, policy => policy.RequireAuthenticatedUser())
@@ -27,11 +21,14 @@ public static class AuthenticationPolicies
                     var userIdClaim = context.User.FindFirst("sub")?.Value ??
                                       context.User.FindFirst("userId")?.Value;
                     var resourceUserId = context.Resource as string;
+                    if (string.IsNullOrEmpty(resourceUserId))
+                    {
+                        return false; // Deny access if resource is not properly set
+                    }
+
                     var isAdmin = context.User.HasClaim("role", "Admin");
                     return isAdmin || (userIdClaim != null && userIdClaim == resourceUserId);
-                }))
-            .SetDefaultPolicy(defaultPolicy)
-            .SetFallbackPolicy(defaultPolicy);
+                }));
     }
 
     public static readonly IReadOnlyDictionary<string, string> RouteToPolicy = new Dictionary<string, string>

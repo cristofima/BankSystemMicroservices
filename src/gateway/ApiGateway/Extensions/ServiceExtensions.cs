@@ -21,10 +21,18 @@ public static class ServiceExtensions
         {
             options.AddDefaultPolicy(builder =>
             {
-                builder
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader();
+                var allowedOrigins = configuration.GetSection("Gateway:Cors:AllowedOrigins").Get<string[]>() ?? [];
+                if (allowedOrigins.Length > 0)
+                {
+                    builder.WithOrigins(allowedOrigins)
+                            .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                            .WithHeaders("Authorization", "Content-Type", "X-Correlation-Id")
+                            .AllowCredentials();
+                }
+                else
+                {
+                    throw new InvalidOperationException("CORS configuration is missing or invalid. Please specify allowed origins in the configuration.");
+                }
             });
         });
 
@@ -93,7 +101,7 @@ public static class ServiceExtensions
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: context.User?.Identity?.Name ?? context.Request.Headers.Host.ToString(),
-                    factory: partition => new FixedWindowRateLimiterOptions
+                    factory: _ => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
                         PermitLimit = 100,
@@ -162,7 +170,7 @@ public static class ServiceExtensions
         app.UseRateLimiter();
 
         // CORS
-        app.UseCors("DefaultPolicy");
+        app.UseCors();
 
         // Authentication and Authorization - Enable for selective authentication
         app.UseAuthentication();
