@@ -9,13 +9,15 @@ public class SelectiveAuthenticationMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<SelectiveAuthenticationMiddleware> _logger;
 
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
+
     private static readonly Regex[] PublicEndpointPatterns =
     [
-        new (@"^/api/v1/auth/(login|register|refresh|forgot-password|reset-password).*", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-        new (@"^/health.*", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-        new (@"^/scalar.*", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-        new (@"^/openapi.*", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-        new (@"^/$", RegexOptions.IgnoreCase | RegexOptions.Compiled)
+        new (@"^/api/v1/auth/(login|register|refresh|forgot-password|reset-password).*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/health.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/scalar.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/openapi.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/$", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout)
     ];
 
     public SelectiveAuthenticationMiddleware(RequestDelegate next, ILogger<SelectiveAuthenticationMiddleware> logger)

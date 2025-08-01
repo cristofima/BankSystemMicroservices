@@ -70,11 +70,18 @@ public static class ServiceDefaultsExtensions
         // Add CORS with default policy
         services.AddCors(options =>
         {
-            options.AddPolicy("DefaultPolicy", policy =>
+            options.AddDefaultPolicy(policy =>
             {
-                var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["*"];
-                if (allowedOrigins.Contains("*"))
+                var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+                if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
                 {
+                    var serviceProvider = services.BuildServiceProvider();
+                    var env = serviceProvider.GetRequiredService<IHostEnvironment>();
+                    if (!env.IsDevelopment())
+                    {
+                        throw new InvalidOperationException("CORS policy is too permissive. Please configure allowed origins explicitly in production.");
+                    }
+
                     policy.AllowAnyOrigin()
                         .AllowAnyMethod()
                         .AllowAnyHeader();
