@@ -75,24 +75,13 @@ public static class ServiceDefaultsExtensions
                 var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
                 if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
                 {
-                    var serviceProvider = services.BuildServiceProvider();
-                    var env = serviceProvider.GetRequiredService<IHostEnvironment>();
-                    if (!env.IsDevelopment())
-                    {
-                        throw new InvalidOperationException("CORS policy is too permissive. Please configure allowed origins explicitly in production.");
-                    }
+                    throw new InvalidOperationException("CORS policy is too permissive. Please configure allowed origins explicitly.");
+                }
 
-                    policy.AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader();
-                }
-                else
-                {
-                    policy.WithOrigins(allowedOrigins)
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials();
-                }
+                policy.WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
             });
         });
 

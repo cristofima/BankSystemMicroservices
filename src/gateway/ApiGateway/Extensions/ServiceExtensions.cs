@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
+using Serilog.Events;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 
@@ -159,11 +160,16 @@ public static class ServiceExtensions
         app.UseSerilogRequestLogging(options =>
         {
             options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-            options.GetLevel = (httpContext, elapsed, ex) => ex != null
-                ? Serilog.Events.LogEventLevel.Error
-                : httpContext.Response.StatusCode > 499
-                    ? Serilog.Events.LogEventLevel.Error
-                    : Serilog.Events.LogEventLevel.Information;
+            options.GetLevel = (httpContext, _, ex) =>
+            {
+                if (ex != null)
+                    return LogEventLevel.Error;
+
+                var isServerError = httpContext.Response.StatusCode > 499;
+                return isServerError
+                    ? LogEventLevel.Error
+                    : LogEventLevel.Information;
+            };
         });
 
         // Rate limiting

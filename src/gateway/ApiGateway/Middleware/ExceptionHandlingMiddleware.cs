@@ -13,6 +13,18 @@ public class ExceptionHandlingMiddleware
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly IWebHostEnvironment _environment;
 
+    private static readonly JsonSerializerOptions JsonOptionsDev = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private static readonly JsonSerializerOptions JsonOptionsProd = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
+
     public ExceptionHandlingMiddleware(
         RequestDelegate next,
         ILogger<ExceptionHandlingMiddleware> logger,
@@ -50,11 +62,8 @@ public class ExceptionHandlingMiddleware
         context.Response.StatusCode = response.Status;
         context.Response.ContentType = "application/json";
 
-        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = _environment.IsDevelopment()
-        });
+        var options = _environment.IsDevelopment() ? JsonOptionsDev : JsonOptionsProd;
+        var jsonResponse = JsonSerializer.Serialize(response, options);
 
         await context.Response.WriteAsync(jsonResponse);
     }
