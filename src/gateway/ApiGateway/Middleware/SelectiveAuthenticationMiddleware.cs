@@ -9,7 +9,7 @@ public class SelectiveAuthenticationMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<SelectiveAuthenticationMiddleware> _logger;
 
-    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
 
     private static readonly Regex[] PublicEndpointPatterns =
     [

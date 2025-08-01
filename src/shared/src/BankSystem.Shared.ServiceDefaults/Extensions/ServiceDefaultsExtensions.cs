@@ -166,7 +166,7 @@ public static class ServiceDefaultsExtensions
         // Default redirect to API documentation
         app.Map("/", () =>
         {
-            var redirectTarget = app.Environment.IsDevelopment() ? "/scalar" : "/";
+            var redirectTarget = app.Environment.IsDevelopment() ? "/scalar" : "/health";
             return Results.Redirect(redirectTarget);
         });
 

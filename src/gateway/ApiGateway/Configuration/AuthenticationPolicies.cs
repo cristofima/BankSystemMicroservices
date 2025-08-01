@@ -6,7 +6,6 @@ public static class AuthenticationPolicies
     public const string AuthenticatedUsers = "AuthenticatedUsers";
     public const string AdminOnly = "AdminOnly";
     public const string ManagerOrAdmin = "ManagerOrAdmin";
-    public const string AccountOwnerOrAdmin = "AccountOwnerOrAdmin";
 
     public static void ConfigureAuthorizationPolicies(this IServiceCollection services)
     {
@@ -14,21 +13,7 @@ public static class AuthenticationPolicies
             .AddPolicy(PublicEndpoints, policy => policy.RequireAssertion(_ => true))
             .AddPolicy(AuthenticatedUsers, policy => policy.RequireAuthenticatedUser())
             .AddPolicy(AdminOnly, policy => policy.RequireClaim("role", "Admin"))
-            .AddPolicy(ManagerOrAdmin, policy => policy.RequireClaim("role", "Manager", "Admin"))
-            .AddPolicy(AccountOwnerOrAdmin, policy =>
-                policy.RequireAssertion(context =>
-                {
-                    var userIdClaim = context.User.FindFirst("sub")?.Value ??
-                                      context.User.FindFirst("userId")?.Value;
-                    var resourceUserId = context.Resource as string;
-                    if (string.IsNullOrEmpty(resourceUserId))
-                    {
-                        return false; // Deny access if resource is not properly set
-                    }
-
-                    var isAdmin = context.User.HasClaim("role", "Admin");
-                    return isAdmin || (userIdClaim != null && userIdClaim == resourceUserId);
-                }));
+            .AddPolicy(ManagerOrAdmin, policy => policy.RequireClaim("role", "Manager", "Admin"));
     }
 
     public static readonly IReadOnlyDictionary<string, string> RouteToPolicy = new Dictionary<string, string>
