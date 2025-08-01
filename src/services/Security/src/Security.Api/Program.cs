@@ -14,11 +14,11 @@ builder.Services.AddWebApiServices(builder.Configuration);
 
 var app = builder.Build();
 
+// Token revocation middleware
+app.UseMiddleware<TokenRevocationMiddleware>();
+
 // Use service defaults middleware pipeline
 app.UseServiceDefaults("Security API");
-
-// Token revocation middleware (must be before authentication but after service defaults)
-app.UseMiddleware<TokenRevocationMiddleware>();
 
 // Map controllers
 app.MapControllers();

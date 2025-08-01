@@ -9,6 +9,17 @@ public class SelectiveAuthenticationMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<SelectiveAuthenticationMiddleware> _logger;
 
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
+
+    private static readonly Regex[] PublicEndpointPatterns =
+    [
+        new (@"^/api/v1/auth/(login|register|refresh|forgot-password|reset-password).*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/health.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/scalar.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/openapi.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/$", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout)
+    ];
+
     public SelectiveAuthenticationMiddleware(RequestDelegate next, ILogger<SelectiveAuthenticationMiddleware> logger)
     {
         _next = next;
@@ -35,7 +46,7 @@ public class SelectiveAuthenticationMiddleware
         }
 
         // For protected endpoints, check authentication
-        if (!context.User.Identity?.IsAuthenticated == true)
+        if (!(context.User.Identity?.IsAuthenticated ?? false))
         {
             _logger.LogWarning("Unauthenticated access attempt to protected endpoint: {Path}", path);
             context.Response.StatusCode = 401;
@@ -68,16 +79,7 @@ public class SelectiveAuthenticationMiddleware
 
     private static bool IsPublicEndpoint(string path)
     {
-        var publicPatterns = new[]
-        {
-            @"^/api/v1/auth/(login|register|refresh|forgot-password|reset-password).*",
-            @"^/health.*",
-            @"^/scalar.*",
-            @"^/openapi.*",
-            @"^/$"
-        };
-
-        return publicPatterns.Any(pattern => Regex.IsMatch(path, pattern, RegexOptions.IgnoreCase));
+        return PublicEndpointPatterns.Any(regex => regex.IsMatch(path));
     }
 
     private static string GetRequiredPolicy(string path)
@@ -89,10 +91,10 @@ public class SelectiveAuthenticationMiddleware
         }
 
         // Check pattern matches
-        if (path.Contains("/admin/"))
+        if (path.Contains("/admin/", StringComparison.OrdinalIgnoreCase))
             return AuthenticationPolicies.AdminOnly;
 
-        if (path.Contains("/reports/") || path.Contains("/audit/"))
+        if (path.Contains("/reports/", StringComparison.OrdinalIgnoreCase) || path.Contains("/audit/", StringComparison.OrdinalIgnoreCase))
             return AuthenticationPolicies.ManagerOrAdmin;
 
         // Default to authenticated users for all other protected endpoints

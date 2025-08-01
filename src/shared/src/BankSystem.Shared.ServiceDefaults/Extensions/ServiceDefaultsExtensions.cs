@@ -70,11 +70,18 @@ public static class ServiceDefaultsExtensions
         // Add CORS with default policy
         services.AddCors(options =>
         {
-            options.AddPolicy("DefaultPolicy", policy =>
+            options.AddDefaultPolicy(policy =>
             {
-                policy.AllowAnyOrigin()
-                      .AllowAnyMethod()
-                      .AllowAnyHeader();
+                var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+                if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
+                {
+                    throw new InvalidOperationException("CORS policy is too permissive. Please configure allowed origins explicitly.");
+                }
+
+                policy.WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
             });
         });
 
@@ -143,8 +150,8 @@ public static class ServiceDefaultsExtensions
         // Rate limiting
         app.UseRateLimiter();
 
-        // CORS (if needed for browser clients)
-        app.UseCors("DefaultPolicy");
+        // CORS
+        app.UseCors();
 
         // Authentication & Authorization
         app.UseAuthentication();
@@ -157,7 +164,11 @@ public static class ServiceDefaultsExtensions
         });
 
         // Default redirect to API documentation
-        app.Map("/", () => Results.Redirect("/scalar"));
+        app.Map("/", () =>
+        {
+            var redirectTarget = app.Environment.IsDevelopment() ? "/scalar" : "/";
+            return Results.Redirect(redirectTarget);
+        });
 
         return app;
     }

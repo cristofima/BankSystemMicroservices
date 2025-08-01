@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
+using Serilog.Events;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 
@@ -21,10 +22,18 @@ public static class ServiceExtensions
         {
             options.AddDefaultPolicy(builder =>
             {
-                builder
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader();
+                var allowedOrigins = configuration.GetSection("Gateway:Cors:AllowedOrigins").Get<string[]>() ?? [];
+                if (allowedOrigins.Length > 0)
+                {
+                    builder.WithOrigins(allowedOrigins)
+                            .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                            .WithHeaders("Authorization", "Content-Type", "X-Correlation-Id")
+                            .AllowCredentials();
+                }
+                else
+                {
+                    throw new InvalidOperationException("CORS configuration is missing or invalid. Please specify allowed origins in the configuration.");
+                }
             });
         });
 
@@ -93,7 +102,7 @@ public static class ServiceExtensions
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: context.User?.Identity?.Name ?? context.Request.Headers.Host.ToString(),
-                    factory: partition => new FixedWindowRateLimiterOptions
+                    factory: _ => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
                         PermitLimit = 100,
@@ -151,18 +160,23 @@ public static class ServiceExtensions
         app.UseSerilogRequestLogging(options =>
         {
             options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-            options.GetLevel = (httpContext, elapsed, ex) => ex != null
-                ? Serilog.Events.LogEventLevel.Error
-                : httpContext.Response.StatusCode > 499
-                    ? Serilog.Events.LogEventLevel.Error
-                    : Serilog.Events.LogEventLevel.Information;
+            options.GetLevel = (httpContext, _, ex) =>
+            {
+                if (ex != null)
+                    return LogEventLevel.Error;
+
+                var isServerError = httpContext.Response.StatusCode > 499;
+                return isServerError
+                    ? LogEventLevel.Error
+                    : LogEventLevel.Information;
+            };
         });
 
         // Rate limiting
         app.UseRateLimiter();
 
         // CORS
-        app.UseCors("DefaultPolicy");
+        app.UseCors();
 
         // Authentication and Authorization - Enable for selective authentication
         app.UseAuthentication();

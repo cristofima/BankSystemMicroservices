@@ -13,6 +13,18 @@ public class ExceptionHandlingMiddleware
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly IWebHostEnvironment _environment;
 
+    private static readonly JsonSerializerOptions JsonOptionsDev = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private static readonly JsonSerializerOptions JsonOptionsProd = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
+
     public ExceptionHandlingMiddleware(
         RequestDelegate next,
         ILogger<ExceptionHandlingMiddleware> logger,
@@ -45,16 +57,13 @@ public class ExceptionHandlingMiddleware
     /// </summary>
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var response = CreateErrorResponse(exception);
+        var response = CreateErrorResponse(exception, context);
 
         context.Response.StatusCode = response.Status;
         context.Response.ContentType = "application/json";
 
-        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = _environment.IsDevelopment()
-        });
+        var options = _environment.IsDevelopment() ? JsonOptionsDev : JsonOptionsProd;
+        var jsonResponse = JsonSerializer.Serialize(response, options);
 
         await context.Response.WriteAsync(jsonResponse);
     }
@@ -63,8 +72,11 @@ public class ExceptionHandlingMiddleware
     /// Creates standardized error response based on exception type.
     /// Follows RFC 7807 Problem Details specification.
     /// </summary>
-    private ErrorResponse CreateErrorResponse(Exception exception)
+    private ErrorResponse CreateErrorResponse(Exception exception, HttpContext context)
     {
+        var correlationId = context.Response.Headers["X-Correlation-Id"].FirstOrDefault()
+                                 ?? context.Request.Headers["X-Correlation-Id"].FirstOrDefault();
+
         return exception switch
         {
             ArgumentException => new ErrorResponse
@@ -73,7 +85,8 @@ public class ExceptionHandlingMiddleware
                 Title = "Bad Request",
                 Status = (int)HttpStatusCode.BadRequest,
                 Detail = "The request contains invalid parameters",
-                Instance = GetInstancePath()
+                Instance = GetInstancePath(),
+                CorrelationId = correlationId
             },
 
             UnauthorizedAccessException => new ErrorResponse
