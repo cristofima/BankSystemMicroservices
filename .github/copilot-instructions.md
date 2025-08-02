@@ -26,7 +26,8 @@ Each microservice follows this structure:
 │   └── ServiceName.Infrastructure/ # Infrastructure layer (Data, Messaging, External services)
 └── tests/
     ├── ServiceName.Application.UnitTests/
-    └── ServiceName.Api.IntegrationTests/
+    ├── ServiceName.Domain.UnitTests/
+    └── ServiceName.Infrastructure.IntegrationTests/
 ```
 
 ### Layer Responsibilities
@@ -175,7 +176,9 @@ public class TransactionController : ControllerBase
 ### Testing Guidelines
 
 - Write **unit tests** for all business logic
-- Create **integration tests** for API endpoints
+- Create **integration tests** for infrastructure components
+- Use **xUnit** as the testing framework
+- Use **Moq** for mocking dependencies in unit tests
 - Use **test doubles** (mocks, stubs) appropriately
 - Follow **AAA pattern** (Arrange, Act, Assert)
 - Achieve **minimum 80% code coverage**

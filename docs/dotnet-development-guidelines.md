@@ -20,6 +20,8 @@
 /BankSystemMicroservices/
 ├── src/
 │   ├── BankSystem.sln
+│   ├── gateway/
+│   │   ├── ApiGateway/
 │   ├── services/
 │   │   ├── Security/           # Authentication & Authorization
 │   │   ├── Account/           # Account Management

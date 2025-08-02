@@ -1,0 +1,39 @@
+autoReview:
+  enabled: true
+
+  # Allow reviews on both default and non-default branches
+  targetBranches:
+    - main
+    - develop
+
+  # Limit the size of diffs that trigger reviews (lines changed)
+  maxDiffSize: 1500
+
+  # Include only relevant files for review
+  fileIncludePattern: "**/*.cs,**/*.csproj,**/*.sln,**/*.json,**/*.yaml,**/*.yml,**/*.md,**/Dockerfile"
+
+  # Exclude non-source or large files, even if not committed (for safety)
+  fileExcludePattern: "**/bin/**,**/obj/**,**/*.dll,**/*.pdb,**/*.log,**/.vs/**,**/node_modules/**"
+
+  # Show a summarized comment after the review
+  commentSummary: true
+
+  # Automatically request the PR author as a reviewer (if collaborator)
+  requestReviewer: true
+
+  # Suggest improvements even if code passes all basic checks
+  showSuggestions: true
+
+  # Limit the number of comments per PR to reduce noise
+  maxComments: 40
+
+  # Show a final summary comment at the end of the review
+  finalComment:
+    enabled: true
+    template: |
+      ✅ CodeRabbit has completed the automated review for this Pull Request.
+
+      📄 Files reviewed: **{{fileCount}}**
+      💬 Comments generated: **{{commentCount}}**
+
+      If you want to adjust the review behavior, feel free to update the `.coderabbit.yaml` file in the repository.

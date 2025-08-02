@@ -6,11 +6,13 @@ trigger:
       - feature/*
   paths:
     include:
+      - 'src/gateway/**'
       - 'src/services/**/src/**'
       - 'src/services/**/tests/**'
       - 'src/shared/**'
       - 'build/azure-pipelines/ci-build-test.yml'
     exclude:
+      - 'src/gateway/**/*.md'
       - 'src/services/**/*.md'
       - 'src/services/**/README.md'
       - 'src/shared/*.md'
@@ -37,6 +39,57 @@ stages:
         packageType: 'sdk'
         version: '9.x'
 
+    # Check what type of changes were made to optimize pipeline execution
+    - bash: |
+        echo "Analyzing changes to optimize pipeline execution..."
+        
+        # Get list of changed files
+        if [ "$(Build.Reason)" = "PullRequest" ]; then
+          # For PR builds, compare with target branch
+          TARGET_REF="$(System.PullRequest.TargetBranch)"
+          # Azure provides refs/heads/xxx – trim prefix for remote ref
+          TARGET_BRANCH=${TARGET_REF#refs/heads/}
+          git fetch origin "$TARGET_BRANCH"
+          CHANGED_FILES=$(git diff --name-only HEAD "origin/$TARGET_BRANCH" || true)
+        else
+          # For CI builds, compare with previous commit
+          CHANGED_FILES=$(git diff --name-only $(git rev-list --max-parents=0 HEAD)..HEAD || true)
+        fi
+        # Fail-safe defaults (in case any git command above fails)
+        echo "##vso[task.setvariable variable=SkipSonarQube]true"
+        echo "##vso[task.setvariable variable=SkipCoverage]true"
+        echo "Changed files:"
+        echo "$CHANGED_FILES"
+        
+        # Check if any non-documentation files were changed
+        CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -v '\.md$' | grep -v 'README' | grep -v 'docs/' | wc -l)
+        
+        # Check if any files that affect coverage were changed (source code in src/, not config/build files)
+        COVERAGE_AFFECTING_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(cs|fs|vb)$' | grep -E '^src/(services|shared)/' | grep -v '/bin/' | grep -v '/obj/' | wc -l)
+        
+        echo "Number of code changes: $CODE_CHANGES"
+        echo "Number of coverage-affecting changes: $COVERAGE_AFFECTING_CHANGES"
+        
+        # Always run SonarQube analysis for code changes (quality analysis)
+        if [ "$CODE_CHANGES" -eq 0 ]; then
+          echo "Only documentation files changed - skipping SonarQube analysis entirely"
+          echo "##vso[task.setvariable variable=SkipSonarQube]true"
+          echo "##vso[task.setvariable variable=SkipCoverage]true"
+        else
+          echo "Code files changed - running SonarQube analysis"
+          echo "##vso[task.setvariable variable=SkipSonarQube]false"
+          
+          # Skip coverage collection if no source code changes that affect coverage
+          if [ "$COVERAGE_AFFECTING_CHANGES" -eq 0 ]; then
+            echo "No coverage-affecting changes - skipping coverage collection"
+            echo "##vso[task.setvariable variable=SkipCoverage]true"
+          else
+            echo "Coverage-affecting changes detected - collecting coverage"
+            echo "##vso[task.setvariable variable=SkipCoverage]false"
+          fi
+        fi
+      displayName: "Analyze Changes for Pipeline Optimization"
+
     # Docker is already installed & running on ubuntu-latest
     - bash: docker info
       displayName: "Verify Docker engine"
@@ -62,7 +115,8 @@ stages:
           sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml
           sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx
           sonar.sourceEncoding=UTF-8
-      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+          sonar.coverage.exclusions=**/*.md,**/README.*,**/docs/**/*.md,**/docs/**/*.y?(a)ml
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'))
       timeoutInMinutes: 10
 
     - task: DotNetCoreCLI@2
@@ -87,6 +141,18 @@ stages:
           src/shared/tests/**/*UnitTests.csproj
         arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
         publishTestResults: true
+      condition: and(succeeded(), ne(variables['SkipCoverage'], 'true'))
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run All Unit Tests without Coverage'
+      inputs:
+        command: 'test'
+        projects: |
+          src/services/**/tests/**/*UnitTests.csproj
+          src/shared/tests/**/*UnitTests.csproj
+        arguments: '--configuration $(buildConfiguration)'
+        publishTestResults: true
+      condition: and(succeeded(), eq(variables['SkipCoverage'], 'true'))
 
     - task: DotNetCoreCLI@2
       displayName: 'Run All Integration Tests with Code Coverage'
@@ -97,6 +163,18 @@ stages:
         publishTestResults: true
       # Note: TestContainers will automatically use Docker on Linux
       continueOnError: true
+      condition: and(succeeded(), ne(variables['SkipCoverage'], 'true'))
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run All Integration Tests without Coverage'
+      inputs:
+        command: 'test'
+        projects: 'src/services/**/tests/**/*IntegrationTests.csproj'
+        arguments: '--configuration $(buildConfiguration)'
+        publishTestResults: true
+      # Note: TestContainers will automatically use Docker on Linux
+      continueOnError: true
+      condition: and(succeeded(), eq(variables['SkipCoverage'], 'true'))
 
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage to Azure DevOps'
@@ -105,22 +183,22 @@ stages:
         summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
         pathToSources: '$(Build.SourcesDirectory)/src'
         failIfCoverageEmpty: false
-      condition: succeeded()
+      condition: and(succeeded(), ne(variables['SkipCoverage'], 'true'))
 
     # Optional: Add delay before SonarQube analysis to help with rate limiting
     - bash: |
         echo "Waiting before SonarQube analysis to prevent rate limiting..."
         sleep 15
       displayName: "Pre-Analysis Delay"
-      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'))
 
     - task: SonarQubeAnalyze@7
       displayName: 'Run SonarQube Analysis'
-      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'))
       timeoutInMinutes: 15
 
     - task: SonarQubePublish@7
       displayName: 'Publish SonarQube Quality Gate Result'
       inputs:
         pollingTimeoutSec: '300'
-      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'))
