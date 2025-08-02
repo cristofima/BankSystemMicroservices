@@ -68,8 +68,8 @@ public class ApplicationUser : IdentityUser
 
     public bool IsLockedOut(int maxAttempts, TimeSpan lockoutDuration)
     {
-        return FailedLoginAttempts >= maxAttempts && 
-               UpdatedAt.HasValue && 
+        return FailedLoginAttempts >= maxAttempts &&
+               UpdatedAt.HasValue &&
                DateTime.UtcNow.Subtract(UpdatedAt.Value) < lockoutDuration;
     }
 

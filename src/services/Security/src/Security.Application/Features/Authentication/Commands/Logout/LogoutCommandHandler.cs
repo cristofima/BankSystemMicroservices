@@ -47,9 +47,9 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
                 _logger.LogWarning("Failed to revoke tokens for user {UserId}: {Error}", request.UserId, revokeResult.Error);
                 return revokeResult;
             }
-            
+
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             await LogUserLogoutAsync(request);
 
             _logger.LogInformation("Successfully processed logout for user {UserId}", request.UserId);

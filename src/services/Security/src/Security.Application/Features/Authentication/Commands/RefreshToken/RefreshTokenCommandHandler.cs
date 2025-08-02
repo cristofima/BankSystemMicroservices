@@ -37,7 +37,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
+
         try
         {
             _logger.LogInformation("Token refresh attempt from IP {IpAddress}", request.IpAddress);
@@ -66,7 +66,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
             await _auditService.LogTokenRefreshAsync(user.Id, request.IpAddress);
 
-            _logger.LogInformation("Token successfully refreshed for user {UserId} from IP {IpAddress}", 
+            _logger.LogInformation("Token successfully refreshed for user {UserId} from IP {IpAddress}",
                 user.Id, request.IpAddress);
 
             return Result<RefreshTokenResponse>.Success(newTokensResult.Value!);
@@ -100,20 +100,20 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     }
 
     private async Task<Result<Domain.Entities.RefreshToken>> ValidateRefreshTokenAsync(
-        RefreshTokenCommand request, 
-        string jwtId, 
-        string userId, 
+        RefreshTokenCommand request,
+        string jwtId,
+        string userId,
         CancellationToken cancellationToken)
     {
         var refreshToken = await _refreshTokenService.ValidateRefreshTokenAsync(
-            request.RefreshToken, 
-            jwtId, 
-            userId, 
+            request.RefreshToken,
+            jwtId,
+            userId,
             cancellationToken);
 
         if (refreshToken == null)
         {
-            _logger.LogWarning("Token refresh failed - invalid refresh token for user {UserId} from IP {IpAddress}", 
+            _logger.LogWarning("Token refresh failed - invalid refresh token for user {UserId} from IP {IpAddress}",
                 userId, request.IpAddress);
             await _auditService.LogFailedAuthenticationAsync(userId, request.IpAddress, "Invalid refresh token");
             return Result<Domain.Entities.RefreshToken>.Failure("Invalid refresh token");

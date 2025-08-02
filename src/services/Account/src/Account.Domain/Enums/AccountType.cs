@@ -1,4 +1,4 @@
-﻿﻿namespace BankSystem.Account.Domain.Enums;
+﻿namespace BankSystem.Account.Domain.Enums;
 
 /// <summary>
 /// Represents the type of bank account.
@@ -6,6 +6,6 @@
 public enum AccountType
 {
     Checking = 1,
-    Savings  = 2,
+    Savings = 2,
     Business = 3
 }

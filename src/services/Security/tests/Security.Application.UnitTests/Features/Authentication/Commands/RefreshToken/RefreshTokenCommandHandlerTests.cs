@@ -34,7 +34,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var jwtId = Guid.NewGuid().ToString();
         var refreshToken = CreateTestRefreshToken(user.Id, jwtId: jwtId);
         var accessToken = CreateValidJwtToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshToken.Token,
@@ -156,7 +156,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var jwtId = Guid.NewGuid().ToString();
         var accessToken = CreateValidJwtToken();
         var refreshTokenValue = CreateValidRefreshToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshTokenValue,
@@ -194,7 +194,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var jwtId = Guid.NewGuid().ToString();
         var accessToken = CreateValidJwtToken();
         var refreshTokenValue = CreateValidRefreshToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshTokenValue,
@@ -232,7 +232,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var jwtId = Guid.NewGuid().ToString();
         var accessToken = CreateValidJwtToken();
         var refreshTokenValue = CreateValidRefreshToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshTokenValue,
@@ -278,7 +278,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var jwtId = Guid.NewGuid().ToString();
         var refreshToken = CreateTestRefreshToken(user.Id, jwtId: jwtId);
         var accessToken = CreateValidJwtToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshToken.Token,
@@ -341,7 +341,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var jwtId = Guid.NewGuid().ToString();
         var accessToken = CreateValidJwtToken();
         var refreshTokenValue = CreateValidRefreshToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshTokenValue,
@@ -373,7 +373,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var userId = Guid.NewGuid().ToString();
         var accessToken = CreateValidJwtToken();
         var refreshTokenValue = CreateValidRefreshToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshTokenValue,
@@ -470,7 +470,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var user = CreateTestUser();
         var jwtId = Guid.NewGuid().ToString();
         var accessToken = CreateValidJwtToken();
-        
+
         var command = new RefreshTokenCommand(
             accessToken,
             refreshToken!,

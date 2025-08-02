@@ -29,18 +29,18 @@ public class YarpOptions
         public string Match { get; set; } = string.Empty;
 
         public Dictionary<string, string> Metadata { get; set; } = new();
-        
+
         public TransformConfig[]? Transforms { get; set; }
     }
 
     public class ClusterConfig
     {
         public Dictionary<string, DestinationConfig> Destinations { get; set; } = new();
-        
+
         public LoadBalancingPolicyConfig? LoadBalancingPolicy { get; set; }
-        
+
         public HealthCheckConfig? HealthCheck { get; set; }
-        
+
         public HttpClientConfig? HttpClient { get; set; }
     }
 
@@ -48,9 +48,9 @@ public class YarpOptions
     {
         [Required]
         public string Address { get; set; } = string.Empty;
-        
+
         public HealthConfig? Health { get; set; }
-        
+
         public Dictionary<string, string> Metadata { get; set; } = new();
     }
 
@@ -62,13 +62,13 @@ public class YarpOptions
     public class HealthCheckConfig
     {
         public bool Enabled { get; set; } = true;
-        
+
         public string Path { get; set; } = "/health";
-        
+
         public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(30);
-        
+
         public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(10);
-        
+
         public string Policy { get; set; } = "ConsecutiveFailures";
     }
 
@@ -80,9 +80,9 @@ public class YarpOptions
     public class HttpClientConfig
     {
         public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
-        
+
         public int MaxConnectionsPerServer { get; set; } = 100;
-        
+
         public bool DangerousAcceptAnyServerCertificate { get; set; } = false;
     }
 

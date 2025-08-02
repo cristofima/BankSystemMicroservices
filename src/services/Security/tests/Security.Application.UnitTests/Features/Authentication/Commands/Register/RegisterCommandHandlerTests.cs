@@ -60,7 +60,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Verify user creation
         MockUserManager.Verify(
             x => x.CreateAsync(
-                It.Is<ApplicationUser>(u => 
+                It.Is<ApplicationUser>(u =>
                     u.UserName == command.UserName &&
                     u.Email == command.Email &&
                     u.FirstName == command.FirstName &&
@@ -266,7 +266,7 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Verify user creation with null values
         MockUserManager.Verify(
             x => x.CreateAsync(
-                It.Is<ApplicationUser>(u => 
+                It.Is<ApplicationUser>(u =>
                     u.FirstName == null &&
                     u.LastName == null),
                 command.Password),

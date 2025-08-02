@@ -19,11 +19,11 @@ public class CustomPasswordValidatorTests : IDisposable
     {
         // Create service collection for UserManager dependencies
         var services = new ServiceCollection();
-        
+
         // Add minimal UserManager dependencies
         services.AddLogging();
         services.AddSingleton<IUserStore<ApplicationUser>, MockUserStore>();
-        services.AddSingleton<IOptions<IdentityOptions>>(provider => 
+        services.AddSingleton<IOptions<IdentityOptions>>(provider =>
             Options.Create(new IdentityOptions()));
         services.AddSingleton<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();
         services.AddSingleton<ILookupNormalizer, UpperInvariantLookupNormalizer>();
@@ -32,7 +32,7 @@ public class CustomPasswordValidatorTests : IDisposable
             provider.GetRequiredService<ILoggerFactory>().CreateLogger<UserManager<ApplicationUser>>());
 
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create UserManager instance
         _userManager = new UserManager<ApplicationUser>(
             serviceProvider.GetRequiredService<IUserStore<ApplicationUser>>(),
@@ -46,7 +46,7 @@ public class CustomPasswordValidatorTests : IDisposable
             serviceProvider.GetRequiredService<ILogger<UserManager<ApplicationUser>>>());
 
         _validator = new CustomPasswordValidator();
-        
+
         // Create test user
         _testUser = new ApplicationUser
         {
@@ -141,7 +141,7 @@ public class CustomPasswordValidatorTests : IDisposable
         // Assert
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, e => e.Code == "CommonPassword");
-        Assert.Equal("Password is too common and easily guessable.", 
+        Assert.Equal("Password is too common and easily guessable.",
             result.Errors.First(e => e.Code == "CommonPassword").Description);
     }
 

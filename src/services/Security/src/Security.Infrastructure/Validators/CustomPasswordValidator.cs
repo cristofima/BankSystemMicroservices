@@ -35,7 +35,7 @@ public class CustomPasswordValidator : IPasswordValidator<ApplicationUser>
         }
 
         // Check for username in password
-        if (!string.IsNullOrEmpty(user.UserName) && 
+        if (!string.IsNullOrEmpty(user.UserName) &&
             password.Contains(user.UserName, StringComparison.OrdinalIgnoreCase))
         {
             errors.Add(new IdentityError
@@ -46,7 +46,7 @@ public class CustomPasswordValidator : IPasswordValidator<ApplicationUser>
         }
 
         // Check for email in password
-        if (!string.IsNullOrEmpty(user.Email) && 
+        if (!string.IsNullOrEmpty(user.Email) &&
             password.Contains(user.Email.Split('@')[0], StringComparison.OrdinalIgnoreCase))
         {
             errors.Add(new IdentityError
@@ -66,8 +66,8 @@ public class CustomPasswordValidator : IPasswordValidator<ApplicationUser>
             });
         }
 
-        return Task.FromResult(errors.Count == 0 
-            ? IdentityResult.Success 
+        return Task.FromResult(errors.Count == 0
+            ? IdentityResult.Success
             : IdentityResult.Failed(errors.ToArray()));
     }
 

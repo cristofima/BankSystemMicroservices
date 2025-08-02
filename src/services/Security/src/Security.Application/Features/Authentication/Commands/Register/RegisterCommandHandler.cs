@@ -30,7 +30,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
     public async Task<Result<UserResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
+
         try
         {
             _logger.LogInformation("Processing registration for user {UserName}", request.UserName);
@@ -41,13 +41,13 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
 
             var user = CreateUserFromRequest(request);
             var createResult = await CreateUserAsync(user, request.Password);
-            
+
             if (createResult.IsFailure)
                 return Result<UserResponse>.Failure(createResult.Error);
 
             await _auditService.LogUserRegistrationAsync(user.Id, request.IpAddress);
 
-            _logger.LogInformation("User {UserName} registered successfully with ID {UserId}", 
+            _logger.LogInformation("User {UserName} registered successfully with ID {UserId}",
                 request.UserName, user.Id);
 
             var userResponse = CreateUserResponse(user);

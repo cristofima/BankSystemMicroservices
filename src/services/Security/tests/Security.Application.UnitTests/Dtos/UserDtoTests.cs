@@ -19,13 +19,13 @@ public class UserDtoTests
 
         // Act
         var response = new UserResponse(
-            id, 
-            userName, 
-            email, 
-            firstName, 
-            lastName, 
-            isEmailConfirmed, 
-            isActive, 
+            id,
+            userName,
+            email,
+            firstName,
+            lastName,
+            isEmailConfirmed,
+            isActive,
             createdAt);
 
         // Assert
@@ -54,13 +54,13 @@ public class UserDtoTests
 
         // Act
         var response = new UserResponse(
-            id, 
-            userName, 
-            email, 
-            firstName, 
-            lastName, 
-            isEmailConfirmed, 
-            isActive, 
+            id,
+            userName,
+            email,
+            firstName,
+            lastName,
+            isEmailConfirmed,
+            isActive,
             createdAt);
 
         // Assert
@@ -89,13 +89,13 @@ public class UserDtoTests
 
         // Act
         var response = new UserResponse(
-            id, 
-            userName, 
-            email, 
-            firstName, 
-            lastName, 
-            isEmailConfirmed, 
-            isActive, 
+            id,
+            userName,
+            email,
+            firstName,
+            lastName,
+            isEmailConfirmed,
+            isActive,
             createdAt);
 
         // Assert
@@ -138,7 +138,7 @@ public class UserDtoTests
         // Arrange
         var response = new UserResponse(
             "user123",
-            "testuser@example.com", 
+            "testuser@example.com",
             "testuser@example.com",
             "John",
             "Doe",

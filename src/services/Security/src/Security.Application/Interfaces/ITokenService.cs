@@ -12,7 +12,7 @@ public interface ITokenService
     /// Creates an access token for the given user with claims
     /// </summary>
     Task<(string Token, string JwtId, DateTime Expiry)> CreateAccessTokenAsync(
-        ApplicationUser user, 
+        ApplicationUser user,
         IEnumerable<Claim> claims);
 
     /// <summary>

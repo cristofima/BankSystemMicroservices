@@ -116,7 +116,8 @@ public static class SecurityHeadersExtensions
         }
 
         // Cache control for API responses
-        if (headers.ContainsKey("Cache-Control")) return;
+        if (headers.ContainsKey("Cache-Control"))
+            return;
         headers.CacheControl = "no-cache, no-store, must-revalidate";
         headers.Pragma = "no-cache";
         headers.Expires = "0";

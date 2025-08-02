@@ -16,7 +16,7 @@ public abstract class TestBase
         Fixture = new Fixture();
         Fixture.Behaviors.Remove(new ThrowingRecursionBehavior());
         Fixture.Behaviors.Add(new OmitOnRecursionBehavior());
-        
+
         // Configure fixture to create valid GUIDs
         Fixture.Register(() => Guid.NewGuid());
     }

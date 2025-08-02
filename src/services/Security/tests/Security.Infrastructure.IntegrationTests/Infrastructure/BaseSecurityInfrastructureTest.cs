@@ -32,7 +32,7 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
     /// <summary>
     /// Gets the configured service provider for dependency resolution
     /// </summary>
-    protected ServiceProvider ServiceProvider => _serviceProvider 
+    protected ServiceProvider ServiceProvider => _serviceProvider
         ?? throw new InvalidOperationException("Service provider not initialized. Ensure InitializeAsync has been called.");
 
     /// <summary>
@@ -55,7 +55,7 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
 
         // Setup service collection with infrastructure dependencies
         var services = new ServiceCollection();
-        
+
         // Configure logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
@@ -135,7 +135,7 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
     private IConfiguration CreateConfiguration()
     {
         var configurationBuilder = new ConfigurationBuilder();
-        
+
         // Add in-memory configuration for testing
         configurationBuilder.AddInMemoryCollection(new Dictionary<string, string>
         {
@@ -187,7 +187,7 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
     {
         using var scope = CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
-        
+
         // Ensure database is created and migrations are applied
         await dbContext.Database.EnsureCreatedAsync();
     }
@@ -199,11 +199,11 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
     {
         using var scope = CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
-        
+
         // Remove all data but keep schema
         await dbContext.RefreshTokens.ExecuteDeleteAsync();
         await dbContext.Users.ExecuteDeleteAsync();
-        
+
         await dbContext.SaveChangesAsync();
     }
 }

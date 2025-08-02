@@ -19,10 +19,10 @@ public class CorrelationIdMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var correlationId = GetOrCreateCorrelationId(context);
-        
+
         // Add correlation ID to response headers for client tracking
         context.Response.Headers.TryAdd(CorrelationIdHeaderName, correlationId);
-        
+
         // Add correlation ID to logging context
         using (_logger.BeginScope(new Dictionary<string, object>
         {
@@ -30,7 +30,7 @@ public class CorrelationIdMiddleware
         }))
         {
             _logger.LogDebug("Processing request with correlation ID: {CorrelationId}", correlationId);
-            
+
             try
             {
                 await _next(context);
@@ -50,17 +50,17 @@ public class CorrelationIdMiddleware
     private string GetOrCreateCorrelationId(HttpContext context)
     {
         var correlationId = context.Request.Headers[CorrelationIdHeaderName].FirstOrDefault();
-        
+
         if (IsValidCorrelationId(correlationId))
         {
             _logger.LogDebug("Using existing correlation ID: {CorrelationId}", correlationId);
             return correlationId!;
         }
-        
+
         // Create new correlation ID
         var newCorrelationId = Guid.NewGuid().ToString();
         context.Request.Headers[CorrelationIdHeaderName] = newCorrelationId;
-        
+
         _logger.LogDebug("Created new correlation ID: {CorrelationId}", newCorrelationId);
         return newCorrelationId;
     }
@@ -70,7 +70,7 @@ public class CorrelationIdMiddleware
     /// </summary>
     private static bool IsValidCorrelationId(string? correlationId)
     {
-        return !string.IsNullOrWhiteSpace(correlationId) && 
+        return !string.IsNullOrWhiteSpace(correlationId) &&
                Guid.TryParse(correlationId, out _);
     }
 }
