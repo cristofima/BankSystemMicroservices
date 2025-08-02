@@ -57,7 +57,7 @@ stages:
         fi
         # Fail-safe defaults (in case any git command above fails)
         echo "##vso[task.setvariable variable=SkipSonarQube]true"
-        echo "##vso[task.setvariable variable=SkipCoverage]true"
+        echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
         echo "Changed files:"
         echo "$CHANGED_FILES"
         
@@ -70,22 +70,22 @@ stages:
         echo "Number of code changes: $CODE_CHANGES"
         echo "Number of coverage-affecting changes: $COVERAGE_AFFECTING_CHANGES"
         
-        # Always run SonarQube analysis for code changes (quality analysis)
+        # Strategy: Always collect coverage for unit tests, but only send to SonarQube when needed
         if [ "$CODE_CHANGES" -eq 0 ]; then
           echo "Only documentation files changed - skipping SonarQube analysis entirely"
           echo "##vso[task.setvariable variable=SkipSonarQube]true"
-          echo "##vso[task.setvariable variable=SkipCoverage]true"
+          echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
         else
           echo "Code files changed - running SonarQube analysis"
           echo "##vso[task.setvariable variable=SkipSonarQube]false"
           
-          # Skip coverage collection if no source code changes that affect coverage
+          # Send coverage to SonarQube only if source code changes that affect coverage
           if [ "$COVERAGE_AFFECTING_CHANGES" -eq 0 ]; then
-            echo "No coverage-affecting changes - skipping coverage collection"
-            echo "##vso[task.setvariable variable=SkipCoverage]true"
+            echo "No coverage-affecting changes - running SonarQube WITHOUT coverage data"
+            echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
           else
-            echo "Coverage-affecting changes detected - collecting coverage"
-            echo "##vso[task.setvariable variable=SkipCoverage]false"
+            echo "Coverage-affecting changes detected - running SonarQube WITH coverage data"
+            echo "##vso[task.setvariable variable=SendCoverageToSonar]true"
           fi
         fi
       displayName: "Analyze Changes for Pipeline Optimization"
@@ -102,7 +102,7 @@ stages:
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
 
     - task: SonarQubePrepare@7
-      displayName: 'Prepare SonarQube Analysis'
+      displayName: 'Prepare SonarQube Analysis (WITH Coverage Data)'
       inputs:
         SonarQube: 'SonarQube'
         organization: '$(SONAR_ORGANIZATION)'
@@ -116,7 +116,22 @@ stages:
           sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx
           sonar.sourceEncoding=UTF-8
           sonar.coverage.exclusions=**/*.md,**/README.*,**/docs/**/*.md,**/docs/**/*.y?(a)ml
-      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'))
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'), eq(variables['SendCoverageToSonar'], 'true'))
+      timeoutInMinutes: 10
+
+    - task: SonarQubePrepare@7
+      displayName: 'Prepare SonarQube Analysis (WITHOUT Coverage Data)'
+      inputs:
+        SonarQube: 'SonarQube'
+        organization: '$(SONAR_ORGANIZATION)'
+        scannerMode: 'dotnet'
+        projectKey: '$(SONAR_PROJECT_KEY)'
+        projectName: '$(SONAR_PROJECT_NAME)'
+        extraProperties: |
+          sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs
+          sonar.test.exclusions=**/bin/**,**/obj/**
+          sonar.sourceEncoding=UTF-8
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'), eq(variables['SendCoverageToSonar'], 'false'))
       timeoutInMinutes: 10
 
     - task: DotNetCoreCLI@2
@@ -141,18 +156,6 @@ stages:
           src/shared/tests/**/*UnitTests.csproj
         arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --settings "$(Build.SourcesDirectory)/src/coverlet.runsettings"'
         publishTestResults: true
-      condition: and(succeeded(), ne(variables['SkipCoverage'], 'true'))
-
-    - task: DotNetCoreCLI@2
-      displayName: 'Run All Unit Tests without Coverage'
-      inputs:
-        command: 'test'
-        projects: |
-          src/services/**/tests/**/*UnitTests.csproj
-          src/shared/tests/**/*UnitTests.csproj
-        arguments: '--configuration $(buildConfiguration)'
-        publishTestResults: true
-      condition: and(succeeded(), eq(variables['SkipCoverage'], 'true'))
 
     - task: DotNetCoreCLI@2
       displayName: 'Run All Integration Tests with Code Coverage'
@@ -163,18 +166,6 @@ stages:
         publishTestResults: true
       # Note: TestContainers will automatically use Docker on Linux
       continueOnError: true
-      condition: and(succeeded(), ne(variables['SkipCoverage'], 'true'))
-
-    - task: DotNetCoreCLI@2
-      displayName: 'Run All Integration Tests without Coverage'
-      inputs:
-        command: 'test'
-        projects: 'src/services/**/tests/**/*IntegrationTests.csproj'
-        arguments: '--configuration $(buildConfiguration)'
-        publishTestResults: true
-      # Note: TestContainers will automatically use Docker on Linux
-      continueOnError: true
-      condition: and(succeeded(), eq(variables['SkipCoverage'], 'true'))
 
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage to Azure DevOps'
