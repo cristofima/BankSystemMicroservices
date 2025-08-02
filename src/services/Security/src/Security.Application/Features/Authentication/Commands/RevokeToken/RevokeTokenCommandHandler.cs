@@ -1,7 +1,7 @@
+using BankSystem.Shared.Domain.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Security.Application.Interfaces;
-using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.Features.Authentication.Commands.RevokeToken;
 
@@ -42,9 +42,9 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
 
             return result;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            _logger.LogInformation("Token revocation operation was cancelled from IP {IpAddress}", request.IpAddress);
+            _logger.LogWarning(ex, "Token revocation operation was cancelled from IP {IpAddress}", request.IpAddress);
             throw;
         }
         catch (Exception ex)

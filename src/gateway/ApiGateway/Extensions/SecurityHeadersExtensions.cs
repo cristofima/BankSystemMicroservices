@@ -7,6 +7,8 @@ namespace BankSystem.ApiGateway.Extensions;
 /// </summary>
 public static class SecurityHeadersExtensions
 {
+    private const string ReferrerPolicyHeader = "Referrer-Policy";
+
     /// <summary>
     /// Adds security headers middleware to the application pipeline.
     /// Implements headers recommended by OWASP for secure web applications.
@@ -54,8 +56,8 @@ public static class SecurityHeadersExtensions
         if (!headers.ContainsKey("X-XSS-Protection"))
             headers.XXSSProtection = "1; mode=block";
 
-        if (!headers.ContainsKey("Referrer-Policy"))
-            headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        if (!headers.ContainsKey(ReferrerPolicyHeader))
+            headers[ReferrerPolicyHeader] = "strict-origin-when-cross-origin";
 
         // Content Security Policy - environment-aware with documentation endpoint handling
         if (!headers.ContainsKey("Content-Security-Policy"))
@@ -168,8 +170,8 @@ public static class SecurityHeadersExtensions
         if (!headers.ContainsKey("X-XSS-Protection"))
             headers.XXSSProtection = "1; mode=block";
 
-        if (!headers.ContainsKey("Referrer-Policy"))
-            headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        if (!headers.ContainsKey(ReferrerPolicyHeader))
+            headers[ReferrerPolicyHeader] = "strict-origin-when-cross-origin";
 
         // Strict Transport Security (HSTS) - only for HTTPS
         if (context.Request.IsHttps)

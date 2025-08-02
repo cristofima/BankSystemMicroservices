@@ -1,10 +1,10 @@
+using BankSystem.Shared.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
-using BankSystem.Shared.Domain.Common;
 using Security.Domain.Entities;
 using System.Security.Claims;
 
@@ -176,7 +176,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         }
         catch (NotSupportedException ex)
         {
-            _logger.LogWarning("Role store not configured properly: {Error}. Proceeding without role claims.", ex.Message);
+            _logger.LogWarning(ex, "Role store not configured properly: {Error}. Proceeding without role claims.", ex.Message);
             // Continue without role claims - this allows the system to work even if roles aren't properly configured
         }
 

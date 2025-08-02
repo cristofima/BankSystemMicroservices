@@ -56,9 +56,9 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 
             return Result.Success();
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            _logger.LogInformation("Logout operation was cancelled for user {UserId}", request.UserId);
+            _logger.LogWarning(ex, "Logout operation was cancelled for user {UserId}", request.UserId);
             throw;
         }
         catch (Exception ex)
