@@ -98,6 +98,7 @@ The pipeline now includes intelligent change detection to separate code analysis
     if [ "$(Build.Reason)" = "PullRequest" ]; then
       # For PR builds, compare with target branch
       TARGET_REF="$(System.PullRequest.TargetBranch)"
+      # Azure provides refs/heads/xxx – trim prefix for remote ref
       TARGET_BRANCH=${TARGET_REF#refs/heads/}
       git fetch origin "$TARGET_BRANCH"
       CHANGED_FILES=$(git diff --name-only HEAD "origin/$TARGET_BRANCH" || true)
@@ -106,10 +107,12 @@ The pipeline now includes intelligent change detection to separate code analysis
       CHANGED_FILES=$(git diff --name-only $(git rev-list --max-parents=0 HEAD)..HEAD || true)
     fi
 
-    # Fail-safe defaults
+    # Fail-safe defaults (in case any git command above fails)
     echo "##vso[task.setvariable variable=SkipSonarQube]true"
     echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
-    echo "Changed files: $CHANGED_FILES"
+    echo "##vso[task.setvariable variable=RunWithoutCoverage]false"
+    echo "Changed files:"
+    echo "$CHANGED_FILES"
 
     # Check if any non-documentation files were changed
     CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -v '\.md$' | grep -v 'README' | grep -v 'docs/' | wc -l)
@@ -125,17 +128,20 @@ The pipeline now includes intelligent change detection to separate code analysis
       echo "Only documentation files changed - skipping SonarQube analysis entirely"
       echo "##vso[task.setvariable variable=SkipSonarQube]true"
       echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
+      echo "##vso[task.setvariable variable=RunWithoutCoverage]false"
     else
       echo "Code files changed - running SonarQube analysis"
       echo "##vso[task.setvariable variable=SkipSonarQube]false"
       
-      # Send coverage to SonarQube only if source code changes that affect coverage
+      # Determine SonarQube execution mode based on coverage-affecting changes
       if [ "$COVERAGE_AFFECTING_CHANGES" -eq 0 ]; then
         echo "No coverage-affecting changes - running SonarQube WITHOUT coverage data"
         echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
+        echo "##vso[task.setvariable variable=RunWithoutCoverage]true"
       else
         echo "Coverage-affecting changes detected - running SonarQube WITH coverage data"
         echo "##vso[task.setvariable variable=SendCoverageToSonar]true"
+        echo "##vso[task.setvariable variable=RunWithoutCoverage]false"
       fi
     fi
   displayName: "Analyze Changes for Pipeline Optimization"
@@ -171,7 +177,7 @@ The pipeline now includes intelligent change detection to separate code analysis
       sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs
       sonar.test.exclusions=**/bin/**,**/obj/**
       sonar.sourceEncoding=UTF-8
-  condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'), eq(variables['SendCoverageToSonar'], 'false'))
+  condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'), eq(variables['RunWithoutCoverage'], 'true'))
   timeoutInMinutes: 10
 
 # Test execution with conditional coverage
@@ -229,7 +235,7 @@ The pipeline now includes intelligent change detection to separate code analysis
 
 ### Smart Execution Logic
 
-The pipeline automatically detects the type of changes and executes accordingly using the `SendCoverageToSonar` variable:
+The pipeline automatically detects the type of changes and executes accordingly using a three-variable control system (`SkipSonarQube`, `SendCoverageToSonar`, `RunWithoutCoverage`):
 
 #### Scenario 1: Documentation-Only Changes
 
@@ -237,15 +243,15 @@ The pipeline automatically detects the type of changes and executes accordingly 
 - **Execution**: Skip SonarQube analysis entirely (`SkipSonarQube = true`)
 - **Result**: Build succeeds without affecting coverage metrics
 
-#### Scenario 2: Configuration/Build Changes
+#### Scenario 2: Configuration/Build Changes (No Coverage-Affecting Code)
 
-- **Detection**: Changes to `.csproj`, `.sln`, `.json`, `.yml`, `.yaml` files without code changes
-- **Execution**: Run SonarQube analysis without sending coverage data (`SendCoverageToSonar = false`)
+- **Detection**: Changes to `.csproj`, `.sln`, `.json`, `.yml`, `.yaml` files without source code changes
+- **Execution**: Run SonarQube analysis without sending coverage data (`RunWithoutCoverage = true`)
 - **Result**: Code quality analysis without coverage impact, preserving existing coverage metrics
 
-#### Scenario 3: Source Code Changes
+#### Scenario 3: Source Code Changes (Coverage-Affecting)
 
-- **Detection**: Changes to `.cs` files (actual source code)
+- **Detection**: Changes to `.cs` files in `src/services/` or `src/shared/` directories
 - **Execution**: Full SonarQube analysis with coverage collection and reporting (`SendCoverageToSonar = true`)
 - **Result**: Complete quality analysis including updated coverage metrics
 
@@ -268,12 +274,13 @@ The test step has been simplified to always collect coverage data, ensuring cons
 
 ### Key Pipeline Practices
 
-1. **Use Conditional Execution**: Only run SonarQube when variables are set and use `SendCoverageToSonar` to control coverage reporting
-2. **Set Timeouts**: Prevent hanging with appropriate timeout values
-3. **Auto-Discovery**: Let SonarQube discover projects automatically in `dotnet` mode
-4. **Minimal Exclusions**: Only exclude necessary files (bin, obj, migrations)
-5. **Always Collect Coverage**: Simplify pipeline by always collecting coverage data, then controlling what gets sent to SonarQube
-6. **Dual SonarQube Preparation**: Use separate preparation tasks for scenarios with and without coverage data
+1. **Use Three-Variable Control**: Employ `SkipSonarQube`, `SendCoverageToSonar`, and `RunWithoutCoverage` for precise conditional execution
+2. **Dual SonarQube Preparation**: Use separate preparation tasks - WITH coverage when any code requires coverage analysis, WITHOUT coverage only when ALL changes don't require coverage
+3. **Set Timeouts**: Prevent hanging with appropriate timeout values
+4. **Auto-Discovery**: Let SonarQube discover projects automatically in `dotnet` mode
+5. **Minimal Exclusions**: Only exclude necessary files (bin, obj, migrations)
+6. **Always Collect Coverage**: Simplify pipeline by always collecting coverage data, then controlling what gets sent to SonarQube
+7. **Strict Conditional Logic**: Ensure WITHOUT coverage task only runs when ALL modified files don't require coverage analysis
 
 ## Troubleshooting
 

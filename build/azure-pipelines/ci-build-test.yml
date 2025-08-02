@@ -58,6 +58,7 @@ stages:
         # Fail-safe defaults (in case any git command above fails)
         echo "##vso[task.setvariable variable=SkipSonarQube]true"
         echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
+        echo "##vso[task.setvariable variable=RunWithoutCoverage]false"
         echo "Changed files:"
         echo "$CHANGED_FILES"
         
@@ -75,17 +76,20 @@ stages:
           echo "Only documentation files changed - skipping SonarQube analysis entirely"
           echo "##vso[task.setvariable variable=SkipSonarQube]true"
           echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
+          echo "##vso[task.setvariable variable=RunWithoutCoverage]false"
         else
           echo "Code files changed - running SonarQube analysis"
           echo "##vso[task.setvariable variable=SkipSonarQube]false"
           
-          # Send coverage to SonarQube only if source code changes that affect coverage
-          if [ "$COVERAGE_AFFECTING_CHANGES" -eq 0 ]; then
-            echo "No coverage-affecting changes - running SonarQube WITHOUT coverage data"
-            echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
-          else
+          # Logic: If ANY file requires coverage, run ALL tasks WITH coverage
+          if [ "$COVERAGE_AFFECTING_CHANGES" -gt 0 ]; then
             echo "Coverage-affecting changes detected - running SonarQube WITH coverage data"
             echo "##vso[task.setvariable variable=SendCoverageToSonar]true"
+            echo "##vso[task.setvariable variable=RunWithoutCoverage]false"
+          else
+            echo "No coverage-affecting changes - running SonarQube WITHOUT coverage data"
+            echo "##vso[task.setvariable variable=SendCoverageToSonar]false"
+            echo "##vso[task.setvariable variable=RunWithoutCoverage]true"
           fi
         fi
       displayName: "Analyze Changes for Pipeline Optimization"
@@ -131,7 +135,7 @@ stages:
           sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs
           sonar.test.exclusions=**/bin/**,**/obj/**
           sonar.sourceEncoding=UTF-8
-      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'), eq(variables['SendCoverageToSonar'], 'false'))
+      condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''), ne(variables['SkipSonarQube'], 'true'), eq(variables['RunWithoutCoverage'], 'true'))
       timeoutInMinutes: 10
 
     - task: DotNetCoreCLI@2
