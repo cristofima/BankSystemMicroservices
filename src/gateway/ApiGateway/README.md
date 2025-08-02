@@ -419,8 +419,6 @@ Key metrics tracked:
      -v
    ```
 
-````
-
 ## Getting Started
 
 ### Prerequisites
@@ -432,10 +430,11 @@ Key metrics tracked:
 ### Running the Gateway
 
 1. **Development Mode**:
+
    ```bash
    cd src/gateway/ApiGateway
    dotnet run
-````
+   ```
 
 2. **With specific environment**:
 

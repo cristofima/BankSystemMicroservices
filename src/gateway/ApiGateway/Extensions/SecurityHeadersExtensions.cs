@@ -158,10 +158,17 @@ public static class SecurityHeadersExtensions
         headers.Remove("Server");
 
         // Basic security headers
-        headers.XContentTypeOptions = "nosniff";
-        headers.XFrameOptions = "DENY";
-        headers.XXSSProtection = "1; mode=block";
-        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        if (!headers.ContainsKey("X-Content-Type-Options"))
+            headers.XContentTypeOptions = "nosniff";
+
+        if (!headers.ContainsKey("X-Frame-Options"))
+            headers.XFrameOptions = "DENY";
+
+        if (!headers.ContainsKey("X-XSS-Protection"))
+            headers.XXSSProtection = "1; mode=block";
+
+        if (!headers.ContainsKey("Referrer-Policy"))
+            headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
 
         // Strict Transport Security (HSTS) - only for HTTPS
         if (context.Request.IsHttps)

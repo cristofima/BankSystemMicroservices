@@ -101,7 +101,9 @@ public static class ServiceExtensions
             // Global rate limiting
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: context.User?.Identity?.Name ?? context.Request.Headers.Host.ToString(),
+                    partitionKey: context.User?.Identity?.Name
+                                  ?? context.Connection.RemoteIpAddress?.ToString()
+                                  ?? "unknown",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,

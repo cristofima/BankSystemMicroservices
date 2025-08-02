@@ -1,3 +1,4 @@
+using BankSystem.ApiGateway.Models;
 using System.Net;
 using System.Text.Json;
 
@@ -79,53 +80,47 @@ public class ExceptionHandlingMiddleware
 
         return exception switch
         {
-            ArgumentException => new ErrorResponse
-            {
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                Title = "Bad Request",
-                Status = (int)HttpStatusCode.BadRequest,
-                Detail = "The request contains invalid parameters",
-                Instance = GetInstancePath(),
-                CorrelationId = correlationId
-            },
+            ArgumentException => GetErrorResponse(
+                "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                "Bad Request",
+                HttpStatusCode.BadRequest,
+                "The request contains invalid parameters",
+                correlationId
+            ),
 
-            UnauthorizedAccessException => new ErrorResponse
-            {
-                Type = "https://tools.ietf.org/html/rfc7235#section-3.1",
-                Title = "Unauthorized",
-                Status = (int)HttpStatusCode.Unauthorized,
-                Detail = "Authentication is required to access this resource",
-                Instance = GetInstancePath()
-            },
+            UnauthorizedAccessException => GetErrorResponse(
+                "https://tools.ietf.org/html/rfc7235#section-3.1",
+                "Unauthorized",
+                HttpStatusCode.Unauthorized,
+                "Authentication is required to access this resource",
+                correlationId
+            ),
 
-            TaskCanceledException or OperationCanceledException => new ErrorResponse
-            {
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
-                Title = "Request Timeout",
-                Status = (int)HttpStatusCode.RequestTimeout,
-                Detail = "The request timed out",
-                Instance = GetInstancePath()
-            },
+            TaskCanceledException or OperationCanceledException => GetErrorResponse(
+                "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+                "Request Timeout",
+                HttpStatusCode.RequestTimeout,
+                "The request timed out",
+                correlationId
+            ),
 
-            HttpRequestException => new ErrorResponse
-            {
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3",
-                Title = "Service Unavailable",
-                Status = (int)HttpStatusCode.ServiceUnavailable,
-                Detail = "An upstream service is currently unavailable",
-                Instance = GetInstancePath()
-            },
+            HttpRequestException => GetErrorResponse(
+                "https://tools.ietf.org/html/rfc7231#section-6.5.3",
+                "Service Unavailable",
+                HttpStatusCode.ServiceUnavailable,
+                "An upstream service is currently unavailable",
+                correlationId
+            ),
 
-            _ => new ErrorResponse
-            {
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                Title = "Internal Server Error",
-                Status = (int)HttpStatusCode.InternalServerError,
-                Detail = _environment.IsDevelopment()
+            _ => GetErrorResponse(
+                "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                "Internal Server Error",
+                HttpStatusCode.InternalServerError,
+                _environment.IsDevelopment()
                     ? $"An unexpected error occurred: {exception.Message}"
                     : "An unexpected error occurred while processing your request",
-                Instance = GetInstancePath()
-            }
+                correlationId
+            ),
         };
     }
 
@@ -136,45 +131,17 @@ public class ExceptionHandlingMiddleware
     {
         return $"/errors/{Guid.NewGuid()}";
     }
-}
 
-/// <summary>
-/// Standardized error response following RFC 7807 Problem Details format.
-/// </summary>
-public class ErrorResponse
-{
-    /// <summary>
-    /// A URI reference that identifies the problem type.
-    /// </summary>
-    public string Type { get; set; } = string.Empty;
-
-    /// <summary>
-    /// A short, human-readable summary of the problem type.
-    /// </summary>
-    public string Title { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The HTTP status code for this occurrence of the problem.
-    /// </summary>
-    public int Status { get; set; }
-
-    /// <summary>
-    /// A human-readable explanation specific to this occurrence of the problem.
-    /// </summary>
-    public string Detail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// A URI reference that identifies the specific occurrence of the problem.
-    /// </summary>
-    public string Instance { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Timestamp when the error occurred.
-    /// </summary>
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// Correlation ID for distributed tracing.
-    /// </summary>
-    public string? CorrelationId { get; set; }
+    private static ErrorResponse GetErrorResponse(string type, string title, HttpStatusCode statusCode, string detail, string? correlationId)
+    {
+        return new ErrorResponse
+        {
+            Type = type,
+            Title = title,
+            Status = (int)statusCode,
+            Detail = detail,
+            Instance = GetInstancePath(),
+            CorrelationId = correlationId
+        };
+    }
 }
