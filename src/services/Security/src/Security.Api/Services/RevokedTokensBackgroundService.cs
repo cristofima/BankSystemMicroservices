@@ -43,7 +43,7 @@ public class RevokedTokensBackgroundService : IHostedService
             {
                 var cacheKey = $"revoked_token_{token.JwtId}";
                 var remainingTime = token.ExpiryDate.Subtract(DateTime.UtcNow);
-                
+
                 if (remainingTime > TimeSpan.Zero)
                 {
                     _memoryCache.Set(cacheKey, DateTime.UtcNow, remainingTime);

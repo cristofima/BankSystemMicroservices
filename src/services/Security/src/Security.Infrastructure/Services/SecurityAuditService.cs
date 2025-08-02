@@ -11,7 +11,7 @@ namespace Security.Infrastructure.Services;
 public class SecurityAuditService : ISecurityAuditService
 {
     private const string UnknownValue = "unknown";
-    
+
     private readonly ILogger<SecurityAuditService> _logger;
     private readonly SecurityOptions _securityOptions;
 

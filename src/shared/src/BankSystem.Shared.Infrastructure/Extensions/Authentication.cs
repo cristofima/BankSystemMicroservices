@@ -57,9 +57,9 @@ public static class Authentication
                 OnTokenValidated = context =>
                 {
                     var claimsIdentity = context.Principal?.Identity as ClaimsIdentity;
-                    if (claimsIdentity?.Claims?.Any() != true)
+                    if (claimsIdentity?.Claims == null)
                     {
-                        context.Fail("Token has no claims");
+                        context.Fail("Token has no claims identity or claims collection");
                     }
                     return Task.CompletedTask;
                 }

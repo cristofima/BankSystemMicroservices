@@ -143,7 +143,7 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser>
         foreach (var entry in entries)
         {
             var entity = (RefreshToken)entry.Entity;
-            
+
             if (entry.State == EntityState.Modified)
             {
                 entity.UpdatedAt = DateTime.UtcNow;

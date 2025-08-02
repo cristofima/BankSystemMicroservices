@@ -7,6 +7,8 @@ namespace BankSystem.ApiGateway.Extensions;
 /// </summary>
 public static class SecurityHeadersExtensions
 {
+    private const string ReferrerPolicyHeader = "Referrer-Policy";
+
     /// <summary>
     /// Adds security headers middleware to the application pipeline.
     /// Implements headers recommended by OWASP for secure web applications.
@@ -54,8 +56,8 @@ public static class SecurityHeadersExtensions
         if (!headers.ContainsKey("X-XSS-Protection"))
             headers.XXSSProtection = "1; mode=block";
 
-        if (!headers.ContainsKey("Referrer-Policy"))
-            headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        if (!headers.ContainsKey(ReferrerPolicyHeader))
+            headers[ReferrerPolicyHeader] = "strict-origin-when-cross-origin";
 
         // Content Security Policy - environment-aware with documentation endpoint handling
         if (!headers.ContainsKey("Content-Security-Policy"))
@@ -116,7 +118,8 @@ public static class SecurityHeadersExtensions
         }
 
         // Cache control for API responses
-        if (headers.ContainsKey("Cache-Control")) return;
+        if (headers.ContainsKey("Cache-Control"))
+            return;
         headers.CacheControl = "no-cache, no-store, must-revalidate";
         headers.Pragma = "no-cache";
         headers.Expires = "0";
@@ -158,10 +161,17 @@ public static class SecurityHeadersExtensions
         headers.Remove("Server");
 
         // Basic security headers
-        headers.XContentTypeOptions = "nosniff";
-        headers.XFrameOptions = "DENY";
-        headers.XXSSProtection = "1; mode=block";
-        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        if (!headers.ContainsKey("X-Content-Type-Options"))
+            headers.XContentTypeOptions = "nosniff";
+
+        if (!headers.ContainsKey("X-Frame-Options"))
+            headers.XFrameOptions = "DENY";
+
+        if (!headers.ContainsKey("X-XSS-Protection"))
+            headers.XXSSProtection = "1; mode=block";
+
+        if (!headers.ContainsKey(ReferrerPolicyHeader))
+            headers[ReferrerPolicyHeader] = "strict-origin-when-cross-origin";
 
         // Strict Transport Security (HSTS) - only for HTTPS
         if (context.Request.IsHttps)

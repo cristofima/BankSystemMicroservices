@@ -21,15 +21,15 @@ namespace Security.Api.Controllers;
 public class AuthController : BaseController
 {
     private const string InvalidRequestDataMessage = "Invalid request data";
-    
+
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
-        IMediator mediator, 
+        IMediator mediator,
         ILogger<AuthController> logger,
         IHttpContextInfoService httpContextInfoService,
-        IApiResponseService apiResponseService) 
+        IApiResponseService apiResponseService)
         : base(httpContextInfoService, apiResponseService)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
@@ -57,7 +57,7 @@ public class AuthController : BaseController
         CancellationToken cancellationToken)
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
-        _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}", 
+        _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}",
             request.UserName, clientIpAddress);
 
         if (!ModelState.IsValid)
@@ -71,7 +71,7 @@ public class AuthController : BaseController
 
         var response = CreateTokenResponse(result.Value!);
         LogSuccessfulLogin(request.UserName);
-        
+
         return Success(response);
     }
 
@@ -136,7 +136,7 @@ public class AuthController : BaseController
 
         var response = CreateTokenResponse(result.Value!);
         LogSuccessfulTokenRefresh(clientIpAddress);
-        
+
         return Success(response);
     }
 
@@ -323,9 +323,9 @@ public class AuthController : BaseController
     private IActionResult HandleRegistrationFailure(string userName, string error)
     {
         _logger.LogWarning("Registration failed for user {UserName}: {Error}", userName, error);
-        
-        return error.Contains("already", StringComparison.OrdinalIgnoreCase) 
-            ? Conflict(error) 
+
+        return error.Contains("already", StringComparison.OrdinalIgnoreCase)
+            ? Conflict(error)
             : ValidationError(error);
     }
 

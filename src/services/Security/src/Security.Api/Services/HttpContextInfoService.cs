@@ -24,7 +24,7 @@ public interface IHttpContextInfoService
 public class HttpContextInfoService : IHttpContextInfoService
 {
     private const string UnknownValue = "unknown";
-    
+
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public HttpContextInfoService(IHttpContextAccessor httpContextAccessor)

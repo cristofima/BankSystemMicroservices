@@ -12,10 +12,10 @@ public class LoginDtoTests
         const string password = "Password123!";
 
         // Act
-        var dto = new LoginDto 
+        var dto = new LoginDto
         {
-            UserName = userName, 
-            Password = password 
+            UserName = userName,
+            Password = password
         };
 
         // Assert

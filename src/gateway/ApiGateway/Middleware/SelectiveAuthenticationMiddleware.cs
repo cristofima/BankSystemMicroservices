@@ -1,5 +1,7 @@
 using BankSystem.ApiGateway.Configuration;
+using BankSystem.ApiGateway.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace BankSystem.ApiGateway.Middleware;
@@ -13,7 +15,7 @@ public class SelectiveAuthenticationMiddleware
 
     private static readonly Regex[] PublicEndpointPatterns =
     [
-        new (@"^/api/v1/auth/(login|register|refresh|forgot-password|reset-password).*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
+        new (@"^/api/v1/auth/(login|register|refresh|forgot-password|reset-password)(\?.*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
         new (@"^/health.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
         new (@"^/scalar.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
         new (@"^/openapi.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout),
@@ -50,7 +52,16 @@ public class SelectiveAuthenticationMiddleware
         {
             _logger.LogWarning("Unauthenticated access attempt to protected endpoint: {Path}", path);
             context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Authentication required");
+            context.Response.ContentType = "application/json";
+            var errorResponse = new ErrorResponse
+            {
+                Type = "https://tools.ietf.org/html/rfc7235#section-3.1",
+                Title = "Unauthorized",
+                Status = 401,
+                Detail = "Authentication is required to access this resource",
+                Instance = $"/errors/{Guid.NewGuid()}"
+            };
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
             return;
         }
 
@@ -66,7 +77,16 @@ public class SelectiveAuthenticationMiddleware
                 _logger.LogWarning("Authorization failed for user {User} on path {Path} with policy {Policy}",
                     context.User.Identity?.Name, path, requiredPolicy);
                 context.Response.StatusCode = 403;
-                await context.Response.WriteAsync("Insufficient permissions");
+                context.Response.ContentType = "application/json";
+                var errorResponse = new ErrorResponse
+                {
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3",
+                    Title = "Forbidden",
+                    Status = 403,
+                    Detail = "Insufficient permissions to access this resource",
+                    Instance = $"/errors/{Guid.NewGuid()}"
+                };
+                await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
                 return;
             }
         }

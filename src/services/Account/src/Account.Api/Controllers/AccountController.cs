@@ -87,7 +87,8 @@ public class AccountController : ApiControllerBase
         var query = new GetAccountByIdQuery(accountId);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsSuccess) return Ok(result.Value);
+        if (result.IsSuccess)
+            return Ok(result.Value);
 
         _logger.LogWarning("Account {AccountId} not found", accountId);
         return HandleFailure(result, "Account Not Found");
@@ -114,7 +115,8 @@ public class AccountController : ApiControllerBase
         var query = new GetAccountsByCustomerIdQuery();
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result.IsSuccess) return Ok(result.Value);
+        if (result.IsSuccess)
+            return Ok(result.Value);
 
         _logger.LogWarning("No accounts found for user {UserName}", userName);
         return HandleFailure(result, "Accounts Not Found");

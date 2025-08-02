@@ -38,12 +38,12 @@ public class TokenRevocationMiddleware
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var jwtId = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-            
+
             if (!string.IsNullOrEmpty(jwtId) && _memoryCache.TryGetValue($"revoked_token_{jwtId}", out _))
             {
-                _logger.LogWarning("Blocked request with revoked token {JwtId} from IP {IpAddress}", 
+                _logger.LogWarning("Blocked request with revoked token {JwtId} from IP {IpAddress}",
                     jwtId, GetClientIpAddress(context));
-                
+
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 await context.Response.WriteAsync("Token has been revoked");
                 return;

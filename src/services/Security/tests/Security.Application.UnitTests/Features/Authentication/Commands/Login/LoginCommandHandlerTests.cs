@@ -135,7 +135,7 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         // Arrange
         var user = CreateTestUser(failedLoginAttempts: 6);
         user.UpdatedAt = DateTime.UtcNow.AddMinutes(-5); // Within lockout period
-        
+
         var command = new LoginCommand(
             user.UserName!,
             "Password123!",

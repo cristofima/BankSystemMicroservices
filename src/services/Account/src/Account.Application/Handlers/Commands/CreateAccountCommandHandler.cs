@@ -31,7 +31,7 @@ public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand,
 
         _accountRepository = accountRepository;
         _authenticatedUserService = authenticatedUserService;
-        _mapper = mapper;   
+        _mapper = mapper;
         _logger = logger;
     }
 

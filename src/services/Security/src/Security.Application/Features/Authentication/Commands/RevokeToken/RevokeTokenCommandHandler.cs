@@ -1,7 +1,7 @@
+using BankSystem.Shared.Domain.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Security.Application.Interfaces;
-using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.Features.Authentication.Commands.RevokeToken;
 
@@ -27,7 +27,7 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
     public async Task<Result> Handle(RevokeTokenCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
+
         try
         {
             _logger.LogInformation("Token revocation attempt from IP {IpAddress}", request.IpAddress);
@@ -35,16 +35,16 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
             cancellationToken.ThrowIfCancellationRequested();
 
             var result = await RevokeTokenAsync(request, cancellationToken);
-            
+
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             await HandleRevocationResultAsync(request, result);
 
             return result;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            _logger.LogInformation("Token revocation operation was cancelled from IP {IpAddress}", request.IpAddress);
+            _logger.LogWarning(ex, "Token revocation operation was cancelled from IP {IpAddress}", request.IpAddress);
             throw;
         }
         catch (Exception ex)
@@ -57,9 +57,9 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
     private async Task<Result> RevokeTokenAsync(RevokeTokenCommand request, CancellationToken cancellationToken)
     {
         return await _refreshTokenService.RevokeTokenAsync(
-            request.Token, 
-            request.IpAddress, 
-            request.Reason, 
+            request.Token,
+            request.IpAddress,
+            request.Reason,
             cancellationToken);
     }
 
@@ -83,7 +83,7 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
 
     private void LogFailedRevocation(RevokeTokenCommand request, string error)
     {
-        _logger.LogWarning("Token revocation failed from IP {IpAddress}: {Error}", 
+        _logger.LogWarning("Token revocation failed from IP {IpAddress}: {Error}",
             request.IpAddress, error);
     }
 }
