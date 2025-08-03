@@ -1,30 +1,28 @@
 using Asp.Versioning;
 using BankSystem.Shared.Infrastructure.Extensions;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using System.Threading.RateLimiting;
 
-namespace BankSystem.Shared.ServiceDefaults.Extensions;
+namespace BankSystem.Shared.WebApi.Extensions;
 
 [ExcludeFromCodeCoverage]
-public static class ServiceDefaultsExtensions
+public static class WebApiExtensions
 {
     /// <summary>
-    /// Adds common service defaults for all microservices in the bank system.
-    /// This includes controllers, authentication, authorization, health checks, API documentation, versioning, and CORS.
+    /// Adds common Web API defaults for all microservices in the bank system.
+    /// This includes controllers, authentication, authorization, API documentation, versioning, CORS, and rate limiting.
+    /// Note: This should be used together with Aspire ServiceDefaults for complete configuration.
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="configuration">The application configuration</param>
     /// <param name="apiTitle">The title for the API documentation (default: "Bank System API")</param>
     /// <param name="configureControllers">Optional action to configure controller options</param>
     /// <returns>The service collection for chaining</returns>
-    public static IServiceCollection AddServiceDefaults(
+    public static IServiceCollection AddWebApiDefaults(
         this IServiceCollection services,
         IConfiguration configuration,
         string apiTitle = "Bank System API",
@@ -60,9 +58,6 @@ public static class ServiceDefaultsExtensions
 
         // Add authorization
         services.AddAuthorization();
-
-        // Add health checks
-        services.AddHealthChecks();
 
         // Add OpenAPI/Swagger
         services.AddOpenApi();
@@ -105,6 +100,7 @@ public static class ServiceDefaultsExtensions
 
     /// <summary>
     /// Adds a DbContext health check to the service collection.
+    /// This complements the basic health checks from Aspire ServiceDefaults.
     /// </summary>
     /// <typeparam name="TDbContext">The type of DbContext to check</typeparam>
     /// <param name="services">The service collection</param>
@@ -121,13 +117,14 @@ public static class ServiceDefaultsExtensions
     }
 
     /// <summary>
-    /// Configures the common middleware pipeline for all microservices.
-    /// This includes development-specific middleware, security headers, authentication, and health checks.
+    /// Configures the common Web API middleware pipeline for all microservices.
+    /// This includes API-specific middleware like authentication, CORS, and documentation.
+    /// Note: Use this AFTER configuring Aspire ServiceDefaults middleware.
     /// </summary>
     /// <param name="app">The web application</param>
     /// <param name="apiTitle">The title for the API documentation</param>
     /// <returns>The web application for chaining</returns>
-    public static WebApplication UseServiceDefaults(this WebApplication app, string apiTitle = "Bank System API")
+    public static WebApplication UseWebApiDefaults(this WebApplication app, string apiTitle = "Bank System API")
     {
         // Development-specific middleware
         if (app.Environment.IsDevelopment())
@@ -144,7 +141,7 @@ public static class ServiceDefaultsExtensions
             app.UseHsts(); // HTTP Strict Transport Security
         }
 
-        // Core middleware pipeline
+        // Core middleware pipeline (order matters!)
         app.UseHttpsRedirection();
 
         // Rate limiting
@@ -157,12 +154,6 @@ public static class ServiceDefaultsExtensions
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // Configure health checks with detailed JSON response
-        app.MapHealthChecks("/health", new HealthCheckOptions
-        {
-            ResponseWriter = WriteHealthCheckResponse
-        });
-
         // Default redirect to API documentation
         app.Map("/", () =>
         {
@@ -171,29 +162,5 @@ public static class ServiceDefaultsExtensions
         });
 
         return app;
-    }
-
-    /// <summary>
-    /// Writes a detailed JSON health check response including status, individual checks, and timing information.
-    /// </summary>
-    /// <param name="context">The HTTP context</param>
-    /// <param name="report">The health check report</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    private static async Task WriteHealthCheckResponse(HttpContext context, HealthReport report)
-    {
-        context.Response.ContentType = "application/json";
-        var response = new
-        {
-            status = report.Status.ToString(),
-            checks = report.Entries.Select(x => new
-            {
-                name = x.Key,
-                status = x.Value.Status.ToString(),
-                exception = x.Value.Exception?.Message,
-                duration = x.Value.Duration.ToString()
-            }),
-            duration = report.TotalDuration.ToString()
-        };
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }
