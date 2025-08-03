@@ -67,10 +67,18 @@ public static class Extensions
             {
                 tracing.AddSource(builder.Environment.ApplicationName)
                     .AddAspNetCoreInstrumentation(options =>
-                        // Exclude health check requests from tracing
+                        // Configure trace filtering to reduce noise and focus on business endpoints
                         options.Filter = context =>
-                            !context.Request.Path.StartsWithSegments(HealthEndpointPath)
-                            && !context.Request.Path.StartsWithSegments(AlivenessEndpointPath)
+                        {
+                            var path = context.Request.Path.Value;
+
+                            // Priority 1: Include all versioned API endpoints (/api/v1, /api/v2, etc.)
+                            if (path?.StartsWith("/api/v", StringComparison.OrdinalIgnoreCase) == true)
+                                return true;
+
+                            // Priority 2: Exclude infrastructure/documentation endpoints to reduce telemetry noise
+                            return !IsExcludedPath(path);
+                        }
                     )
                     // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
                     //.AddGrpcClientInstrumentation()
@@ -154,5 +162,45 @@ public static class Extensions
             duration = report.TotalDuration.ToString()
         };
         await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+    }
+
+    /// <summary>
+    /// Determines if a path should be excluded from tracing based on common non-business endpoints.
+    /// </summary>
+    /// <param name="path">The request path to evaluate</param>
+    /// <returns>True if the path should be excluded from tracing, false otherwise</returns>
+    private static bool IsExcludedPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return true;
+
+        var pathLower = path.ToLowerInvariant();
+
+        // Common paths to exclude from tracing
+        var excludedPaths = new[]
+        {
+            "/health",           // Health checks
+            "/alive",            // Liveness checks
+            "/ready",            // Readiness checks
+            "/live",             // Alternative liveness
+            "/healthz",          // Kubernetes health checks
+            "/livez",            // Kubernetes liveness
+            "/readyz",           // Kubernetes readiness
+            "/swagger",          // Swagger UI
+            "/swagger-ui",       // Alternative Swagger UI
+            "/scalar",           // Scalar API documentation
+            "/openapi",          // OpenAPI specification
+            "/api-docs",         // API documentation
+            "/favicon.ico",      // Favicon requests
+            "/robots.txt",       // Robots file
+            "/sitemap.xml",      // Sitemap
+            "/.well-known",      // Well-known URIs
+            "/metrics",          // Prometheus metrics
+            "/ping",             // Simple ping endpoint
+            "/version",          // Version endpoint
+            "/status"            // Status endpoint
+        };
+
+        return excludedPaths.Any(excluded => pathLower.StartsWith(excluded));
     }
 }
