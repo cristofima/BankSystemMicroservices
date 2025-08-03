@@ -3,7 +3,7 @@ using BankSystem.Account.Api.Services;
 using BankSystem.Account.Application.Behaviours;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Infrastructure.Data;
-using BankSystem.Shared.ServiceDefaults.Extensions;
+using BankSystem.Shared.WebApi.Extensions;
 using System.Diagnostics.CodeAnalysis;
 
 namespace BankSystem.Account.Api;
@@ -14,7 +14,7 @@ public static class DependencyInjection
     public static IServiceCollection AddWebApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Add shared service defaults with Controllers configuration
-        services.AddServiceDefaults(configuration,
+        services.AddWebApiDefaults(configuration,
             "Account API",
             configureControllers: options =>
         {

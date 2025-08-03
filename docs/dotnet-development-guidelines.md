@@ -20,24 +20,42 @@
 /BankSystemMicroservices/
 ├── src/
 │   ├── BankSystem.sln
-│   ├── gateway/
-│   │   ├── ApiGateway/
+│   ├── aspire-app/                    # LOCAL DEVELOPMENT ONLY
+│   │   ├── AppHost/                   # .NET Aspire orchestration
+│   │   └── ServiceDefaults/           # Aspire service defaults
+│   ├── gateway/                       # LOCAL DEVELOPMENT ONLY
+│   │   └── ApiGateway/               # YARP-based API Gateway
 │   ├── services/
-│   │   ├── Security/           # Authentication & Authorization
-│   │   ├── Account/           # Account Management
-│   │   ├── Transaction/       # Transaction Processing (Commands)
-│   │   └── Movement/          # Movement History (Queries)
-│   ├── shared/
-│   │   ├── BankSystem.Shared.Events/     # Common domain events
-│   │   ├── BankSystem.Shared.Contracts/  # Common interfaces & DTOs
-│   │   └── BankSystem.Shared.Infrastructure/ # Common infrastructure
-│   └── client/
-│       └── BankSystem.WebApp/    # Angular Client Application
+│   │   ├── Security/                 # Authentication & Authorization
+│   │   ├── Account/                  # Account Management
+│   │   ├── Transaction/              # Transaction Processing (Commands)
+│   │   ├── Movement/                 # Movement History (Queries)
+│   │   ├── Notification/             # Notifications & Alerts
+│   │   └── Reporting/                # Analytics & Reports
+│   └── shared/
+│       └── src/
+│           ├── BankSystem.Shared.Domain/         # Common domain logic
+│           ├── BankSystem.Shared.Infrastructure/ # Common infrastructure
+│           └── BankSystem.Shared.WebApi/         # Web API configurations
 ├── tests/
 ├── docs/
-├── iac/                      # Infrastructure as Code (Terraform/Bicep)
+├── scripts/                  # Build and deployment scripts
 └── build/                    # CI/CD Pipeline configurations
 ```
+
+### Environment Architecture
+
+#### Local Development Environment
+
+- **API Gateway**: YARP-based reverse proxy for service routing
+- **.NET Aspire Dashboard**: Local orchestration and monitoring
+- **ServiceDefaults**: Aspire-based service configuration and telemetry
+
+#### Production Environment (Azure)
+
+- **Azure API Management**: Replaces local API Gateway
+- **Azure Application Insights Dashboard**: Replaces .NET Aspire Dashboard
+- **Azure Service Discovery**: Replaces Aspire service discovery
 
 ### Microservice Internal Structure
 
@@ -82,8 +100,64 @@ Each microservice follows Clean Architecture with this structure:
 └── tests/
     ├── ServiceName.Application.UnitTests/
     ├── ServiceName.Domain.UnitTests/
-    ├── ServiceName.Infrastructure.IntegrationTests/
-    └── ServiceName.Api.IntegrationTests/
+    └── ServiceName.Infrastructure.IntegrationTests/
+```
+
+### Shared Projects Structure and Responsibilities
+
+The shared projects provide common functionality across all microservices:
+
+#### BankSystem.Shared.Domain
+
+- **Purpose**: Common domain logic, base entities, value objects, and domain events
+- **Contents**:
+  - Base entities (`Entity<T>`, `AggregateRoot<T>`)
+  - Common value objects (`Money`, `Currency`, `Email`)
+  - Domain events interfaces (`IDomainEvent`)
+  - Common enumerations and exceptions
+  - Result pattern implementations
+
+#### BankSystem.Shared.Infrastructure
+
+- **Purpose**: Common infrastructure patterns and implementations
+- **Contents**:
+  - Base repository patterns
+  - Event publishing infrastructure
+  - Common database configurations
+  - Caching abstractions
+  - Azure Service Bus integration
+
+#### BankSystem.Shared.WebApi
+
+- **Purpose**: Web API common configurations and extensions
+- **Contents**:
+  - Authentication and authorization setup
+  - CORS configuration
+  - API versioning
+  - Rate limiting
+  - Health checks
+  - Scalar documentation
+  - Common middleware extensions
+
+### Project Dependencies
+
+```
+┌─────────────────────────────────────┐
+│           Microservices             │
+│    (Security, Account, etc.)        │
+└─────────────────┬───────────────────┘
+                  │
+    ┌─────────────▼─────────────┐
+    │  BankSystem.Shared.WebApi │
+    └─────────────┬─────────────┘
+                  │
+┌─────────────────▼─────────────────┐
+│ BankSystem.Shared.Infrastructure │
+└─────────────────┬─────────────────┘
+                  │
+    ┌─────────────▼─────────────┐
+    │  BankSystem.Shared.Domain │
+    └───────────────────────────┘
 ```
 
 ## Clean Architecture Implementation

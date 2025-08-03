@@ -34,6 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\aspire-app\ServiceDefaults\BankSystem.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
   </ItemGroup>
 

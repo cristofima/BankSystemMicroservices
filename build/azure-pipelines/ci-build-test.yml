@@ -110,7 +110,7 @@ stages:
         summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
         pathToSources: '$(Build.SourcesDirectory)/src'
         failIfCoverageEmpty: false
-      condition: and(succeeded(), ne(variables['SkipCoverage'], 'true'))
+      condition: succeeded()
 
     # Optional: Add delay before SonarQube analysis to help with rate limiting
     - bash: |

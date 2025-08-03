@@ -67,10 +67,26 @@ This system implements a distributed banking platform using microservices that c
 ### Development Tools
 
 - **Docker**: Containerization
+- **.NET Aspire**: Local development orchestration and monitoring _(Local Development Only)_
+- **YARP**: Reverse proxy for API Gateway _(Local Development Only)_
 - **Terraform/Bicep**: Infrastructure as Code
 - **Azure DevOps**: CI/CD pipelines
 - **xUnit**: Unit testing framework
 - **FluentAssertions**: Assertion library
+
+### Environment Architecture
+
+#### Local Development Environment
+
+- **API Gateway**: YARP-based reverse proxy for service routing
+- **.NET Aspire Dashboard**: Local orchestration and monitoring
+- **ServiceDefaults**: Aspire-based service configuration and telemetry
+
+#### Production Environment (Azure)
+
+- **Azure API Management**: Replaces local API Gateway for enterprise-grade routing, policies, and security
+- **Azure Application Insights Dashboard**: Replaces .NET Aspire Dashboard for production monitoring
+- **Azure Service Discovery**: Native Azure service discovery and load balancing
 
 ## 🏛️ System Architecture
 
@@ -128,20 +144,33 @@ This system implements a distributed banking platform using microservices that c
 /BankSystemMicroservices/
 ├── src/
 │   ├── BankSystem.sln
+│   ├── aspire-app/                    # LOCAL DEVELOPMENT ONLY
+│   │   ├── AppHost/                   # .NET Aspire orchestration
+│   │   └── ServiceDefaults/           # Aspire service defaults
+│   ├── gateway/                       # LOCAL DEVELOPMENT ONLY
+│   │   └── ApiGateway/               # YARP-based API Gateway
 │   ├── services/
-│   │   ├── Security/           # Authentication & Authorization
-│   │   ├── Account/           # Account Management
-│   │   ├── Transaction/       # Transaction Processing
-│   │   ├── Movement/          # Movement History & Reporting
-│   │   ├── Notification/      # Notifications
-│   │   └── Reporting/         # Reporting & Analytics
-│   ├── shared/                # Common components
-│   └── client/               # Web application
+│   │   ├── Security/                 # Authentication & Authorization
+│   │   ├── Account/                  # Account Management
+│   │   ├── Transaction/              # Transaction Processing
+│   │   ├── Movement/                 # Movement History & Reporting
+│   │   ├── Notification/             # Notifications
+│   │   └── Reporting/                # Reporting & Analytics
+│   └── shared/
+│       └── src/
+│           ├── BankSystem.Shared.Domain/         # Common domain logic
+│           ├── BankSystem.Shared.Infrastructure/ # Common infrastructure
+│           └── BankSystem.Shared.WebApi/         # Web API configurations
 ├── docs/                     # Documentation
-├── iac/                      # Infrastructure as Code
+├── scripts/                  # Build and deployment scripts
 ├── tests/                    # Integration tests
 └── build/                    # CI/CD configurations
 ```
+
+### Local vs Production Components
+
+- **aspire-app/** and **gateway/**: Used only for local development
+- **Production**: Azure API Management and Azure Application Insights replace these components
 
 ## 🚦 Getting Started
 

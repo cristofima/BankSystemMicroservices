@@ -46,14 +46,18 @@ public class CustomPasswordValidator : IPasswordValidator<ApplicationUser>
         }
 
         // Check for email in password
-        if (!string.IsNullOrEmpty(user.Email) &&
-            password.Contains(user.Email.Split('@')[0], StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(user.Email))
         {
-            errors.Add(new IdentityError
+            var at = user.Email.IndexOf('@');
+            var localPart = at > 0 ? user.Email[..at] : user.Email;
+            if (password.Contains(localPart, StringComparison.OrdinalIgnoreCase))
             {
-                Code = "PasswordContainsEmail",
-                Description = "Password cannot contain parts of the email address."
-            });
+                errors.Add(new IdentityError
+                {
+                    Code = "PasswordContainsEmail",
+                    Description = "Password cannot contain parts of the email address."
+                });
+            }
         }
 
         // Check for repeating characters (security best practice)

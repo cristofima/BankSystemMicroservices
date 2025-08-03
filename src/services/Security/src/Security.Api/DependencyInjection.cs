@@ -1,4 +1,4 @@
-﻿using BankSystem.Shared.ServiceDefaults.Extensions;
+﻿using BankSystem.Shared.WebApi.Extensions;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 using Security.Api.Filters;
@@ -15,7 +15,7 @@ public static class DependencyInjection
     public static IServiceCollection AddWebApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Configure common services with Security-specific controller configuration
-        services.AddServiceDefaults(
+        services.AddWebApiDefaults(
             configuration,
             "Security API",
             options =>
