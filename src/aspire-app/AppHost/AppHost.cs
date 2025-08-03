@@ -12,4 +12,4 @@ builder
     .WaitFor(security)
     .WaitFor(account);
 
-builder.Build().Run();
+await builder.Build().RunAsync();
