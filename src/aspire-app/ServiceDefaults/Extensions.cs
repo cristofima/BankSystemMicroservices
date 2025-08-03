@@ -12,12 +12,13 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace BankSystem.ServiceDefaults;
 
-// Adds common .NET Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
-// This project should be referenced by each service project in your solution.
-// To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
+// Adds common .NET Aspire services: service discovery, resilience, health checks, and
+// OpenTelemetry. This project should be referenced by each service project in your solution. To
+// learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 [ExcludeFromCodeCoverage]
 public static class Extensions
 {
@@ -44,7 +45,14 @@ public static class Extensions
         // Restrict the allowed schemes for service discovery.
         builder.Services.Configure<ServiceDiscoveryOptions>(options =>
         {
-            options.AllowedSchemes = ["https"];
+            if (builder.Environment.IsDevelopment())
+            {
+                options.AllowedSchemes = ["http", "https"];
+            }
+            else
+            {
+                options.AllowedSchemes = ["https"];
+            }
         });
 
         return builder;
@@ -75,10 +83,11 @@ public static class Extensions
                             var path = context.Request.Path.Value;
 
                             // Priority 1: Include all versioned API endpoints (/api/v1, /api/v2, etc.)
-                            if (path?.StartsWith("/api/v", StringComparison.OrdinalIgnoreCase) == true)
+                            if (Regex.IsMatch(path ?? string.Empty, @"^/api/v\d+/?", RegexOptions.IgnoreCase))
                                 return true;
 
-                            // Priority 2: Exclude infrastructure/documentation endpoints to reduce telemetry noise
+                            // Priority 2: Exclude infrastructure/documentation endpoints to reduce
+                            // telemetry noise
                             return !IsExcludedPath(path);
                         }
                     )
@@ -122,22 +131,24 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
-        // Adding health checks endpoints to applications in non-development environments has security implications.
-        // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
-        if (!app.Environment.IsDevelopment())
-            return app;
-
         // All health checks must pass for app to be considered ready to accept traffic after starting
-        app.MapHealthChecks(HealthEndpointPath, new HealthCheckOptions
+        var healthEndpoint = app.MapHealthChecks(HealthEndpointPath, new HealthCheckOptions
         {
             ResponseWriter = WriteHealthCheckResponse
         });
 
         // Only health checks tagged with the "live" tag must pass for app to be considered alive
-        app.MapHealthChecks(AlivenessEndpointPath, new HealthCheckOptions
+        var alivenessEndpoint = app.MapHealthChecks(AlivenessEndpointPath, new HealthCheckOptions
         {
             Predicate = r => r.Tags.Contains("live")
         });
+
+        // Only require authorization in non-development environments
+        if (!app.Environment.IsDevelopment())
+        {
+            healthEndpoint.RequireAuthorization();
+            alivenessEndpoint.RequireAuthorization();
+        }
 
         return app;
     }
@@ -158,7 +169,9 @@ public static class Extensions
             {
                 name = x.Key,
                 status = x.Value.Status.ToString(),
-                exception = x.Value.Exception?.Message,
+                exception = context.RequestServices.GetRequiredService<IHostEnvironment>().IsDevelopment()
+                            ? x.Value.Exception?.Message
+                            : x.Value.Exception != null ? "An error occurred" : null,
                 duration = x.Value.Duration.ToString()
             }),
             duration = report.TotalDuration.ToString()
