@@ -13,6 +13,8 @@ namespace BankSystem.Shared.WebApi.Extensions;
 [ExcludeFromCodeCoverage]
 public static class WebApiExtensions
 {
+    private const string RateLimitingSection = "RateLimiting:DefaultApi";
+
     /// <summary>
     /// Adds common Web API defaults for all microservices in the bank system.
     /// This includes controllers, authentication, authorization, API documentation, versioning, CORS, and rate limiting.
@@ -89,13 +91,13 @@ public static class WebApiExtensions
             // Default API rate limit
             options.AddFixedWindowLimiter("DefaultApi", limiterOptions =>
             {
-                var permitLimit = configuration.GetValue("RateLimiting:DefaultApi:PermitLimit", 100);
+                var permitLimit = configuration.GetValue($"{RateLimitingSection}:PermitLimit", 100);
                 Guard.AgainstZeroOrNegative(permitLimit, "permitLimit");
 
-                var windowSize = configuration.GetValue("RateLimiting:DefaultApi:WindowMinutes", 1);
+                var windowSize = configuration.GetValue($"{RateLimitingSection}:WindowMinutes", 1);
                 Guard.AgainstZeroOrNegative(windowSize, "windowSize");
 
-                var queueLimit = configuration.GetValue("RateLimiting:DefaultApi:QueueLimit", 10);
+                var queueLimit = configuration.GetValue($"{RateLimitingSection}:QueueLimit", 10);
                 Guard.AgainstNegative(queueLimit, "queueLimit");
 
                 limiterOptions.PermitLimit = permitLimit;
