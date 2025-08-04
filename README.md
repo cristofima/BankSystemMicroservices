@@ -141,13 +141,13 @@ graph TB
     Reporting --> SqlDB
     Reporting --> CosmosDB
 
-    %% Styling
-    classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef gatewayStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef coreServiceStyle fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef readServiceStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef eventStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef dataStyle fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    %% Styling - Darker backgrounds with white text for optimal contrast
+    classDef clientStyle fill:#0277bd,stroke:#01579b,stroke-width:2px,color:#ffffff
+    classDef gatewayStyle fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#ffffff
+    classDef coreServiceStyle fill:#388e3c,stroke:#2e7d32,stroke-width:2px,color:#ffffff
+    classDef readServiceStyle fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#ffffff
+    classDef eventStyle fill:#ad1457,stroke:#c2185b,stroke-width:2px,color:#ffffff
+    classDef dataStyle fill:#689f38,stroke:#558b2f,stroke-width:2px,color:#ffffff
 
     class Client clientStyle
     class Gateway gatewayStyle
