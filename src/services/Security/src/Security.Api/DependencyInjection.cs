@@ -1,4 +1,4 @@
-﻿using BankSystem.Shared.WebApi.Extensions;
+﻿using BankSystem.Shared.WebApiDefaults.Extensions;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 using Security.Api.Filters;

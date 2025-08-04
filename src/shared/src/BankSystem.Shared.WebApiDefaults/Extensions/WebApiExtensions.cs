@@ -8,7 +8,7 @@ using Scalar.AspNetCore;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.RateLimiting;
 
-namespace BankSystem.Shared.WebApi.Extensions;
+namespace BankSystem.Shared.WebApiDefaults.Extensions;
 
 [ExcludeFromCodeCoverage]
 public static class WebApiExtensions

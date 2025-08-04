@@ -3,7 +3,7 @@ using BankSystem.Account.Api.Services;
 using BankSystem.Account.Application.Behaviours;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Infrastructure.Data;
-using BankSystem.Shared.WebApi.Extensions;
+using BankSystem.Shared.WebApiDefaults.Extensions;
 using System.Diagnostics.CodeAnalysis;
 
 namespace BankSystem.Account.Api;

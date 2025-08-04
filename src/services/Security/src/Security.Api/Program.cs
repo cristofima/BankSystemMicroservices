@@ -1,5 +1,5 @@
 using BankSystem.ServiceDefaults;
-using BankSystem.Shared.WebApi.Extensions;
+using BankSystem.Shared.WebApiDefaults.Extensions;
 using Security.Api;
 using Security.Api.Middleware;
 using Security.Application;
