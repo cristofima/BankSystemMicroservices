@@ -25,6 +25,30 @@ public static class Extensions
     private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
 
+    private static readonly string[] ExcludedPaths =
+    [
+        "/health",           // Health checks
+        "/alive",            // Liveness checks
+        "/ready",            // Readiness checks
+        "/live",             // Alternative liveness
+        "/healthz",          // Kubernetes health checks
+        "/livez",            // Kubernetes liveness
+        "/readyz",           // Kubernetes readiness
+        "/swagger",          // Swagger UI
+        "/swagger-ui",       // Alternative Swagger UI
+        "/scalar",           // Scalar API documentation
+        "/openapi",          // OpenAPI specification
+        "/api-docs",         // API documentation
+        "/favicon.ico",      // Favicon requests
+        "/robots.txt",       // Robots file
+        "/sitemap.xml",      // Sitemap
+        "/.well-known",      // Well-known URIs
+        "/metrics",          // Prometheus metrics
+        "/ping",             // Simple ping endpoint
+        "/version",          // Version endpoint
+        "/status"            // Status endpoint
+    ];
+
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         builder.ConfigureOpenTelemetry();
@@ -191,31 +215,6 @@ public static class Extensions
 
         var pathLower = path.ToLowerInvariant();
 
-        // Common paths to exclude from tracing
-        var excludedPaths = new[]
-        {
-            "/health",           // Health checks
-            "/alive",            // Liveness checks
-            "/ready",            // Readiness checks
-            "/live",             // Alternative liveness
-            "/healthz",          // Kubernetes health checks
-            "/livez",            // Kubernetes liveness
-            "/readyz",           // Kubernetes readiness
-            "/swagger",          // Swagger UI
-            "/swagger-ui",       // Alternative Swagger UI
-            "/scalar",           // Scalar API documentation
-            "/openapi",          // OpenAPI specification
-            "/api-docs",         // API documentation
-            "/favicon.ico",      // Favicon requests
-            "/robots.txt",       // Robots file
-            "/sitemap.xml",      // Sitemap
-            "/.well-known",      // Well-known URIs
-            "/metrics",          // Prometheus metrics
-            "/ping",             // Simple ping endpoint
-            "/version",          // Version endpoint
-            "/status"            // Status endpoint
-        };
-
-        return excludedPaths.Any(excluded => pathLower.StartsWith(excluded));
+        return ExcludedPaths.Any(excluded => pathLower.StartsWith(excluded));
     }
 }
