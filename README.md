@@ -90,34 +90,71 @@ This system implements a distributed banking platform using microservices that c
 
 ## 🏛️ System Architecture
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────┐
-│   Client App    │──▶│  API Management  │───▶│   Microservices     │
-│  (Angular)      │    │   (Gateway)      │    │                     │
-└─────────────────┘    └──────────────────┘    └─────────────────────┘
-                                                           │
-                              ┌────────────────────────────┼────────────────────────────┐
-                              │                            │                            │
-                              ▼                            ▼                            ▼
-                    ┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
-                    │   Security      │        │   Account       │        │  Transaction    │
-                    │   Service       │        │   Service       │        │   Service       │
-                    └─────────────────┘        └─────────────────┘        └─────────────────┘
-                              │                            │                            │
-                              └────────────────────────────┼────────────────────────────┘
-                                                           │
-                                           ┌───────────────▼───────────────┐
-                                           │     Azure Service Bus         │
-                                           │    (Event Distribution)       │
-                                           └───────────────┬───────────────┘
-                                                           │
-                              ┌────────────────────────────┼────────────────────────────┐
-                              │                            │                            │
-                              ▼                            ▼                            ▼
-                    ┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
-                    │   Movement      │        │  Notification   │        │   Reporting     │
-                    │   Service       │        │   Service       │        │   Service       │
-                    └─────────────────┘        └─────────────────┘        └─────────────────┘
+```mermaid
+graph TB
+    %% Client Layer
+    Client[📱 Client App<br/>Angular]
+
+    %% Gateway Layer
+    Gateway[🌐 API Management<br/>Gateway]
+
+    %% Core Services Layer
+    Security[🔐 Security<br/>Service]
+    Account[🏦 Account<br/>Service]
+    Transaction[💸 Transaction<br/>Service]
+
+    %% Event Bus
+    ServiceBus[🚌 Azure Service Bus<br/>Event Distribution]
+
+    %% Read Services Layer
+    Movement[📊 Movement<br/>Service]
+    Notification[🔔 Notification<br/>Service]
+    Reporting[📈 Reporting<br/>Service]
+
+    %% Data Layer
+    SqlDB[(🗄️ Azure SQL<br/>Database)]
+    CosmosDB[(🌍 Azure Cosmos DB<br/>Movement History)]
+
+    %% Client to Gateway
+    Client --> Gateway
+
+    %% Gateway to Core Services
+    Gateway --> Security
+    Gateway --> Account
+    Gateway --> Transaction
+
+    %% Core Services to Event Bus
+    Security -.-> ServiceBus
+    Account -.-> ServiceBus
+    Transaction -.-> ServiceBus
+
+    %% Event Bus to Read Services
+    ServiceBus -.-> Movement
+    ServiceBus -.-> Notification
+    ServiceBus -.-> Reporting
+
+    %% Data Connections
+    Security --> SqlDB
+    Account --> SqlDB
+    Transaction --> SqlDB
+    Movement --> CosmosDB
+    Reporting --> SqlDB
+    Reporting --> CosmosDB
+
+    %% Styling
+    classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef gatewayStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef coreServiceStyle fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef readServiceStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef eventStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef dataStyle fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+
+    class Client clientStyle
+    class Gateway gatewayStyle
+    class Security,Account,Transaction coreServiceStyle
+    class Movement,Notification,Reporting readServiceStyle
+    class ServiceBus eventStyle
+    class SqlDB,CosmosDB dataStyle
 ```
 
 ## 🔄 Event-Driven Flow
@@ -141,30 +178,82 @@ This system implements a distributed banking platform using microservices that c
 ## 📁 Project Structure
 
 ```
-/BankSystemMicroservices/
-├── src/
-│   ├── BankSystem.sln
-│   ├── aspire-app/                    # LOCAL DEVELOPMENT ONLY
-│   │   ├── AppHost/                   # .NET Aspire orchestration
-│   │   └── ServiceDefaults/           # Aspire service defaults
-│   ├── gateway/                       # LOCAL DEVELOPMENT ONLY
-│   │   └── ApiGateway/               # YARP-based API Gateway
-│   ├── services/
-│   │   ├── Security/                 # Authentication & Authorization
-│   │   ├── Account/                  # Account Management
-│   │   ├── Transaction/              # Transaction Processing
-│   │   ├── Movement/                 # Movement History & Reporting
-│   │   ├── Notification/             # Notifications
-│   │   └── Reporting/                # Reporting & Analytics
-│   └── shared/
-│       └── src/
-│           ├── BankSystem.Shared.Domain/         # Common domain logic
-│           ├── BankSystem.Shared.Infrastructure/ # Common infrastructure
-│           └── BankSystem.Shared.WebApi/         # Web API configurations
-├── docs/                     # Documentation
-├── scripts/                  # Build and deployment scripts
-├── tests/                    # Integration tests
-└── build/                    # CI/CD configurations
+BankSystemMicroservices/
+├── 📄 README.md                                  # Main documentation
+├── 📄 LICENSE                                    # MIT License
+├── 📄 docker-compose.yml                         # Docker orchestration
+├── 📄 docker-compose.infrastructure.yml          # Infrastructure services
+├── 📂 src/                                       # Source code
+│   ├── 📄 BankSystem.sln                        # Main solution file
+│   ├── 📄 coverlet.runsettings                  # Test coverage settings
+│   ├── 📂 aspire-app/                           # 🏠 LOCAL DEVELOPMENT ONLY
+│   │   ├── 📂 AppHost/                          # .NET Aspire orchestration
+│   │   │   ├── 📄 AppHost.cs                    # Aspire host configuration
+│   │   │   ├── 📄 BankSystem.AppHost.csproj     # AppHost project file
+│   │   │   └── 📄 appsettings.json              # Aspire settings
+│   │   └── 📂 ServiceDefaults/                  # Aspire service defaults
+│   │       ├── 📄 Extensions.cs                 # Service extensions
+│   │       └── 📄 BankSystem.ServiceDefaults.csproj
+│   ├── 📂 gateway/                              # 🌐 LOCAL DEVELOPMENT ONLY
+│   │   └── 📂 ApiGateway/                       # YARP-based API Gateway
+│   │       ├── 📄 Program.cs                    # Gateway entry point
+│   │       ├── 📄 BankSystem.ApiGateway.csproj  # Gateway project
+│   │       └── 📄 appsettings.json              # Gateway configuration
+│   ├── 📂 services/                             # 🏗️ Microservices
+│   │   ├── 📂 Security/                         # 🔐 Authentication & Authorization
+│   │   │   ├── 📂 src/
+│   │   │   │   ├── 📂 Security.Api/             # Web API layer
+│   │   │   │   ├── 📂 Security.Application/     # Application layer (CQRS)
+│   │   │   │   ├── 📂 Security.Domain/          # Domain layer (DDD)
+│   │   │   │   └── 📂 Security.Infrastructure/  # Infrastructure layer
+│   │   │   └── 📂 tests/                        # Service-specific tests
+│   │   │       ├── 📂 Security.Application.UnitTests/
+│   │   │       ├── 📂 Security.Domain.UnitTests/
+│   │   │       └── 📂 Security.Infrastructure.IntegrationTests/
+│   │   ├── 📂 Account/                          # 🏦 Account Management
+│   │   │   ├── 📂 src/                          # Same structure as Security
+│   │   │   └── 📂 tests/                        # Same test structure
+│   │   ├── 📂 Transaction/                      # 💸 Transaction Processing (Write)
+│   │   │   ├── 📂 src/                          # Same structure as Security
+│   │   │   └── 📂 tests/                        # Same test structure
+│   │   ├── 📂 Movement/                         # 📊 Movement History (Read)
+│   │   │   ├── 📂 src/                          # Same structure as Security
+│   │   │   └── 📂 tests/                        # Same test structure
+│   │   ├── 📂 Notification/                     # 🔔 Notifications
+│   │   │   ├── 📂 src/                          # Same structure as Security
+│   │   │   └── 📂 tests/                        # Same test structure
+│   │   └── 📂 Reporting/                        # 📈 Reporting & Analytics
+│   │       ├── 📂 src/                          # Same structure as Security
+│   │       └── 📂 tests/                        # Same test structure
+│   └── 📂 shared/                               # 🔗 Shared Components
+│       ├── 📂 src/
+│       │   ├── 📂 BankSystem.Shared.Domain/     # Common domain logic
+│       │   ├── 📂 BankSystem.Shared.Infrastructure/ # Common infrastructure
+│       │   └── 📂 BankSystem.Shared.WebApi/     # Web API configurations
+│       └── 📂 tests/
+│           └── 📂 BankSystem.Shared.Domain.UnitTests/
+├── 📂 docs/                                     # 📚 Documentation
+│   ├── 📄 dotnet-development-guidelines.md      # Development guidelines
+│   ├── 📄 health-checks-configuration.md        # Health checks guide
+│   ├── 📄 sonarqube-integration-guide.md        # SonarQube setup
+│   └── 📂 guidelines/                           # Detailed guidelines
+│       ├── 📄 clean-code.md                     # Clean code practices
+│       ├── 📄 api-design.md                     # API design patterns
+│       ├── 📄 cqrs-implementation.md            # CQRS patterns
+│       └── 📄 ...                               # Other guidelines
+├── 📂 scripts/                                  # 🔧 Build & Deployment Scripts
+│   ├── 📄 build-local.bat                       # Windows build script
+│   ├── 📄 build-local.ps1                       # PowerShell build script
+│   ├── 📄 run-unit-tests.ps1                    # Test execution script
+│   └── 📄 BUILD_SCRIPTS.md                      # Scripts documentation
+├── 📂 tests/                                    # 🧪 Cross-Service Integration Tests
+│   └── 📂 integration/                          # End-to-end test scenarios
+└── 📂 build/                                    # 🚀 CI/CD Configurations
+    ├── 📂 azure-pipelines/                      # Azure DevOps pipelines
+    │   └── 📄 ci-build-test.yml                 # CI/CD pipeline definition
+    └── 📂 terraform/                            # Infrastructure as Code
+        ├── 📄 main.tf                           # Main Terraform config
+        └── 📄 variables.tf                      # Terraform variables
 ```
 
 ### Local vs Production Components
