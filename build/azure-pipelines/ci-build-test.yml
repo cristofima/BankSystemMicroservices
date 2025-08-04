@@ -6,13 +6,11 @@ trigger:
       - feature/*
   paths:
     include:
-      - 'src/gateway/**'
       - 'src/services/**/src/**'
       - 'src/services/**/tests/**'
       - 'src/shared/**'
       - 'build/azure-pipelines/ci-build-test.yml'
     exclude:
-      - 'src/gateway/**/*.md'
       - 'src/services/**/*.md'
       - 'src/services/**/README.md'
       - 'src/shared/*.md'
