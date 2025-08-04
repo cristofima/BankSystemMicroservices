@@ -6,13 +6,11 @@ trigger:
       - feature/*
   paths:
     include:
-      - 'src/gateway/**'
       - 'src/services/**/src/**'
       - 'src/services/**/tests/**'
       - 'src/shared/**'
       - 'build/azure-pipelines/ci-build-test.yml'
     exclude:
-      - 'src/gateway/**/*.md'
       - 'src/services/**/*.md'
       - 'src/services/**/README.md'
       - 'src/shared/*.md'
@@ -110,7 +108,7 @@ stages:
         summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
         pathToSources: '$(Build.SourcesDirectory)/src'
         failIfCoverageEmpty: false
-      condition: and(succeeded(), ne(variables['SkipCoverage'], 'true'))
+      condition: succeeded()
 
     # Optional: Add delay before SonarQube analysis to help with rate limiting
     - bash: |

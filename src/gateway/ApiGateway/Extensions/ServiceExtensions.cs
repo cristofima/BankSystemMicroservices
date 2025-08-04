@@ -1,12 +1,10 @@
 using BankSystem.ApiGateway.Configuration;
 using BankSystem.ApiGateway.Middleware;
 using BankSystem.Shared.Infrastructure.Extensions;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Serilog.Events;
-using System.Text.Json;
 using System.Threading.RateLimiting;
 
 namespace BankSystem.ApiGateway.Extensions;
@@ -64,11 +62,6 @@ public static class ServiceExtensions
                                  ?? new GatewayHealthCheckOptions();
 
         var healthChecksBuilder = services.AddHealthChecks();
-
-        // Add self health check
-        healthChecksBuilder.AddCheck(
-            healthCheckOptions.Self.Name,
-            () => HealthCheckResult.Healthy(healthCheckOptions.Self.Message));
 
         // Add external service health checks
         foreach (var serviceCheck in healthCheckOptions.Services)
@@ -190,27 +183,6 @@ public static class ServiceExtensions
         // Custom middleware
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-        // Health checks
-        app.UseHealthChecks("/health", new HealthCheckOptions
-        {
-            ResponseWriter = async (context, report) =>
-            {
-                context.Response.ContentType = "application/json";
-                var response = new
-                {
-                    status = report.Status.ToString(),
-                    checks = report.Entries.Select(x => new
-                    {
-                        name = x.Key,
-                        status = x.Value.Status.ToString(),
-                        exception = x.Value.Exception?.Message,
-                        duration = x.Value.Duration.ToString()
-                    })
-                };
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
-            }
-        });
 
         // YARP reverse proxy
         app.MapReverseProxy();

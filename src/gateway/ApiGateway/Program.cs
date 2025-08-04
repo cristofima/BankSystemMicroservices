@@ -1,4 +1,5 @@
 using BankSystem.ApiGateway.Extensions;
+using BankSystem.ServiceDefaults;
 using Serilog;
 
 namespace BankSystem.ApiGateway;
@@ -17,6 +18,7 @@ public static class Program
             Log.Information("Starting Bank System API Gateway");
 
             var builder = WebApplication.CreateBuilder(args);
+            builder.AddServiceDefaults();
 
             // Configure Serilog
             builder.Host.UseSerilog((context, services, configuration) =>
@@ -43,6 +45,7 @@ public static class Program
                 .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
             var app = builder.Build();
+            app.MapDefaultEndpoints();
 
             // Configure pipeline
             await app.ConfigurePipelineAsync();

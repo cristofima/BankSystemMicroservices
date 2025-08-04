@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.3.1" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>34fbd6ef-c2b3-4dd7-883b-f3a0b987e284</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\gateway\ApiGateway\BankSystem.ApiGateway.csproj" />
+    <ProjectReference Include="..\..\services\Account\src\Account.Api\BankSystem.Account.Api.csproj" />
+    <ProjectReference Include="..\..\services\Security\src\Security.Api\Security.Api.csproj" />
+  </ItemGroup>
+
+</Project>

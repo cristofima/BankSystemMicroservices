@@ -168,10 +168,6 @@ Tests are always run with coverage collection for consistent SonarQube reporting
 
 ### 3. Code Coverage Configuration (`coverlet.runsettings`)
 
-````
-
-### 3. Code Coverage Configuration (`coverlet.runsettings`)
-
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
@@ -187,7 +183,7 @@ Tests are always run with coverage collection for consistent SonarQube reporting
     </DataCollectors>
   </DataCollectionRunSettings>
 </RunSettings>
-````
+```
 
 ## Pipeline Integration
 
@@ -553,8 +549,6 @@ extraProperties: |
 - [Azure DevOps SonarQube Extension](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarqube)
 - [SonarCloud for Azure DevOps](https://sonarcloud.io/documentation/integrations/azuredevops/)
 - [.NET Code Coverage](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-code-coverage)
-
----
 
 **Last Updated**: July 4, 2025  
 **Version**: 2.0  

@@ -47,6 +47,8 @@ public class SelectiveAuthenticationMiddleware
             return;
         }
 
+        var correlationId = context.Request.Headers["X-Correlation-Id"].FirstOrDefault();
+
         // For protected endpoints, check authentication
         if (!(context.User.Identity?.IsAuthenticated ?? false))
         {
@@ -59,7 +61,8 @@ public class SelectiveAuthenticationMiddleware
                 Title = "Unauthorized",
                 Status = 401,
                 Detail = "Authentication is required to access this resource",
-                Instance = $"/errors/{Guid.NewGuid()}"
+                Instance = $"/errors/{Guid.NewGuid()}",
+                CorrelationId = correlationId
             };
             await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
             return;
@@ -84,7 +87,8 @@ public class SelectiveAuthenticationMiddleware
                     Title = "Forbidden",
                     Status = 403,
                     Detail = "Insufficient permissions to access this resource",
-                    Instance = $"/errors/{Guid.NewGuid()}"
+                    Instance = $"/errors/{Guid.NewGuid()}",
+                    CorrelationId = correlationId
                 };
                 await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
                 return;

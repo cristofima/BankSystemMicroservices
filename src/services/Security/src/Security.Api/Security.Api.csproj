@@ -16,8 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\aspire-app\ServiceDefaults\BankSystem.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Security.Infrastructure\Security.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.ServiceDefaults\BankSystem.Shared.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.WebApi\BankSystem.Shared.WebApi.csproj" />
   </ItemGroup>
 
 </Project>

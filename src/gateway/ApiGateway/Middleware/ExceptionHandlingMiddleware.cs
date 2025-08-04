@@ -60,7 +60,7 @@ public class ExceptionHandlingMiddleware
     {
         var response = CreateErrorResponse(exception, context);
 
-        context.Response.StatusCode = response.Status;
+        context.Response.StatusCode = response.Status!.Value;
         context.Response.ContentType = "application/json";
 
         var options = _environment.IsDevelopment() ? JsonOptionsDev : JsonOptionsProd;
