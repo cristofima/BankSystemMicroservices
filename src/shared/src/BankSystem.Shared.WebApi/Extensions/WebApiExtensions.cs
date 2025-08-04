@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -88,10 +89,19 @@ public static class WebApiExtensions
             // Default API rate limit
             options.AddFixedWindowLimiter("DefaultApi", limiterOptions =>
             {
-                limiterOptions.PermitLimit = 100;
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                var permitLimit = configuration.GetValue("RateLimiting:DefaultApi:PermitLimit", 100);
+                Guard.AgainstZeroOrNegative(permitLimit, "permitLimit");
+
+                var windowSize = configuration.GetValue("RateLimiting:DefaultApi:WindowMinutes", 1);
+                Guard.AgainstZeroOrNegative(windowSize, "windowSize");
+
+                var queueLimit = configuration.GetValue("RateLimiting:DefaultApi:QueueLimit", 10);
+                Guard.AgainstNegative(windowSize, "windowSize");
+
+                limiterOptions.PermitLimit = permitLimit;
+                limiterOptions.Window = TimeSpan.FromMinutes(windowSize);
                 limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = 10;
+                limiterOptions.QueueLimit = queueLimit;
             });
         });
 
