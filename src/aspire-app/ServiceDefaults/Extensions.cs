@@ -83,7 +83,7 @@ public static class Extensions
                             var path = context.Request.Path.Value;
 
                             // Priority 1: Include all versioned API endpoints (/api/v1, /api/v2, etc.)
-                            if (Regex.IsMatch(path ?? string.Empty, @"^/api/v\d+/?", RegexOptions.IgnoreCase))
+                            if (Regex.IsMatch(path ?? string.Empty, @"^/api/v\d+/?", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500)))
                                 return true;
 
                             // Priority 2: Exclude infrastructure/documentation endpoints to reduce
