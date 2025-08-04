@@ -96,7 +96,7 @@ public static class WebApiExtensions
                 Guard.AgainstZeroOrNegative(windowSize, "windowSize");
 
                 var queueLimit = configuration.GetValue("RateLimiting:DefaultApi:QueueLimit", 10);
-                Guard.AgainstNegative(windowSize, "windowSize");
+                Guard.AgainstNegative(queueLimit, "queueLimit");
 
                 limiterOptions.PermitLimit = permitLimit;
                 limiterOptions.Window = TimeSpan.FromMinutes(windowSize);
