@@ -1,4 +1,5 @@
 ﻿using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -9,6 +10,14 @@ namespace BankSystem.Shared.Auditing;
 /// </summary>
 public class AuditSaveChangesInterceptor : SaveChangesInterceptor
 {
+    private readonly ICurrentUser _currentUser;
+
+    public AuditSaveChangesInterceptor(ICurrentUser currentUser)
+    {
+        Guard.AgainstNull(currentUser, nameof(currentUser));
+        _currentUser = currentUser;
+    }
+
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
         InterceptionResult<int> result
@@ -28,7 +37,7 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private static void SetAuditData(DbContextEventData eventData)
+    private void SetAuditData(DbContextEventData eventData)
     {
         var entries =
             eventData
@@ -45,10 +54,12 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
             {
                 case EntityState.Modified:
                     entity.UpdatedAt = DateTime.UtcNow;
+                    entity.UpdatedBy = _currentUser.UserName;
                     break;
 
                 case EntityState.Added:
                     entity.CreatedAt = DateTime.UtcNow;
+                    entity.CreatedBy = _currentUser.UserName;
                     break;
             }
         }
