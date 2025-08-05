@@ -8,10 +8,14 @@ namespace BankSystem.Account.Domain.UnitTests.Entities;
 
 public class AccountTests
 {
-    private static AccountEntity CreateTestAccount(Guid customerId, AccountType accountType, Currency? currency = null)
+    private static AccountEntity CreateTestAccount(
+        Guid customerId,
+        AccountType accountType,
+        Currency? currency = null
+    )
     {
         currency ??= Currency.USD;
-        return AccountEntity.CreateNew(customerId, accountType, currency, "test");
+        return AccountEntity.CreateNew(customerId, accountType, currency);
     }
 
     [Fact]
@@ -40,7 +44,7 @@ public class AccountTests
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
 
         // Act
-        account.Activate("test");
+        account.Activate();
 
         // Assert
         account.Status.Should().Be(AccountStatus.Active);
@@ -54,7 +58,7 @@ public class AccountTests
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
 
         // Act
-        account.Suspend("Suspicious activity", "test");
+        account.Suspend("Suspicious activity");
 
         // Assert
         account.Status.Should().Be(AccountStatus.Suspended);
@@ -68,7 +72,7 @@ public class AccountTests
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking);
 
         // Act
-        account.Freeze("Suspicious activity", "test");
+        account.Freeze("Suspicious activity");
 
         // Assert
         account.Status.Should().Be(AccountStatus.Frozen);
@@ -81,10 +85,10 @@ public class AccountTests
         // Arrange
         var currency = Currency.EUR;
         var account = CreateTestAccount(Guid.NewGuid(), AccountType.Checking, currency);
-        account.Activate("test");
+        account.Activate();
 
         // Act
-        account.Close("Customer request", "test");
+        account.Close("Customer request");
 
         // Assert
         account.Status.Should().Be(AccountStatus.Closed);

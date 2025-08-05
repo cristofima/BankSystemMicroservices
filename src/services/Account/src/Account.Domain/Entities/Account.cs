@@ -44,8 +44,7 @@ public class Account : AggregateRoot<Guid>
     public DateTime? ClosedAt { get; private set; }
 
     // Private constructor for EF Core
-    private Account()
-    { }
+    private Account() { }
 
     /// <summary>
     /// Initializes a new instance of the Account class.
@@ -54,18 +53,16 @@ public class Account : AggregateRoot<Guid>
     /// <param name="customerId">The customer ID who owns the account.</param>
     /// <param name="type">The type of account.</param>
     /// <param name="currency">The currency for the account.</param>
-    /// <param name="createdBy">The user who created the account.</param>
     private Account(
         AccountNumber accountNumber,
         Guid customerId,
         AccountType type,
-        Currency currency,
-        string createdBy)
+        Currency currency
+    )
     {
         Guard.AgainstNullOrEmpty(accountNumber, "accountNumber");
         Guard.AgainstNullOrEmpty(currency, "currency");
         Guard.AgainstEmptyGuid(customerId, "customerId");
-        Guard.AgainstNullOrEmpty(createdBy, "createdBy");
 
         Id = Guid.NewGuid();
         AccountNumber = accountNumber;
@@ -73,7 +70,6 @@ public class Account : AggregateRoot<Guid>
         Type = type;
         Balance = Money.Zero(currency);
         Status = AccountStatus.PendingActivation;
-        CreatedBy = createdBy;
     }
 
     /// <summary>
@@ -82,28 +78,21 @@ public class Account : AggregateRoot<Guid>
     /// <param name="customerId">The customer ID who will own the account.</param>
     /// <param name="type">The type of account to create.</param>
     /// <param name="currency">The currency for the account.</param>
-    /// <param name="createdBy">The user who is creating the account.</param>
     /// <returns>A new account instance.</returns>
-    public static Account CreateNew(
-        Guid customerId,
-        AccountType type,
-        Currency currency,
-        string createdBy)
+    public static Account CreateNew(Guid customerId, AccountType type, Currency currency)
     {
         var accountNumber = AccountNumber.Generate();
-        var account = new Account(
-            accountNumber,
-            customerId,
-            type,
-            currency,
-            createdBy);
+        var account = new Account(accountNumber, customerId, type, currency);
 
-        account.AddDomainEvent(new AccountCreatedEvent(
-            account.Id,
-            customerId,
-            account.AccountNumber,
-            type.ToString(),
-            DateTime.UtcNow));
+        account.AddDomainEvent(
+            new AccountCreatedEvent(
+                account.Id,
+                customerId,
+                account.AccountNumber,
+                type.ToString(),
+                DateTime.UtcNow
+            )
+        );
 
         return account;
     }
@@ -111,11 +100,8 @@ public class Account : AggregateRoot<Guid>
     /// <summary>
     /// Activates the account, allowing transactions to be processed.
     /// </summary>
-    /// <param name="activatedBy">The user who is activating the account.</param>
-    public Result Activate(string activatedBy)
+    public Result Activate()
     {
-        Guard.AgainstNullOrEmpty(activatedBy, "activatedBy");
-
         if (Status == AccountStatus.Active)
             return Result.Failure("Account is already active");
 
@@ -123,9 +109,10 @@ public class Account : AggregateRoot<Guid>
             return Result.Failure("Cannot activate a closed account");
 
         Status = AccountStatus.Active;
-        UpdatedBy = activatedBy;
 
-        AddDomainEvent(new AccountActivatedEvent(Id, CustomerId, AccountNumber.Value, DateTime.UtcNow));
+        AddDomainEvent(
+            new AccountActivatedEvent(Id, CustomerId, AccountNumber.Value, DateTime.UtcNow)
+        );
         return Result.Success();
     }
 
@@ -133,19 +120,16 @@ public class Account : AggregateRoot<Guid>
     /// Suspends the account, preventing new transactions.
     /// </summary>
     /// <param name="reason">The reason for suspension.</param>
-    /// <param name="suspendedBy">The user who is suspending the account.</param>
-    public Result Suspend(string reason, string suspendedBy)
+    public Result Suspend(string reason)
     {
         Guard.AgainstNullOrEmpty(reason, "reason");
-        Guard.AgainstNullOrEmpty(suspendedBy, "suspendedBy");
 
         if (Status == AccountStatus.Closed)
             return Result.Failure("Cannot suspend a closed account");
 
         Status = AccountStatus.Suspended;
-        UpdatedBy = suspendedBy;
 
-        AddDomainEvent(new AccountSuspendedEvent(Id, reason, DateTime.UtcNow, suspendedBy));
+        AddDomainEvent(new AccountSuspendedEvent(Id, reason, DateTime.UtcNow));
         return Result.Success();
     }
 
@@ -153,11 +137,9 @@ public class Account : AggregateRoot<Guid>
     /// Freezes the account.
     /// </summary>
     /// <param name="reason">The reason for freezing the account.</param>
-    /// <param name="freezeBy">The user who is freezing the account.</param>
-    public Result Freeze(string reason, string freezeBy)
+    public Result Freeze(string reason)
     {
         Guard.AgainstNullOrEmpty(reason, "reason");
-        Guard.AgainstNullOrEmpty(freezeBy, "freezeBy");
 
         if (Status == AccountStatus.Frozen)
             return Result.Failure("Account is already frozen");
@@ -166,7 +148,6 @@ public class Account : AggregateRoot<Guid>
             return Result.Failure("Cannot freeze a closed account");
 
         Status = AccountStatus.Frozen;
-        UpdatedBy = freezeBy;
 
         AddDomainEvent(new AccountFrozenEvent(Id, AccountNumber, CustomerId, reason));
         return Result.Success();
@@ -176,11 +157,9 @@ public class Account : AggregateRoot<Guid>
     /// Closes the account permanently.
     /// </summary>
     /// <param name="reason">The reason for closing the account.</param>
-    /// <param name="closedBy">The user who is closing the account.</param>
-    public Result Close(string reason, string closedBy)
+    public Result Close(string reason)
     {
         Guard.AgainstNullOrEmpty(reason, "reason");
-        Guard.AgainstNullOrEmpty(closedBy, "closedBy");
 
         if (Status == AccountStatus.Closed)
             return Result.Failure("Account is already closed");
@@ -190,7 +169,6 @@ public class Account : AggregateRoot<Guid>
 
         Status = AccountStatus.Closed;
         ClosedAt = DateTime.UtcNow;
-        UpdatedBy = closedBy;
 
         AddDomainEvent(new AccountClosedEvent(Id, AccountNumber, CustomerId, reason));
         return Result.Success();

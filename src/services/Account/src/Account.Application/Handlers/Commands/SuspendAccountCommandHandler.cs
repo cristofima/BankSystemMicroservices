@@ -10,43 +10,53 @@ namespace BankSystem.Account.Application.Handlers.Commands;
 public class SuspendAccountCommandHandler : IRequestHandler<SuspendAccountCommand, Result>
 {
     private readonly IAccountRepository _accountRepository;
-    private readonly IAuthenticatedUserService _authenticatedUserService;
     private readonly ILogger<SuspendAccountCommandHandler> _logger;
 
     public SuspendAccountCommandHandler(
         IAccountRepository accountRepository,
-        IAuthenticatedUserService authenticatedUserService,
-        ILogger<SuspendAccountCommandHandler> logger)
+        ILogger<SuspendAccountCommandHandler> logger
+    )
     {
         Guard.AgainstNull(accountRepository, "accountRepository");
-        Guard.AgainstNull(authenticatedUserService, "authenticatedUserService");
         Guard.AgainstNull(logger, "logger");
 
         _accountRepository = accountRepository;
-        _authenticatedUserService = authenticatedUserService;
         _logger = logger;
     }
 
-    public async Task<Result> Handle(SuspendAccountCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        SuspendAccountCommand request,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
-            var account = await _accountRepository.GetByIdAsync(request.AccountId, cancellationToken);
+            var account = await _accountRepository.GetByIdAsync(
+                request.AccountId,
+                cancellationToken
+            );
             if (account is null)
             {
                 _logger.LogWarning("Account {AccountId} not found.", request.AccountId);
                 return Result.Failure("Account not found.");
             }
 
-            var frozenResult = account.Suspend(request.Reason, _authenticatedUserService.UserName);
+            var frozenResult = account.Suspend(request.Reason);
             if (!frozenResult.IsSuccess)
             {
-                _logger.LogWarning("Failed to suspend account {AccountId}: {Error}", request.AccountId, frozenResult.Error);
+                _logger.LogWarning(
+                    "Failed to suspend account {AccountId}: {Error}",
+                    request.AccountId,
+                    frozenResult.Error
+                );
                 return frozenResult;
             }
 
             await _accountRepository.UpdateAsync(account, cancellationToken);
-            _logger.LogInformation("Account {AccountId} suspended successfully.", request.AccountId);
+            _logger.LogInformation(
+                "Account {AccountId} suspended successfully.",
+                request.AccountId
+            );
             return Result.Success();
         }
         catch (Exception ex)

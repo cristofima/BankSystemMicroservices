@@ -8,8 +8,6 @@ namespace BankSystem.Account.Infrastructure.IntegrationTests.Repositories;
 
 public class AccountRepositoryTests : BaseAccountInfrastructureTests
 {
-    private const string TestUserName = "testuser";
-
     private IAccountRepository GetAccountRepository()
     {
         return GetService<IAccountRepository>();
@@ -20,11 +18,7 @@ public class AccountRepositoryTests : BaseAccountInfrastructureTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
-        var account = AccountEntity.CreateNew(
-            customerId,
-            AccountType.Savings,
-            Currency.USD,
-            TestUserName);
+        var account = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD);
 
         var accountRepository = GetAccountRepository();
 
@@ -60,17 +54,9 @@ public class AccountRepositoryTests : BaseAccountInfrastructureTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
-        var account1 = AccountEntity.CreateNew(
-            customerId,
-            AccountType.Savings,
-            Currency.USD,
-            TestUserName);
+        var account1 = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD);
 
-        var account2 = AccountEntity.CreateNew(
-            customerId,
-            AccountType.Checking,
-            Currency.EUR,
-            TestUserName);
+        var account2 = AccountEntity.CreateNew(customerId, AccountType.Checking, Currency.EUR);
 
         var accountRepository = GetAccountRepository();
         await accountRepository.AddAsync(account1);
@@ -104,17 +90,13 @@ public class AccountRepositoryTests : BaseAccountInfrastructureTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
-        var account = AccountEntity.CreateNew(
-            customerId,
-            AccountType.Savings,
-            Currency.USD,
-            TestUserName);
+        var account = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD);
 
         var accountRepository = GetAccountRepository();
         await accountRepository.AddAsync(account);
 
         // Act
-        account.Activate(TestUserName);
+        account.Activate();
         await accountRepository.UpdateAsync(account);
         var result = await accountRepository.GetByIdAsync(account.Id);
 
@@ -128,11 +110,7 @@ public class AccountRepositoryTests : BaseAccountInfrastructureTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
-        var account = AccountEntity.CreateNew(
-            customerId,
-            AccountType.Savings,
-            Currency.USD,
-            TestUserName);
+        var account = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD);
         var accountRepository = GetAccountRepository();
         await accountRepository.AddAsync(account);
 
