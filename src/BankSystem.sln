@@ -69,6 +69,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankSystem.ServiceDefaults"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankSystem.Shared.WebApiDefaults", "shared\src\BankSystem.Shared.WebApiDefaults\BankSystem.Shared.WebApiDefaults.csproj", "{6B797447-0D60-E2F8-D579-44FF7E086E10}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankSystem.Shared.Auditing", "shared\src\BankSystem.Shared.Auditing\BankSystem.Shared.Auditing.csproj", "{1646AF57-1B54-179D-D5CC-B82B8862BE0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -159,6 +161,10 @@ Global
 		{6B797447-0D60-E2F8-D579-44FF7E086E10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B797447-0D60-E2F8-D579-44FF7E086E10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B797447-0D60-E2F8-D579-44FF7E086E10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1646AF57-1B54-179D-D5CC-B82B8862BE0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1646AF57-1B54-179D-D5CC-B82B8862BE0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1646AF57-1B54-179D-D5CC-B82B8862BE0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1646AF57-1B54-179D-D5CC-B82B8862BE0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -193,6 +199,7 @@ Global
 		{B138393D-F889-46FA-8D4D-BC5CB7FE122E} = {D08771AB-A033-44E0-BF8E-77B8038C05DA}
 		{C437E7E9-136F-4765-B7F9-F6B0721BA43F} = {D08771AB-A033-44E0-BF8E-77B8038C05DA}
 		{6B797447-0D60-E2F8-D579-44FF7E086E10} = {3C16AF09-1155-48BB-87A6-571CC9DDB4F5}
+		{1646AF57-1B54-179D-D5CC-B82B8862BE0C} = {3C16AF09-1155-48BB-87A6-571CC9DDB4F5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7AC226A1-8444-4340-96E8-25D79829A241}
