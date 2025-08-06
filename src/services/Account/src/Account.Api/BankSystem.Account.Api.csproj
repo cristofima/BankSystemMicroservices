@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -18,7 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\aspire-app\ServiceDefaults\BankSystem.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.WebApi\BankSystem.Shared.WebApi.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.WebApiDefaults\BankSystem.Shared.WebApiDefaults.csproj" />
     <ProjectReference Include="..\Account.Application\BankSystem.Account.Application.csproj" />
     <ProjectReference Include="..\Account.Infrastructure\BankSystem.Account.Infrastructure.csproj" />
   </ItemGroup>

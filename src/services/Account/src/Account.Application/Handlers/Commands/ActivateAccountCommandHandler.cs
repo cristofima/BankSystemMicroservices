@@ -10,40 +10,50 @@ namespace BankSystem.Account.Application.Handlers.Commands;
 public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountCommand, Result>
 {
     private readonly IAccountRepository _accountRepository;
-    private readonly IAuthenticatedUserService _authenticatedUserService;
     private readonly ILogger<ActivateAccountCommandHandler> _logger;
 
     public ActivateAccountCommandHandler(
         IAccountRepository accountRepository,
-        IAuthenticatedUserService authenticatedUserService,
-        ILogger<ActivateAccountCommandHandler> logger)
+        ILogger<ActivateAccountCommandHandler> logger
+    )
     {
         Guard.AgainstNull(accountRepository, "accountRepository");
-        Guard.AgainstNull(authenticatedUserService, "authenticatedUserService");
         Guard.AgainstNull(logger, "logger");
 
         _accountRepository = accountRepository;
-        _authenticatedUserService = authenticatedUserService;
         _logger = logger;
     }
 
-    public async Task<Result> Handle(ActivateAccountCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        ActivateAccountCommand request,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
             _logger.LogInformation("Activating account {AccountId}", request.AccountId);
-            var account = await _accountRepository.GetByIdAsync(request.AccountId, cancellationToken);
+            var account = await _accountRepository.GetByIdAsync(
+                request.AccountId,
+                cancellationToken
+            );
             if (account is null)
             {
-                _logger.LogWarning("Account {AccountId} not found for activation", request.AccountId);
+                _logger.LogWarning(
+                    "Account {AccountId} not found for activation",
+                    request.AccountId
+                );
                 return Result.Failure($"Account {request.AccountId} not found", ErrorType.NotFound);
             }
 
             // Activate the account
-            var activateResult = account.Activate(_authenticatedUserService.UserName);
+            var activateResult = account.Activate();
             if (!activateResult.IsSuccess)
             {
-                _logger.LogWarning("Failed to activate account {AccountId}: {Error}", request.AccountId, activateResult.Error);
+                _logger.LogWarning(
+                    "Failed to activate account {AccountId}: {Error}",
+                    request.AccountId,
+                    activateResult.Error
+                );
                 return activateResult;
             }
 

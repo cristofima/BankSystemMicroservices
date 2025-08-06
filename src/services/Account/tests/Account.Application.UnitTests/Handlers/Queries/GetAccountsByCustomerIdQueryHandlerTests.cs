@@ -4,6 +4,7 @@ using BankSystem.Account.Application.Handlers.Queries;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Application.Queries;
 using BankSystem.Account.Domain.Enums;
+using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,7 +15,7 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Queries;
 public class GetAccountsByCustomerIdQueryHandlerTests
 {
     private readonly Mock<IAccountRepository> _mockAccountRepository;
-    private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
+    private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly Mock<IMapper> _mockMapper;
     private readonly GetAccountsByCustomerIdQueryHandler _handler;
     private const string TestUserName = "testuser";
@@ -22,30 +23,32 @@ public class GetAccountsByCustomerIdQueryHandlerTests
     public GetAccountsByCustomerIdQueryHandlerTests()
     {
         _mockAccountRepository = new Mock<IAccountRepository>();
-        _mockAuthenticatedUserService = new Mock<IAuthenticatedUserService>();
+        _mockCurrentUser = new Mock<ICurrentUser>();
         _mockMapper = new Mock<IMapper>();
         var mockLogger = new Mock<ILogger<GetAccountsByCustomerIdQueryHandler>>();
 
-        _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(TestUserName);
+        _mockCurrentUser.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
+        _mockCurrentUser.Setup(s => s.UserId).Returns(Guid.NewGuid());
+        _mockCurrentUser.Setup(s => s.UserName).Returns(TestUserName);
 
         _handler = new GetAccountsByCustomerIdQueryHandler(
             _mockAccountRepository.Object,
-            _mockAuthenticatedUserService.Object,
+            _mockCurrentUser.Object,
             _mockMapper.Object,
-            mockLogger.Object);
+            mockLogger.Object
+        );
     }
 
     [Fact]
     public async Task Handle_ReturnsAccounts_WhenAccountsExist()
     {
         // Arrange
-        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
-        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, TestUserName);
+        var customerId = _mockCurrentUser.Object.CustomerId;
+        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD);
         var accounts = new List<AccountEntity> { mockAccount, mockAccount };
         var accountDtos = new List<AccountDto> { new(), new() };
-        _mockAccountRepository.Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(accounts);
         _mockMapper.Setup(m => m.Map<IEnumerable<AccountDto>>(accounts)).Returns(accountDtos);
         var query = new GetAccountsByCustomerIdQuery();
@@ -62,10 +65,11 @@ public class GetAccountsByCustomerIdQueryHandlerTests
     public async Task Handle_ReturnsFailure_WhenNoAccountsExist()
     {
         // Arrange
-        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
+        var customerId = _mockCurrentUser.Object.CustomerId;
         var accounts = new List<AccountEntity>();
         var accountDtos = new List<AccountDto>();
-        _mockAccountRepository.Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(accounts);
         _mockMapper.Setup(m => m.Map<IEnumerable<AccountDto>>(accounts)).Returns(accountDtos);
         var query = new GetAccountsByCustomerIdQuery();
@@ -81,8 +85,9 @@ public class GetAccountsByCustomerIdQueryHandlerTests
     public async Task Handle_ReturnsFailure_WhenExceptionThrown()
     {
         // Arrange
-        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
-        _mockAccountRepository.Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
+        var customerId = _mockCurrentUser.Object.CustomerId;
+        _mockAccountRepository
+            .Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("db error"));
         var query = new GetAccountsByCustomerIdQuery();
 

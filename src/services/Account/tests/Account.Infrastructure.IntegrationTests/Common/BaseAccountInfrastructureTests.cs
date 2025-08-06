@@ -1,4 +1,5 @@
 ﻿using BankSystem.Account.Infrastructure.Data;
+using BankSystem.Shared.Domain.Common;
 using DotNet.Testcontainers.Builders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -32,13 +33,17 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
     /// <summary>
     /// Gets the configured service provider for dependency resolution
     /// </summary>
-    protected ServiceProvider ServiceProvider => _serviceProvider
-                                                 ?? throw new InvalidOperationException("Service provider not initialized. Ensure InitializeAsync has been called.");
+    protected ServiceProvider ServiceProvider =>
+        _serviceProvider
+        ?? throw new InvalidOperationException(
+            "Service provider not initialized. Ensure InitializeAsync has been called."
+        );
 
     /// <summary>
     /// Gets a service of type T from the service provider
     /// </summary>
-    protected T GetService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
+    protected T GetService<T>()
+        where T : notnull => ServiceProvider.GetRequiredService<T>();
 
     /// <summary>
     /// Gets the AccountDbContext instance
@@ -66,16 +71,22 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
         // Configure DbContext with container connection string
         services.AddDbContext<AccountDbContext>(options =>
         {
-            options.UseNpgsql(_sqlContainer.GetConnectionString(), sqlOptions =>
-            {
-                sqlOptions.CommandTimeout(30);
-                sqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(30), null);
-            });
+            options.UseNpgsql(
+                _sqlContainer.GetConnectionString(),
+                sqlOptions =>
+                {
+                    sqlOptions.CommandTimeout(30);
+                    sqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(30), null);
+                }
+            );
 
             // Enable detailed errors and sensitive data logging for testing
             options.EnableDetailedErrors();
             options.EnableSensitiveDataLogging();
         });
+
+        // Add test implementation of current user service
+        services.AddScoped<ICurrentUser, TestCurrentUser>();
 
         // Register infrastructure services
         services.AddInfrastructureServices(configuration);
@@ -113,11 +124,13 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
         var configurationBuilder = new ConfigurationBuilder();
 
         // Add in-memory configuration for testing
-        configurationBuilder.AddInMemoryCollection(new Dictionary<string, string>
-        {
-            // Database Configuration
-            ["ConnectionStrings:DefaultConnection"] = _sqlContainer.GetConnectionString(),
-        }!);
+        configurationBuilder.AddInMemoryCollection(
+            new Dictionary<string, string>
+            {
+                // Database Configuration
+                ["ConnectionStrings:DefaultConnection"] = _sqlContainer.GetConnectionString(),
+            }!
+        );
 
         return configurationBuilder.Build();
     }

@@ -1,14 +1,16 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
+using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Infrastructure.Extensions;
+using BankSystem.Shared.WebApiDefaults.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.RateLimiting;
 
-namespace BankSystem.Shared.WebApi.Extensions;
+namespace BankSystem.Shared.WebApiDefaults.Extensions;
 
 [ExcludeFromCodeCoverage]
 public static class WebApiExtensions
@@ -29,7 +31,8 @@ public static class WebApiExtensions
         this IServiceCollection services,
         IConfiguration configuration,
         string apiTitle = "Bank System API",
-        Action<MvcOptions>? configureControllers = null)
+        Action<MvcOptions>? configureControllers = null
+    )
     {
         // Add Controllers with common configuration
         services.AddControllers(options =>
@@ -42,22 +45,30 @@ public static class WebApiExtensions
         });
 
         // Configure API versioning
-        services.AddApiVersioning(options =>
-        {
-            options.DefaultApiVersion = new ApiVersion(1, 0);
-            options.AssumeDefaultVersionWhenUnspecified = true;
-            options.ApiVersionReader = ApiVersionReader.Combine(
-                new UrlSegmentApiVersionReader(),
-                new QueryStringApiVersionReader("version"),
-                new HeaderApiVersionReader("X-Version"));
-        }).AddApiExplorer(setup =>
-        {
-            setup.GroupNameFormat = "'v'VVV";
-            setup.SubstituteApiVersionInUrl = true;
-        });
+        services
+            .AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ApiVersionReader = ApiVersionReader.Combine(
+                    new UrlSegmentApiVersionReader(),
+                    new QueryStringApiVersionReader("version"),
+                    new HeaderApiVersionReader("X-Version")
+                );
+            })
+            .AddApiExplorer(setup =>
+            {
+                setup.GroupNameFormat = "'v'VVV";
+                setup.SubstituteApiVersionInUrl = true;
+            });
 
         // Add JWT Authentication from shared infrastructure
         services.AddJwtAuthentication(configuration);
+
+        // Add HTTP context accessor for services that need it
+        services.AddHttpContextAccessor();
+        // Add custom current user service
+        services.AddScoped<ICurrentUser, CurrentUser>();
 
         // Add authorization
         services.AddAuthorization();
@@ -70,13 +81,17 @@ public static class WebApiExtensions
         {
             options.AddDefaultPolicy(policy =>
             {
-                var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+                var allowedOrigins =
+                    configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
                 if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
                 {
-                    throw new InvalidOperationException("CORS policy is too permissive. Please configure allowed origins explicitly.");
+                    throw new InvalidOperationException(
+                        "CORS policy is too permissive. Please configure allowed origins explicitly."
+                    );
                 }
 
-                policy.WithOrigins(allowedOrigins)
+                policy
+                    .WithOrigins(allowedOrigins)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials();
@@ -89,22 +104,34 @@ public static class WebApiExtensions
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
             // Default API rate limit
-            options.AddFixedWindowLimiter("DefaultApi", limiterOptions =>
-            {
-                var permitLimit = configuration.GetValue($"{RateLimitingSection}:PermitLimit", 100);
-                Guard.AgainstZeroOrNegative(permitLimit, "permitLimit");
+            options.AddFixedWindowLimiter(
+                "DefaultApi",
+                limiterOptions =>
+                {
+                    var permitLimit = configuration.GetValue(
+                        $"{RateLimitingSection}:PermitLimit",
+                        100
+                    );
+                    Guard.AgainstZeroOrNegative(permitLimit, "permitLimit");
 
-                var windowSize = configuration.GetValue($"{RateLimitingSection}:WindowMinutes", 1);
-                Guard.AgainstZeroOrNegative(windowSize, "windowSize");
+                    var windowSize = configuration.GetValue(
+                        $"{RateLimitingSection}:WindowMinutes",
+                        1
+                    );
+                    Guard.AgainstZeroOrNegative(windowSize, "windowSize");
 
-                var queueLimit = configuration.GetValue($"{RateLimitingSection}:QueueLimit", 10);
-                Guard.AgainstNegative(queueLimit, "queueLimit");
+                    var queueLimit = configuration.GetValue(
+                        $"{RateLimitingSection}:QueueLimit",
+                        10
+                    );
+                    Guard.AgainstNegative(queueLimit, "queueLimit");
 
-                limiterOptions.PermitLimit = permitLimit;
-                limiterOptions.Window = TimeSpan.FromMinutes(windowSize);
-                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = queueLimit;
-            });
+                    limiterOptions.PermitLimit = permitLimit;
+                    limiterOptions.Window = TimeSpan.FromMinutes(windowSize);
+                    limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    limiterOptions.QueueLimit = queueLimit;
+                }
+            );
         });
 
         return services;
@@ -120,10 +147,11 @@ public static class WebApiExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddDbContextHealthCheck<TDbContext>(
         this IServiceCollection services,
-        string name = "database") where TDbContext : DbContext
+        string name = "database"
+    )
+        where TDbContext : DbContext
     {
-        services.AddHealthChecks()
-            .AddDbContextCheck<TDbContext>(name);
+        services.AddHealthChecks().AddDbContextCheck<TDbContext>(name);
 
         return services;
     }
@@ -136,7 +164,10 @@ public static class WebApiExtensions
     /// <param name="app">The web application</param>
     /// <param name="apiTitle">The title for the API documentation</param>
     /// <returns>The web application for chaining</returns>
-    public static WebApplication UseWebApiDefaults(this WebApplication app, string apiTitle = "Bank System API")
+    public static WebApplication UseWebApiDefaults(
+        this WebApplication app,
+        string apiTitle = "Bank System API"
+    )
     {
         // Development-specific middleware
         if (app.Environment.IsDevelopment())
@@ -167,11 +198,14 @@ public static class WebApiExtensions
         app.UseAuthorization();
 
         // Default redirect to API documentation
-        app.Map("/", () =>
-        {
-            var redirectTarget = app.Environment.IsDevelopment() ? "/scalar" : "/health";
-            return Results.Redirect(redirectTarget);
-        });
+        app.Map(
+            "/",
+            () =>
+            {
+                var redirectTarget = app.Environment.IsDevelopment() ? "/scalar" : "/health";
+                return Results.Redirect(redirectTarget);
+            }
+        );
 
         return app;
     }

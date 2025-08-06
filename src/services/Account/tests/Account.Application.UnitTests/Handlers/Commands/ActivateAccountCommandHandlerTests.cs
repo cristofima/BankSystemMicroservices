@@ -2,6 +2,7 @@
 using BankSystem.Account.Application.Handlers.Commands;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Domain.Enums;
+using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -13,23 +14,21 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands;
 public class ActivateAccountCommandHandlerTests
 {
     private readonly Mock<IAccountRepository> _mockAccountRepository;
-    private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
+    private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly ActivateAccountCommandHandler _handler;
-    private const string TestUserName = "testuser";
 
     public ActivateAccountCommandHandlerTests()
     {
         _mockAccountRepository = new Mock<IAccountRepository>();
-        _mockAuthenticatedUserService = new Mock<IAuthenticatedUserService>();
+        _mockCurrentUser = new Mock<ICurrentUser>();
         var mockLogger = new Mock<ILogger<ActivateAccountCommandHandler>>();
 
-        _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(TestUserName);
+        _mockCurrentUser.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
 
         _handler = new ActivateAccountCommandHandler(
             _mockAccountRepository.Object,
-            _mockAuthenticatedUserService.Object,
-            mockLogger.Object);
+            mockLogger.Object
+        );
     }
 
     [Fact]
@@ -37,11 +36,12 @@ public class ActivateAccountCommandHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
+        var customerId = _mockCurrentUser.Object.CustomerId;
         var command = new ActivateAccountCommand(accountId);
-        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, TestUserName);
+        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD);
 
-        _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockAccount);
 
         // Act
@@ -50,7 +50,10 @@ public class ActivateAccountCommandHandlerTests
         // Assert
         command.ValidationErrorTitle().Should().NotBeNullOrEmpty();
         result.IsSuccess.Should().BeTrue();
-        _mockAccountRepository.Verify(r => r.UpdateAsync(mockAccount, It.IsAny<CancellationToken>()), Times.Once);
+        _mockAccountRepository.Verify(
+            r => r.UpdateAsync(mockAccount, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -60,7 +63,8 @@ public class ActivateAccountCommandHandlerTests
         var accountId = Guid.NewGuid();
         var command = new ActivateAccountCommand(accountId);
 
-        _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AccountEntity?)null);
 
         // Act
@@ -76,12 +80,13 @@ public class ActivateAccountCommandHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
+        var customerId = _mockCurrentUser.Object.CustomerId;
         var command = new ActivateAccountCommand(accountId);
-        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD, TestUserName);
-        mockAccount.Activate(TestUserName);
+        var mockAccount = AccountEntity.CreateNew(customerId, AccountType.Savings, Currency.USD);
+        mockAccount.Activate();
 
-        _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockAccount);
 
         // Act
@@ -90,7 +95,10 @@ public class ActivateAccountCommandHandlerTests
         // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Contain("already active");
-        _mockAccountRepository.Verify(r => r.UpdateAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockAccountRepository.Verify(
+            r => r.UpdateAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -101,7 +109,8 @@ public class ActivateAccountCommandHandlerTests
         var command = new ActivateAccountCommand(accountId);
         var exception = new Exception("Database error");
 
-        _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
 
         // Act

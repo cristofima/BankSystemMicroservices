@@ -1,3 +1,5 @@
+using BankSystem.Security.Infrastructure.IntegrationTests.Common;
+using BankSystem.Shared.Domain.Common;
 using DotNet.Testcontainers.Builders;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -5,7 +7,7 @@ using Security.Application.Configuration;
 using Security.Infrastructure.Data;
 using Testcontainers.MsSql;
 
-namespace Security.Infrastructure.IntegrationTests.Infrastructure;
+namespace Security.Infrastructure.IntegrationTests.Common;
 
 /// <summary>
 /// Base class for Security infrastructure integration tests using Testcontainers with SQL Server.
@@ -32,13 +34,17 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
     /// <summary>
     /// Gets the configured service provider for dependency resolution
     /// </summary>
-    protected ServiceProvider ServiceProvider => _serviceProvider
-        ?? throw new InvalidOperationException("Service provider not initialized. Ensure InitializeAsync has been called.");
+    protected ServiceProvider ServiceProvider =>
+        _serviceProvider
+        ?? throw new InvalidOperationException(
+            "Service provider not initialized. Ensure InitializeAsync has been called."
+        );
 
     /// <summary>
     /// Gets a service of type T from the service provider
     /// </summary>
-    protected T GetService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
+    protected T GetService<T>()
+        where T : notnull => ServiceProvider.GetRequiredService<T>();
 
     /// <summary>
     /// Gets the SecurityDbContext instance
@@ -69,19 +75,25 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
         // Configure DbContext with container connection string
         services.AddDbContext<SecurityDbContext>(options =>
         {
-            options.UseSqlServer(_sqlContainer.GetConnectionString(), sqlOptions =>
-            {
-                sqlOptions.CommandTimeout(30);
-                sqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 3,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-            });
+            options.UseSqlServer(
+                _sqlContainer.GetConnectionString(),
+                sqlOptions =>
+                {
+                    sqlOptions.CommandTimeout(30);
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null
+                    );
+                }
+            );
 
             // Enable detailed errors and sensitive data logging for testing
             options.EnableDetailedErrors();
             options.EnableSensitiveDataLogging();
         });
+
+        services.AddScoped<ICurrentUser, TestCurrentUser>();
 
         // Register infrastructure services
         services.AddInfrastructureServices(configuration);
@@ -137,36 +149,38 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
         var configurationBuilder = new ConfigurationBuilder();
 
         // Add in-memory configuration for testing
-        configurationBuilder.AddInMemoryCollection(new Dictionary<string, string>
-        {
-            // Database Configuration
-            ["ConnectionStrings:DefaultConnection"] = _sqlContainer.GetConnectionString(),
+        configurationBuilder.AddInMemoryCollection(
+            new Dictionary<string, string>
+            {
+                // Database Configuration
+                ["ConnectionStrings:DefaultConnection"] = _sqlContainer.GetConnectionString(),
 
-            // JWT Configuration
-            ["Jwt:Key"] = "ThisIsASecretKeyForTestingPurposesOnly123456789",
-            ["Jwt:Issuer"] = "https://localhost:5001",
-            ["Jwt:Audience"] = "bank-system-test",
-            ["Jwt:ExpiryInMinutes"] = "60",
-            ["Jwt:RefreshTokenExpiryInDays"] = "7",
+                // JWT Configuration
+                ["Jwt:Key"] = "ThisIsASecretKeyForTestingPurposesOnly123456789",
+                ["Jwt:Issuer"] = "https://localhost:5001",
+                ["Jwt:Audience"] = "bank-system-test",
+                ["Jwt:ExpiryInMinutes"] = "60",
+                ["Jwt:RefreshTokenExpiryInDays"] = "7",
 
-            // Security Configuration
-            ["Security:MaxFailedLoginAttempts"] = "5",
-            ["Security:LockoutDuration"] = "00:15:00",
-            ["Security:PasswordPolicy:MinLength"] = "8",
-            ["Security:PasswordPolicy:RequireSpecialCharacters"] = "true",
-            ["Security:PasswordPolicy:RequireNumbers"] = "true",
-            ["Security:PasswordPolicy:RequireUppercase"] = "true",
-            ["Security:PasswordPolicy:RequireLowercase"] = "true",
-            ["Security:TokenSecurity:EnableTokenRotation"] = "true",
-            ["Security:TokenSecurity:EnableRevocationCheck"] = "true",
-            ["Security:TokenSecurity:MaxConcurrentSessions"] = "5",
-            ["Security:TokenSecurity:CleanupExpiredTokensAfterDays"] = "30",
-            ["Security:Audit:EnableAuditLogging"] = "true",
-            ["Security:Audit:LogSuccessfulAuthentication"] = "true",
-            ["Security:Audit:LogFailedAuthentication"] = "true",
-            ["Security:Audit:LogTokenOperations"] = "true",
-            ["Security:Audit:LogUserOperations"] = "true"
-        }!);
+                // Security Configuration
+                ["Security:MaxFailedLoginAttempts"] = "5",
+                ["Security:LockoutDuration"] = "00:15:00",
+                ["Security:PasswordPolicy:MinLength"] = "8",
+                ["Security:PasswordPolicy:RequireSpecialCharacters"] = "true",
+                ["Security:PasswordPolicy:RequireNumbers"] = "true",
+                ["Security:PasswordPolicy:RequireUppercase"] = "true",
+                ["Security:PasswordPolicy:RequireLowercase"] = "true",
+                ["Security:TokenSecurity:EnableTokenRotation"] = "true",
+                ["Security:TokenSecurity:EnableRevocationCheck"] = "true",
+                ["Security:TokenSecurity:MaxConcurrentSessions"] = "5",
+                ["Security:TokenSecurity:CleanupExpiredTokensAfterDays"] = "30",
+                ["Security:Audit:EnableAuditLogging"] = "true",
+                ["Security:Audit:LogSuccessfulAuthentication"] = "true",
+                ["Security:Audit:LogFailedAuthentication"] = "true",
+                ["Security:Audit:LogTokenOperations"] = "true",
+                ["Security:Audit:LogUserOperations"] = "true",
+            }!
+        );
 
         return configurationBuilder.Build();
     }

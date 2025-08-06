@@ -25,7 +25,8 @@ public class GetAccountByIdQueryHandlerTests
         _handler = new GetAccountByIdQueryHandler(
             _mockAccountRepository.Object,
             _mockMapper.Object,
-            mockLogger.Object);
+            mockLogger.Object
+        );
     }
 
     [Fact]
@@ -33,9 +34,10 @@ public class GetAccountByIdQueryHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        var account = AccountEntity.CreateNew(Guid.NewGuid(), AccountType.Checking, Currency.USD, "test");
+        var account = AccountEntity.CreateNew(Guid.NewGuid(), AccountType.Checking, Currency.USD);
         var accountDto = new AccountDto();
-        _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
         _mockMapper.Setup(m => m.Map<AccountDto>(account)).Returns(accountDto);
 
@@ -47,7 +49,10 @@ public class GetAccountByIdQueryHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(accountDto, result.Value);
-        _mockAccountRepository.Verify(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
+        _mockAccountRepository.Verify(
+            r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
         _mockMapper.Verify(m => m.Map<AccountDto>(account), Times.Once);
     }
 
@@ -56,7 +61,8 @@ public class GetAccountByIdQueryHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AccountEntity?)null!);
         var query = new GetAccountByIdQuery(accountId);
 
@@ -73,7 +79,8 @@ public class GetAccountByIdQueryHandlerTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        _mockAccountRepository.Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
+        _mockAccountRepository
+            .Setup(r => r.GetByIdAsync(accountId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("db error"));
         var query = new GetAccountByIdQuery(accountId);
 
