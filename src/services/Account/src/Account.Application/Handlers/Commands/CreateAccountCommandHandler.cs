@@ -14,30 +14,34 @@ namespace BankSystem.Account.Application.Handlers.Commands;
 public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand, Result<AccountDto>>
 {
     private readonly IAccountRepository _accountRepository;
-    private readonly IAuthenticatedUserService _authenticatedUserService;
+    private readonly ICurrentUser _currentUser;
     private readonly IMapper _mapper;
     private readonly ILogger<CreateAccountCommandHandler> _logger;
 
     public CreateAccountCommandHandler(
         IAccountRepository accountRepository,
-        IAuthenticatedUserService authenticatedUserService,
+        ICurrentUser currentUser,
         IMapper mapper,
-        ILogger<CreateAccountCommandHandler> logger)
+        ILogger<CreateAccountCommandHandler> logger
+    )
     {
         Guard.AgainstNull(accountRepository, "accountRepository");
-        Guard.AgainstNull(authenticatedUserService, "authenticatedUserService");
+        Guard.AgainstNull(currentUser, "currentUser");
         Guard.AgainstNull(mapper, "mapper");
         Guard.AgainstNull(logger, "logger");
 
         _accountRepository = accountRepository;
-        _authenticatedUserService = authenticatedUserService;
+        _currentUser = currentUser;
         _mapper = mapper;
         _logger = logger;
     }
 
-    public async Task<Result<AccountDto>> Handle(CreateAccountCommand request, CancellationToken cancellationToken)
+    public async Task<Result<AccountDto>> Handle(
+        CreateAccountCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        var customerId = _authenticatedUserService.CustomerId;
+        var customerId = _currentUser.CustomerId;
 
         try
         {
@@ -46,19 +50,18 @@ public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand,
             var currency = new Currency(request.Currency);
 
             // Create new account
-            var account = AccountEntity.CreateNew(
-                customerId,
-                request.AccountType,
-                currency,
-                _authenticatedUserService.UserName);
+            var account = AccountEntity.CreateNew(customerId, request.AccountType, currency);
 
             // Save account
             await _accountRepository.AddAsync(account, cancellationToken);
 
             var accountDto = _mapper.Map<AccountDto>(account);
 
-            _logger.LogInformation("Account {AccountId} created successfully for customer {CustomerId}",
-                account.Id, customerId);
+            _logger.LogInformation(
+                "Account {AccountId} created successfully for customer {CustomerId}",
+                account.Id,
+                customerId
+            );
 
             return Result<AccountDto>.Success(accountDto);
         }

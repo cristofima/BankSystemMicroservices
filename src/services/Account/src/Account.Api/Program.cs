@@ -3,7 +3,7 @@ using BankSystem.Account.Api.Middlewares;
 using BankSystem.Account.Application;
 using BankSystem.Account.Infrastructure;
 using BankSystem.ServiceDefaults;
-using BankSystem.Shared.WebApi.Extensions;
+using BankSystem.Shared.WebApiDefaults.Extensions;
 using System.Diagnostics.CodeAnalysis;
 
 var builder = WebApplication.CreateBuilder(args);

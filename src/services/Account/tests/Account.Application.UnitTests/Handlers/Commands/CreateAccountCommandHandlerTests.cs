@@ -4,6 +4,7 @@ using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Handlers.Commands;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Domain.Enums;
+using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -15,28 +16,27 @@ namespace BankSystem.Account.Application.UnitTests.Handlers.Commands;
 public class CreateAccountCommandHandlerTests
 {
     private readonly Mock<IAccountRepository> _mockAccountRepository;
-    private readonly Mock<IAuthenticatedUserService> _mockAuthenticatedUserService;
+    private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<ILogger<CreateAccountCommandHandler>> _mockLogger;
     private readonly CreateAccountCommandHandler _handler;
-    private const string TestUserName = "testuser";
 
     public CreateAccountCommandHandlerTests()
     {
         _mockAccountRepository = new Mock<IAccountRepository>();
-        _mockAuthenticatedUserService = new Mock<IAuthenticatedUserService>();
+        _mockCurrentUser = new Mock<ICurrentUser>();
         _mockMapper = new Mock<IMapper>();
         _mockLogger = new Mock<ILogger<CreateAccountCommandHandler>>();
 
-        _mockAuthenticatedUserService.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
-        _mockAuthenticatedUserService.Setup(s => s.UserName).Returns(TestUserName);
+        _mockCurrentUser.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
+        _mockCurrentUser.Setup(s => s.UserId).Returns(Guid.NewGuid());
 
         _handler = new CreateAccountCommandHandler(
             _mockAccountRepository.Object,
-            _mockAuthenticatedUserService.Object,
+            _mockCurrentUser.Object,
             _mockMapper.Object,
-            _mockLogger.Object);
+            _mockLogger.Object
+        );
     }
 
     [Fact]
@@ -47,10 +47,9 @@ public class CreateAccountCommandHandlerTests
 
         var currency = new Currency(command.Currency);
         var expectedAccount = AccountEntity.CreateNew(
-            _mockAuthenticatedUserService.Object.CustomerId,
+            _mockCurrentUser.Object.CustomerId,
             command.AccountType,
-            currency,
-            TestUserName
+            currency
         );
 
         var expectedDto = new AccountDto
@@ -62,16 +61,14 @@ public class CreateAccountCommandHandlerTests
             Currency = expectedAccount.Balance.Currency.Code,
             Status = expectedAccount.Status.ToString(),
             AccountType = expectedAccount.Type.ToString(),
-            CreatedAt = expectedAccount.CreatedAt
+            CreatedAt = expectedAccount.CreatedAt,
         };
 
         _mockAccountRepository
             .Setup(r => r.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockMapper
-            .Setup(m => m.Map<AccountDto>(It.IsAny<AccountEntity>()))
-            .Returns(expectedDto);
+        _mockMapper.Setup(m => m.Map<AccountDto>(It.IsAny<AccountEntity>())).Returns(expectedDto);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -85,7 +82,8 @@ public class CreateAccountCommandHandlerTests
 
         _mockAccountRepository.Verify(
             r => r.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Theory]
@@ -94,7 +92,8 @@ public class CreateAccountCommandHandlerTests
     [InlineData(AccountType.Business, "GBP")]
     public async Task Handle_DifferentAccountTypesAndCurrencies_ShouldCreateAccountSuccessfully(
         AccountType accountType,
-        string currency)
+        string currency
+    )
     {
         // Arrange
         var command = new CreateAccountCommand(accountType, currency);
@@ -102,22 +101,20 @@ public class CreateAccountCommandHandlerTests
         var expectedDto = new AccountDto
         {
             Id = Guid.NewGuid(),
-            CustomerId = _mockAuthenticatedUserService.Object.CustomerId,
+            CustomerId = _mockCurrentUser.Object.CustomerId,
             AccountNumber = "1234567890",
             Balance = 0,
             Currency = currency,
             Status = nameof(AccountStatus.Active),
             AccountType = accountType.ToString(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockAccountRepository
             .Setup(r => r.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockMapper
-            .Setup(m => m.Map<AccountDto>(It.IsAny<AccountEntity>()))
-            .Returns(expectedDto);
+        _mockMapper.Setup(m => m.Map<AccountDto>(It.IsAny<AccountEntity>())).Returns(expectedDto);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -132,16 +129,14 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ValidCommand_ShouldCreateAccountSuccessfully()
     {
         // Arrange
-        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
-        var command = new CreateAccountCommand(
-            AccountType: AccountType.Checking,
-            Currency: "USD");
+        var customerId = _mockCurrentUser.Object.CustomerId;
+        var command = new CreateAccountCommand(AccountType: AccountType.Checking, Currency: "USD");
 
         var createdAccount = AccountEntity.CreateNew(
             customerId,
             AccountType.Checking,
-            new Currency("USD"),
-            TestUserName);
+            new Currency("USD")
+        );
 
         var expectedDto = new AccountDto
         {
@@ -149,16 +144,14 @@ public class CreateAccountCommandHandlerTests
             AccountNumber = createdAccount.AccountNumber,
             CustomerId = customerId,
             AccountType = "Checking",
-            Balance = 1000m
+            Balance = 1000m,
         };
 
         _mockAccountRepository
             .Setup(x => x.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockMapper
-            .Setup(x => x.Map<AccountDto>(It.IsAny<AccountEntity>()))
-            .Returns(expectedDto);
+        _mockMapper.Setup(x => x.Map<AccountDto>(It.IsAny<AccountEntity>())).Returns(expectedDto);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -173,11 +166,10 @@ public class CreateAccountCommandHandlerTests
 
         _mockAccountRepository.Verify(
             x => x.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
 
-        _mockMapper.Verify(
-            x => x.Map<AccountDto>(It.IsAny<AccountEntity>()),
-            Times.Once);
+        _mockMapper.Verify(x => x.Map<AccountDto>(It.IsAny<AccountEntity>()), Times.Once);
 
         VerifyLoggerWasCalled(LogLevel.Information, "Creating account for customer");
     }
@@ -186,10 +178,8 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ValidCommandWithZeroBalance_ShouldCreateAccountWithoutDeposit()
     {
         // Arrange
-        var customerId = _mockAuthenticatedUserService.Object.CustomerId;
-        var command = new CreateAccountCommand(
-            AccountType: AccountType.Savings,
-            Currency: "EUR");
+        var customerId = _mockCurrentUser.Object.CustomerId;
+        var command = new CreateAccountCommand(AccountType: AccountType.Savings, Currency: "EUR");
 
         var expectedDto = new AccountDto
         {
@@ -197,16 +187,14 @@ public class CreateAccountCommandHandlerTests
             AccountNumber = "1234567890",
             CustomerId = customerId,
             AccountType = "Savings",
-            Balance = 0m
+            Balance = 0m,
         };
 
         _mockAccountRepository
             .Setup(x => x.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockMapper
-            .Setup(x => x.Map<AccountDto>(It.IsAny<AccountEntity>()))
-            .Returns(expectedDto);
+        _mockMapper.Setup(x => x.Map<AccountDto>(It.IsAny<AccountEntity>())).Returns(expectedDto);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -221,7 +209,8 @@ public class CreateAccountCommandHandlerTests
 
         _mockAccountRepository.Verify(
             x => x.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
 
         VerifyLoggerWasCalled(LogLevel.Information, "Creating account for customer");
     }
@@ -230,9 +219,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_ExceptionThrown_ShouldReturnFailureResult()
     {
         // Arrange
-        var command = new CreateAccountCommand(
-            AccountType: AccountType.Checking,
-            Currency: "USD");
+        var command = new CreateAccountCommand(AccountType: AccountType.Checking, Currency: "USD");
 
         _mockAccountRepository
             .Setup(x => x.AddAsync(It.IsAny<AccountEntity>(), It.IsAny<CancellationToken>()))
@@ -253,9 +240,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_RepositoryThrowsException_ShouldLogErrorAndReturnFailure()
     {
         // Arrange
-        var command = new CreateAccountCommand(
-            AccountType: AccountType.Checking,
-            Currency: "USD");
+        var command = new CreateAccountCommand(AccountType: AccountType.Checking, Currency: "USD");
 
         var expectedException = new Exception("Repository failed");
 
@@ -276,9 +261,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_MapperThrowsException_ShouldLogErrorAndReturnFailure()
     {
         // Arrange
-        var command = new CreateAccountCommand(
-            AccountType: AccountType.Checking,
-            Currency: "USD");
+        var command = new CreateAccountCommand(AccountType: AccountType.Checking, Currency: "USD");
 
         var expectedException = new AutoMapperMappingException("Mapping failed");
 
@@ -303,9 +286,7 @@ public class CreateAccountCommandHandlerTests
     public async Task Handle_CancellationRequested_ShouldReturnFailureResult()
     {
         // Arrange
-        var command = new CreateAccountCommand(
-            AccountType: AccountType.Checking,
-            Currency: "USD");
+        var command = new CreateAccountCommand(AccountType: AccountType.Checking, Currency: "USD");
 
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
@@ -324,12 +305,15 @@ public class CreateAccountCommandHandlerTests
     private void VerifyLoggerWasCalled(LogLevel logLevel, string message)
     {
         _mockLogger.Verify(
-            x => x.Log(
-                logLevel,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(message)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
+            x =>
+                x.Log(
+                    logLevel,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(message)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.AtLeastOnce
+        );
     }
 }

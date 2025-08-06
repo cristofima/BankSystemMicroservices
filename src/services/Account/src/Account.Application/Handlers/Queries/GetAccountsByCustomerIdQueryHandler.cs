@@ -9,47 +9,59 @@ using Microsoft.Extensions.Logging;
 
 namespace BankSystem.Account.Application.Handlers.Queries;
 
-public class GetAccountsByCustomerIdQueryHandler : IRequestHandler<GetAccountsByCustomerIdQuery, Result<IEnumerable<AccountDto>>>
+public class GetAccountsByCustomerIdQueryHandler
+    : IRequestHandler<GetAccountsByCustomerIdQuery, Result<IEnumerable<AccountDto>>>
 {
     private readonly IAccountRepository _accountRepository;
-    private readonly IAuthenticatedUserService _authenticatedUserService;
+    private readonly ICurrentUser _currentUser;
     private readonly IMapper _mapper;
     private readonly ILogger<GetAccountsByCustomerIdQueryHandler> _logger;
 
     public GetAccountsByCustomerIdQueryHandler(
         IAccountRepository accountRepository,
-        IAuthenticatedUserService authenticatedUserService,
+        ICurrentUser currentUser,
         IMapper mapper,
-        ILogger<GetAccountsByCustomerIdQueryHandler> logger)
+        ILogger<GetAccountsByCustomerIdQueryHandler> logger
+    )
     {
         Guard.AgainstNull(accountRepository, "accountRepository");
-        Guard.AgainstNull(authenticatedUserService, "authenticatedUserService");
+        Guard.AgainstNull(currentUser, "currentUser");
         Guard.AgainstNull(mapper, "mapper");
         Guard.AgainstNull(logger, "logger");
 
         _accountRepository = accountRepository;
-        _authenticatedUserService = authenticatedUserService;
+        _currentUser = currentUser;
         _mapper = mapper;
         _logger = logger;
     }
 
     public async Task<Result<IEnumerable<AccountDto>>> Handle(
         GetAccountsByCustomerIdQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
-        var customerId = _authenticatedUserService.CustomerId;
+        var customerId = _currentUser.CustomerId;
 
         try
         {
             _logger.LogInformation("Retrieving accounts for customer {CustomerId}", customerId);
 
-            var accounts = await _accountRepository.GetByCustomerIdAsync(customerId, cancellationToken);
-            _logger.LogInformation("Found {Count} accounts for customer {CustomerId}",
-                accounts.Count(), customerId);
+            var accounts = await _accountRepository.GetByCustomerIdAsync(
+                customerId,
+                cancellationToken
+            );
+            _logger.LogInformation(
+                "Found {Count} accounts for customer {CustomerId}",
+                accounts.Count(),
+                customerId
+            );
 
             if (!accounts.Any())
             {
-                return Result<IEnumerable<AccountDto>>.Failure("No accounts found", ErrorType.NotFound);
+                return Result<IEnumerable<AccountDto>>.Failure(
+                    "No accounts found",
+                    ErrorType.NotFound
+                );
             }
 
             var accountDtos = _mapper.Map<IEnumerable<AccountDto>>(accounts);
@@ -58,7 +70,9 @@ public class GetAccountsByCustomerIdQueryHandler : IRequestHandler<GetAccountsBy
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving accounts for customer {CustomerId}", customerId);
-            return Result<IEnumerable<AccountDto>>.Failure("An error occurred while retrieving customer accounts");
+            return Result<IEnumerable<AccountDto>>.Failure(
+                "An error occurred while retrieving customer accounts"
+            );
         }
     }
 }

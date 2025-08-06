@@ -2,8 +2,8 @@ using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Security.Application.Configuration;
+using Security.Infrastructure.IntegrationTests.Common;
 using Security.Infrastructure.Services;
-using Security.Infrastructure.IntegrationTests.Infrastructure;
 
 namespace Security.Infrastructure.IntegrationTests.Services;
 
@@ -29,7 +29,7 @@ public class TokenServiceTests : BaseSecurityInfrastructureTest
             EmailConfirmed = true,
             SecurityStamp = Guid.NewGuid().ToString(),
             ConcurrencyStamp = Guid.NewGuid().ToString(),
-            ClientId = uniqueId
+            ClientId = uniqueId,
         };
         var context = GetDbContext();
         context.Users.Add(user);
@@ -45,7 +45,7 @@ public class TokenServiceTests : BaseSecurityInfrastructureTest
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.UniqueName, user.UserName!),
-            new(JwtRegisteredClaimNames.Email, user.Email!)
+            new(JwtRegisteredClaimNames.Email, user.Email!),
         };
         var tokenService = CreateTokenService();
 
@@ -62,8 +62,14 @@ public class TokenServiceTests : BaseSecurityInfrastructureTest
         var jwt = handler.ReadJwtToken(token);
         Assert.Equal(jwtId, jwt.Id);
         Assert.Equal(user.Id, jwt.Subject);
-        Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == user.UserName);
-        Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Email && c.Value == user.Email);
+        Assert.Contains(
+            jwt.Claims,
+            c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == user.UserName
+        );
+        Assert.Contains(
+            jwt.Claims,
+            c => c.Type == JwtRegisteredClaimNames.Email && c.Value == user.Email
+        );
     }
 
     [Fact]
@@ -75,7 +81,7 @@ public class TokenServiceTests : BaseSecurityInfrastructureTest
         {
             new(JwtRegisteredClaimNames.Sub, user.Id!),
             new(JwtRegisteredClaimNames.UniqueName, user.UserName!),
-            new(JwtRegisteredClaimNames.Email, user.Email!)
+            new(JwtRegisteredClaimNames.Email, user.Email!),
         };
         var tokenService = CreateTokenService();
         var (token, jwtId, expiry) = await tokenService.CreateAccessTokenAsync(user, claims);
@@ -146,16 +152,18 @@ public class TokenServiceTests : BaseSecurityInfrastructureTest
     public void Constructor_ShouldThrowArgumentException_WhenJwtKeyIsNullOrEmpty()
     {
         // Arrange
-        var options = Options.Create(new JwtOptions
-        {
-            Key = "", // Empty key
-            Issuer = "issuer",
-            Audience = "audience",
-            AccessTokenExpiryInMinutes = 5,
-            ValidateIssuerSigningKey = true,
-            ValidateIssuer = true,
-            ValidateAudience = true
-        });
+        var options = Options.Create(
+            new JwtOptions
+            {
+                Key = "", // Empty key
+                Issuer = "issuer",
+                Audience = "audience",
+                AccessTokenExpiryInMinutes = 5,
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+            }
+        );
 
         // Act & Assert
         var ex = Assert.Throws<ArgumentException>(() => new TokenService(options));
