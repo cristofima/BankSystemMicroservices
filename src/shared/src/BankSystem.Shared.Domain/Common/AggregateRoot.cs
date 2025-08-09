@@ -1,9 +1,14 @@
+using BankSystem.Shared.Kernel.Common;
+using BankSystem.Shared.Kernel.Events;
+
 namespace BankSystem.Shared.Domain.Common;
 
 /// <summary>
-/// Base class for aggregate roots.
+/// Marker base class for aggregate roots that can produce domain events.
+/// This class provides a common contract for accessing domain events
+/// from any aggregate root without knowing its specific generic type.
 /// </summary>
-public abstract class AggregateRoot<TId> : Entity<TId>
+public abstract class AggregateRoot<TId> : Entity<TId>, IAggregateRoot
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
@@ -15,7 +20,7 @@ public abstract class AggregateRoot<TId> : Entity<TId>
     /// <summary>
     /// Adds a domain event to the aggregate.
     /// </summary>
-    protected void AddDomainEvent(IDomainEvent domainEvent)
+    public void AddDomainEvent(IDomainEvent domainEvent)
     {
         _domainEvents.Add(domainEvent);
     }
