@@ -1,5 +1,5 @@
 ﻿using BankSystem.Account.Infrastructure.Data;
-using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Kernel.Common;
 using DotNet.Testcontainers.Builders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

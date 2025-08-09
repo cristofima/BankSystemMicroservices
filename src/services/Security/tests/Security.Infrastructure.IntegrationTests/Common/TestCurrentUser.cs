@@ -1,6 +1,6 @@
-using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Kernel.Common;
 
-namespace BankSystem.Security.Infrastructure.IntegrationTests.Common;
+namespace Security.Infrastructure.IntegrationTests.Common;
 
 /// <summary>
 /// Test implementation of ICurrentUser for integration tests

@@ -1,5 +1,6 @@
 ﻿using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.Kernel.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 

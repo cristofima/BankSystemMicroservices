@@ -4,6 +4,7 @@ using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Application.Queries;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.Kernel.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
