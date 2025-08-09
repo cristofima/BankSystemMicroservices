@@ -1,4 +1,4 @@
-using BankSystem.Account.Application.Interfaces;
+﻿using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Shared.Domain.Validation;
@@ -23,24 +23,30 @@ public class AccountRepository : IAccountRepository
     }
 
     /// <inheritdoc />
-    public async Task<AccountEntity?> GetByIdAsync(Guid accountId, CancellationToken cancellationToken = default)
+    public async Task<AccountEntity?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
-        Guard.AgainstEmptyGuid(accountId, nameof(accountId));
+        Guard.AgainstEmptyGuid(id, nameof(id));
 
-        _logger.LogDebug("Retrieving account by ID: {AccountId}", accountId);
+        _logger.LogDebug("Retrieving account: {AccountId}", id);
 
-        return await _context.Accounts.FindAsync([accountId], cancellationToken: cancellationToken);
+        return await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<AccountEntity>> GetByCustomerIdAsync(Guid customerId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<AccountEntity>> GetByCustomerIdAsync(
+        Guid customerId,
+        CancellationToken cancellationToken = default
+    )
     {
         Guard.AgainstEmptyGuid(customerId, nameof(customerId));
 
         _logger.LogDebug("Retrieving accounts for customer: {CustomerId}", customerId);
 
-        return await _context.Accounts
-            .Where(a => a.CustomerId == customerId)
+        return await _context
+            .Accounts.Where(a => a.CustomerId == customerId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
@@ -53,32 +59,42 @@ public class AccountRepository : IAccountRepository
         _logger.LogDebug("Adding new account: {AccountId}", account.Id);
 
         _context.Accounts.Add(account);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Account {AccountId} added successfully", account.Id);
     }
 
     /// <inheritdoc />
-    public async Task UpdateAsync(AccountEntity account, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(
+        AccountEntity account,
+        CancellationToken cancellationToken = default
+    )
     {
         Guard.AgainstNull(account, nameof(account));
 
         _logger.LogDebug("Updating account: {AccountId}", account.Id);
 
         _context.Accounts.Update(account);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Account {AccountId} updated successfully", account.Id);
     }
 
     /// <inheritdoc />
-    public async Task<bool> AccountNumberExistsAsync(string accountNumber, CancellationToken cancellationToken = default)
+    public async Task<bool> AccountNumberExistsAsync(
+        string accountNumber,
+        CancellationToken cancellationToken = default
+    )
     {
         Guard.AgainstNullOrEmpty(accountNumber, nameof(accountNumber));
 
         _logger.LogDebug("Checking if account number exists: {AccountNumber}", accountNumber);
 
-        return await _context.Accounts
-            .AnyAsync(a => a.AccountNumber.Equals(new AccountNumber(accountNumber)), cancellationToken);
+        return await _context.Accounts.AnyAsync(
+            a => a.AccountNumber.Equals(new AccountNumber(accountNumber)),
+            cancellationToken
+        );
     }
 }
