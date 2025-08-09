@@ -1,4 +1,4 @@
-using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Events;
 
 namespace BankSystem.Account.Domain.Events;
 
@@ -9,8 +9,5 @@ public record AccountActivatedEvent(
     Guid AccountId,
     Guid CustomerId,
     string AccountNumber,
-    DateTime ActivatedAt) : IDomainEvent
-{
-    public Guid Id { get; } = Guid.NewGuid();
-    public DateTime OccurredOn { get; } = DateTime.UtcNow;
-}
+    DateTime ActivatedAt
+) : DomainEvent { }

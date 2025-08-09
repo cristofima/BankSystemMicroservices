@@ -1,4 +1,4 @@
-using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Kernel.Common;
 
 namespace BankSystem.Account.Infrastructure.IntegrationTests.Common;
 

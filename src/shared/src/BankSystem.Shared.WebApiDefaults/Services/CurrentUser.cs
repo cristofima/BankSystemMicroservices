@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Kernel.Common;
 
 namespace BankSystem.Shared.WebApiDefaults.Services;
 

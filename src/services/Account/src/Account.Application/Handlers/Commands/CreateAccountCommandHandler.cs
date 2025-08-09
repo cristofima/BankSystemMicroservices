@@ -5,6 +5,7 @@ using BankSystem.Account.Application.Interfaces;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Domain.ValueObjects;
+using BankSystem.Shared.Kernel.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;

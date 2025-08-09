@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using BankSystem.Account.Domain.ValueObjects;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 
@@ -19,6 +20,9 @@ public class AccountDbContext(DbContextOptions<AccountDbContext> options) : DbCo
 
         // Configure Account entity
         ConfigureAccount(modelBuilder);
+
+        // Configure MassTransit OutBox Entities
+        modelBuilder.AddTransactionalOutboxEntities();
     }
 
     private static void ConfigureAccount(ModelBuilder modelBuilder)
