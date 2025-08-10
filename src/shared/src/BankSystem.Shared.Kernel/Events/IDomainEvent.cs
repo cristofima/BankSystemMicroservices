@@ -16,5 +16,10 @@ public interface IDomainEvent : INotification
     /// <summary>
     /// When the event occurred
     /// </summary>
-    DateTime OccurredOn { get; }
+    DateTimeOffset OccurredOn { get; }
+
+    /// <summary>
+    /// Event contract version for backward compatibility.
+    /// </summary>
+    int Version { get; }
 }
