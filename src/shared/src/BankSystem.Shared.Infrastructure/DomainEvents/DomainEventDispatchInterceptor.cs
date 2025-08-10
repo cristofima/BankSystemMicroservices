@@ -1,3 +1,4 @@
+using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Kernel.Common;
 using BankSystem.Shared.Kernel.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -21,11 +22,14 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
         ILogger<DomainEventDispatchInterceptor> logger
     )
     {
-        _serviceProvider =
-            serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(serviceProvider, nameof(logger));
+        Guard.AgainstNull(logger, nameof(logger));
+
+        _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
+    /// <inheritdoc/>
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -38,6 +42,7 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public override async ValueTask<int> SavedChangesAsync(
         SaveChangesCompletedEventData eventData,
         int result,
@@ -55,7 +60,7 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
             // Find all aggregate roots with domain events
             var aggregatesWithEvents = GetAggregatesWithEvents(context);
 
-            if (aggregatesWithEvents.Any())
+            if (aggregatesWithEvents.Count > 0)
             {
                 _logger.LogDebug(
                     "Found {AggregateCount} aggregates with domain events after SaveChanges",
@@ -87,6 +92,7 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
         return await base.SavedChangesAsync(eventData, result, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
         InterceptionResult<int> result
@@ -98,6 +104,7 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
         return base.SavingChanges(eventData, result);
     }
 
+    /// <inheritdoc/>
     public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
     {
         var context = eventData.Context;
@@ -111,7 +118,7 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
             // Find all aggregate roots with domain events
             var aggregatesWithEvents = GetAggregatesWithEvents(context);
 
-            if (aggregatesWithEvents.Any())
+            if (aggregatesWithEvents.Count > 0)
             {
                 _logger.LogDebug(
                     "Found {AggregateCount} aggregates with domain events after SaveChanges (sync)",
@@ -149,7 +156,7 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
     {
         return context
             .ChangeTracker.Entries<IAggregateRoot>()
-            .Where(entry => entry.Entity.DomainEvents?.Any() == true)
+            .Where(entry => entry.Entity.DomainEvents?.Count > 0)
             .Select(entry => entry.Entity)
             .ToList();
     }

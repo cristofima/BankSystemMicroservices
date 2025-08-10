@@ -19,9 +19,6 @@ public static class OutboxServiceCollectionExtensions
         {
             busConfigurator.AddEntityFrameworkOutbox<TDbContext>(outboxConfigurator =>
             {
-                outboxConfigurator.QueryDelay = TimeSpan.FromSeconds(1);
-                outboxConfigurator.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-                outboxConfigurator.UseBusOutbox();
                 switch (databaseEngine)
                 {
                     case DatabaseEngine.SqlServer:
@@ -32,6 +29,16 @@ public static class OutboxServiceCollectionExtensions
                         outboxConfigurator.UsePostgres();
                         break;
                 }
+
+                // Query Configuration
+                outboxConfigurator.QueryDelay = TimeSpan.FromSeconds(1);
+                outboxConfigurator.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+
+                // Cleanup Configuration
+                outboxConfigurator.DisableInboxCleanupService();
+
+                // Use Bus Outbox for better performance
+                outboxConfigurator.UseBusOutbox();
             });
         });
 
