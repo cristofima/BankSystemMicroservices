@@ -28,6 +28,11 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Moq" />
+    <Using Include="FluentAssertions"/>
+    <Using Include="AutoMapper"/>
+    <Using Include="BankSystem.Shared.Kernel.Common"/>
+    <Using Include="BankSystem.Shared.Domain.ValueObjects"/>
   </ItemGroup>
 
 </Project>

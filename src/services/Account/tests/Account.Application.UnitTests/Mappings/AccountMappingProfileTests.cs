@@ -1,7 +1,5 @@
-﻿using AutoMapper;
-using BankSystem.Account.Application.DTOs;
+﻿using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Mappings;
-using BankSystem.Shared.Domain.ValueObjects;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 
 namespace BankSystem.Account.Application.UnitTests.Mappings;
@@ -34,9 +32,10 @@ public class AccountMappingProfileTests
     [InlineData(typeof(Currency), typeof(string))]
     public void Map_SourceToDestination_ExistConfiguration(Type origin, Type destination)
     {
-        var instance = origin.GetConstructor(Type.EmptyTypes) != null
-            ? Activator.CreateInstance(origin)!
-            : GetDefaultInstance(origin);
+        var instance =
+            origin.GetConstructor(Type.EmptyTypes) != null
+                ? Activator.CreateInstance(origin)!
+                : GetDefaultInstance(origin);
 
         var result = _mapper.Map(instance, origin, destination);
         Assert.NotNull(result);

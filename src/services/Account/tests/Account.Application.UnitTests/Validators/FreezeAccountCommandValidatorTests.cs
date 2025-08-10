@@ -1,6 +1,5 @@
 ﻿using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.Validators;
-using FluentAssertions;
 
 namespace BankSystem.Account.Application.UnitTests.Validators;
 
@@ -23,6 +22,8 @@ public class FreezeAccountCommandValidatorTests
         validationResult.IsValid.Should().BeFalse();
         validationResult.Errors.Should().HaveCount(2);
         validationResult.Errors.Should().Contain(e => e.ErrorMessage == "Account ID is required");
-        validationResult.Errors.Should().Contain(e => e.ErrorMessage == "Reason for freezing the account is required");
+        validationResult
+            .Errors.Should()
+            .Contain(e => e.ErrorMessage == "Reason for freezing the account is required");
     }
 }

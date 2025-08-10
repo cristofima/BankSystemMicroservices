@@ -1,14 +1,9 @@
-using AutoMapper;
 using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Handlers.Commands;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Domain.Enums;
-using BankSystem.Shared.Domain.ValueObjects;
-using BankSystem.Shared.Kernel.Common;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 
 namespace BankSystem.Account.Application.UnitTests.Handlers.Commands;
@@ -29,7 +24,6 @@ public class CreateAccountCommandHandlerTests
         _mockLogger = new Mock<ILogger<CreateAccountCommandHandler>>();
 
         _mockCurrentUser.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
-        _mockCurrentUser.Setup(s => s.UserId).Returns(Guid.NewGuid());
 
         _handler = new CreateAccountCommandHandler(
             _mockAccountRepository.Object,

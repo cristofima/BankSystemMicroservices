@@ -54,13 +54,13 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
             switch (entry.State)
             {
                 case EntityState.Modified:
-                    entity.UpdatedAt = DateTime.UtcNow;
-                    entity.UpdatedBy = _currentUser.UserName;
+                    entity.UpdatedAt = DateTimeOffset.UtcNow;
+                    entity.UpdatedBy = _currentUser.UserName ?? "system";
                     break;
 
                 case EntityState.Added:
-                    entity.CreatedAt = DateTime.UtcNow;
-                    entity.CreatedBy = _currentUser.UserName;
+                    entity.CreatedAt = DateTimeOffset.UtcNow;
+                    entity.CreatedBy = _currentUser.UserName ?? "system";
                     break;
             }
         }
