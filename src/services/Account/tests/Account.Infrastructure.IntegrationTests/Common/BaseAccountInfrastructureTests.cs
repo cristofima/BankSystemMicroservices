@@ -22,7 +22,7 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
     {
         // Create PostgreSQL container with specific configuration
         _sqlContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:latest")
+            .WithImage("postgres:15.6-alpine")
             .WithUsername("testuser")
             .WithPassword("Test123!")
             .WithPortBinding(0, 5432) // Random host port
@@ -99,7 +99,7 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Cleans up resources - stops SQL Server container and disposes service provider
+    /// Cleans up resources - stops PostgreSQL container and disposes service provider
     /// </summary>
     public async Task DisposeAsync()
     {
@@ -143,7 +143,7 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
         using var scope = CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
 
-        // Ensure database is created and migrations are applied
-        await dbContext.Database.EnsureCreatedAsync();
+        // Ensure database is created and all migrations are applied
+        await dbContext.Database.MigrateAsync();
     }
 }

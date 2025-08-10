@@ -24,15 +24,18 @@ public class AccountRepository : IAccountRepository
 
     /// <inheritdoc />
     public async Task<AccountEntity?> GetByIdAsync(
-        Guid id,
+        Guid accountId,
         CancellationToken cancellationToken = default
     )
     {
-        Guard.AgainstEmptyGuid(id, nameof(id));
+        Guard.AgainstEmptyGuid(accountId, nameof(accountId));
 
-        _logger.LogDebug("Retrieving account: {AccountId}", id);
+        _logger.LogDebug("Retrieving account: {AccountId}", accountId);
 
-        return await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+        return await _context.Accounts.FirstOrDefaultAsync(
+            a => a.Id == accountId,
+            cancellationToken
+        );
     }
 
     /// <inheritdoc />
