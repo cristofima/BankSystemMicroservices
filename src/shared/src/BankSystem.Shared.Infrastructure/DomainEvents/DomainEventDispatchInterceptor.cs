@@ -17,6 +17,9 @@ public class DomainEventDispatchInterceptor : SaveChangesInterceptor
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DomainEventDispatchInterceptor> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DomainEventDispatchInterceptor"/> class.
+    /// </summary>
     public DomainEventDispatchInterceptor(
         IServiceProvider serviceProvider,
         ILogger<DomainEventDispatchInterceptor> logger

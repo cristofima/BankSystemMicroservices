@@ -18,6 +18,9 @@ public class DomainEventEmitter : IDomainEventEmitter
     private readonly ILogger<DomainEventEmitter> _logger;
     private readonly AsyncRetryPolicy _retryPolicy;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DomainEventEmitter"/> class.
+    /// </summary>
     public DomainEventEmitter(MediatRMediator mediator, ILogger<DomainEventEmitter> logger)
     {
         Guard.AgainstNull(mediator, nameof(mediator));

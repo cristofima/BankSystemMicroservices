@@ -18,6 +18,9 @@ public class DomainEventDispatcher : IDomainEventDispatcher
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<DomainEventDispatcher> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DomainEventDispatcher"/> class.
+    /// </summary>
     public DomainEventDispatcher(
         IMediator mediator,
         IPublishEndpoint publishEndpoint,
