@@ -34,7 +34,7 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(e => e.ClientId).IsRequired();
 
-            entity.Property(e => e.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedAt).IsRequired();
 
             entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
 
@@ -83,7 +83,7 @@ public class SecurityDbContext : IdentityDbContext<ApplicationUser>
 
         entity.Property(e => e.DeviceInfo).HasMaxLength(1000);
 
-        entity.Property(e => e.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
+        entity.Property(e => e.CreatedAt).IsRequired();
 
         entity.Property(e => e.CreatedBy).HasMaxLength(30);
 

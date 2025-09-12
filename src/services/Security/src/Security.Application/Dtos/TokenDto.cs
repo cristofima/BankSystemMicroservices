@@ -6,18 +6,16 @@
 public record TokenResponse(
     string AccessToken,
     string RefreshToken,
-    DateTime AccessTokenExpiry,
-    DateTime RefreshTokenExpiry);
+    DateTimeOffset AccessTokenExpiry,
+    DateTimeOffset RefreshTokenExpiry
+);
 
 /// <summary>
 /// Request model for token refresh
 /// </summary>
-public record RefreshTokenRequest(
-    string AccessToken,
-    string RefreshToken);
+public record RefreshTokenRequest(string AccessToken, string RefreshToken);
 
 /// <summary>
 /// Request model for token revocation
 /// </summary>
-public record RevokeTokenRequest(
-    string Token);
+public record RevokeTokenRequest(string Token);

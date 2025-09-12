@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Auditing\BankSystem.Shared.Auditing.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Security.Application\Security.Application.csproj" />
   </ItemGroup>
 

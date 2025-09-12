@@ -25,12 +25,12 @@ public class ApplicationUser : IdentityUser
     /// <summary>
     /// When the user was created
     /// </summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// When the user was last updated
     /// </summary>
-    public DateTime? UpdatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     /// <summary>
     /// Collection of refresh tokens for this user
@@ -45,7 +45,7 @@ public class ApplicationUser : IdentityUser
     /// <summary>
     /// Last login date
     /// </summary>
-    public DateTime? LastLoginAt { get; set; }
+    public DateTimeOffset? LastLoginAt { get; set; }
 
     /// <summary>
     /// Number of failed login attempts
@@ -55,7 +55,7 @@ public class ApplicationUser : IdentityUser
     // Domain methods
     public void RecordSuccessfulLogin()
     {
-        LastLoginAt = DateTime.UtcNow;
+        LastLoginAt = DateTimeOffset.UtcNow;
         FailedLoginAttempts = 0;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -63,14 +63,14 @@ public class ApplicationUser : IdentityUser
     public void RecordFailedLogin()
     {
         FailedLoginAttempts++;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public bool IsLockedOut(int maxAttempts, TimeSpan lockoutDuration)
     {
-        return FailedLoginAttempts >= maxAttempts &&
-               UpdatedAt.HasValue &&
-               DateTime.UtcNow.Subtract(UpdatedAt.Value) < lockoutDuration;
+        return FailedLoginAttempts >= maxAttempts
+            && UpdatedAt.HasValue
+            && DateTimeOffset.UtcNow.Subtract(UpdatedAt.Value) < lockoutDuration;
     }
 
     public void ResetLockout()
