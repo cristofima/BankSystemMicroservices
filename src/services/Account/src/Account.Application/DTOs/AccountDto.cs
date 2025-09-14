@@ -43,10 +43,10 @@ public record AccountDto
     /// <summary>
     /// The date and time when the account was created
     /// </summary>
-    public DateTime CreatedAt { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>
     /// The date and time when the account was last updated
     /// </summary>
-    public DateTime? UpdatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
 }

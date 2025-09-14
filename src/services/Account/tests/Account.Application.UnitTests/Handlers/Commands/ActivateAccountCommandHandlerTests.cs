@@ -2,11 +2,7 @@
 using BankSystem.Account.Application.Handlers.Commands;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Domain.Enums;
-using BankSystem.Shared.Domain.ValueObjects;
-using BankSystem.Shared.Kernel.Common;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 
 namespace BankSystem.Account.Application.UnitTests.Handlers.Commands;

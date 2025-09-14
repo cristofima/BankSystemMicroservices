@@ -1,6 +1,5 @@
 ﻿using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.Validators;
-using FluentAssertions;
 
 namespace BankSystem.Account.Application.UnitTests.Validators;
 
@@ -21,7 +20,9 @@ public class CloseAccountCommandValidatorTests
 
         // Assert
         validationResult.IsValid.Should().BeFalse();
-        validationResult.Errors.Should().ContainSingle(e => e.ErrorMessage == "Reason for closing the account is required");
+        validationResult
+            .Errors.Should()
+            .ContainSingle(e => e.ErrorMessage == "Reason for closing the account is required");
     }
 
     [Fact]
@@ -36,6 +37,8 @@ public class CloseAccountCommandValidatorTests
 
         // Assert
         validationResult.IsValid.Should().BeFalse();
-        validationResult.Errors.Should().ContainSingle(e => e.ErrorMessage == "Account ID is required");
+        validationResult
+            .Errors.Should()
+            .ContainSingle(e => e.ErrorMessage == "Account ID is required");
     }
 }

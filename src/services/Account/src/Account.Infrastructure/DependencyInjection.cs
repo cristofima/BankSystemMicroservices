@@ -56,7 +56,10 @@ public static class DependencyInjection
         services.AddScoped<SaveChangesInterceptor, DomainEventDispatchInterceptor>();
         services.AddScoped<SaveChangesInterceptor, AuditSaveChangesInterceptor>();
 
-        services.AddEntityFrameworkOutbox<AccountDbContext>(DatabaseEngine.PostgreSql);
+        services.AddEntityFrameworkOutbox<AccountDbContext>(
+            configuration,
+            DatabaseEngine.PostgreSql
+        );
 
         return services;
     }

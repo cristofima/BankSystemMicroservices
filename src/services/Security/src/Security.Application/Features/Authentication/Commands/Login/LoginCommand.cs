@@ -1,5 +1,5 @@
-using MediatR;
 using BankSystem.Shared.Domain.Common;
+using MediatR;
 
 namespace Security.Application.Features.Authentication.Commands.Login;
 
@@ -10,7 +10,8 @@ public record LoginCommand(
     string UserName,
     string Password,
     string? IpAddress = null,
-    string? DeviceInfo = null) : IRequest<Result<LoginResponse>>;
+    string? DeviceInfo = null
+) : IRequest<Result<LoginResponse>>;
 
 /// <summary>
 /// Response containing authentication tokens
@@ -18,5 +19,6 @@ public record LoginCommand(
 public record LoginResponse(
     string AccessToken,
     string RefreshToken,
-    DateTime AccessTokenExpiry,
-    DateTime RefreshTokenExpiry);
+    DateTimeOffset AccessTokenExpiry,
+    DateTimeOffset RefreshTokenExpiry
+);

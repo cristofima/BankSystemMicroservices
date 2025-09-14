@@ -1,7 +1,9 @@
+using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Kernel.Common;
 using BankSystem.Shared.Kernel.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Polly.Retry;
 using MediatRMediator = MediatR.IMediator;
 
 namespace BankSystem.Shared.Infrastructure.DomainEvents;
@@ -14,12 +16,18 @@ public class DomainEventEmitter : IDomainEventEmitter
 {
     private readonly MediatRMediator _mediator;
     private readonly ILogger<DomainEventEmitter> _logger;
-    private readonly IAsyncPolicy _retryPolicy;
+    private readonly AsyncRetryPolicy _retryPolicy;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DomainEventEmitter"/> class.
+    /// </summary>
     public DomainEventEmitter(MediatRMediator mediator, ILogger<DomainEventEmitter> logger)
     {
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(mediator, nameof(mediator));
+        Guard.AgainstNull(logger, nameof(logger));
+
+        _mediator = mediator;
+        _logger = logger;
 
         // Configure retry policy for resilience
         _retryPolicy = Policy
@@ -48,7 +56,7 @@ public class DomainEventEmitter : IDomainEventEmitter
         CancellationToken cancellationToken = default
     )
     {
-        if (aggregateRoot?.DomainEvents == null || !aggregateRoot.DomainEvents.Any())
+        if (aggregateRoot?.DomainEvents == null || aggregateRoot.DomainEvents.Count == 0)
         {
             return;
         }
@@ -89,17 +97,17 @@ public class DomainEventEmitter : IDomainEventEmitter
         CancellationToken cancellationToken = default
     )
     {
-        if (aggregateRoots?.Any() != true)
+        if (!aggregateRoots.Any())
         {
             return;
         }
 
         var allEvents = aggregateRoots
-            .Where(ar => ar.DomainEvents?.Any() == true)
+            .Where(ar => ar.DomainEvents.Count > 0)
             .SelectMany(ar => ar.DomainEvents)
             .ToList();
 
-        if (!allEvents.Any())
+        if (allEvents.Count == 0)
         {
             return;
         }
@@ -125,7 +133,7 @@ public class DomainEventEmitter : IDomainEventEmitter
         });
 
         // Clear events only after successful emission
-        foreach (var aggregateRoot in aggregateRoots.Where(ar => ar.DomainEvents?.Any() == true))
+        foreach (var aggregateRoot in aggregateRoots.Where(ar => ar.DomainEvents.Count > 0))
         {
             aggregateRoot.ClearDomainEvents();
         }

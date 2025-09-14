@@ -8,5 +8,6 @@ namespace BankSystem.Shared.Domain.Events;
 public abstract record DomainEvent : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredOn { get; } = DateTime.UtcNow;
+    public DateTimeOffset OccurredOn { get; } = DateTimeOffset.UtcNow;
+    public int Version { get; init; } = 1;
 }

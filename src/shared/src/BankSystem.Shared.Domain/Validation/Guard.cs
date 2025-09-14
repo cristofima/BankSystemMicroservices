@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace BankSystem.Shared.Domain.Validation;
 
 /// <summary>
@@ -13,7 +15,11 @@ public static class Guard
     /// <param name="value">The value to check for null</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentNullException">Thrown when value is null</exception>
-    public static void AgainstNull<T>(T value, string parameterName) where T : class?
+    public static void AgainstNull<T>(
+        T value,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
+        where T : class?
     {
         if (value is null)
             throw new ArgumentNullException(parameterName);
@@ -88,10 +94,18 @@ public static class Guard
     /// <param name="max">The maximum allowed value (inclusive)</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is outside the range</exception>
-    public static void AgainstInvalidRange(decimal value, decimal min, decimal max, string parameterName)
+    public static void AgainstInvalidRange(
+        decimal value,
+        decimal min,
+        decimal max,
+        string parameterName
+    )
     {
         if (value < min || value > max)
-            throw new ArgumentException($"Value {value} is not within range [{min}, {max}]", parameterName);
+            throw new ArgumentException(
+                $"Value {value} is not within range [{min}, {max}]",
+                parameterName
+            );
     }
 
     /// <summary>
@@ -113,7 +127,8 @@ public static class Guard
     /// <param name="value">The enum value to check</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is not a valid enum value</exception>
-    public static void AgainstInvalidEnum<TEnum>(TEnum value, string parameterName) where TEnum : struct, Enum
+    public static void AgainstInvalidEnum<TEnum>(TEnum value, string parameterName)
+        where TEnum : struct, Enum
     {
         if (!Enum.IsDefined(value))
             throw new ArgumentException($"Invalid enum value: {value}", parameterName);
@@ -129,7 +144,10 @@ public static class Guard
     public static void AgainstExcessiveLength(string value, int maxLength, string parameterName)
     {
         if (!string.IsNullOrEmpty(value) && value.Length > maxLength)
-            throw new ArgumentException($"String length {value.Length} exceeds maximum of {maxLength}", parameterName);
+            throw new ArgumentException(
+                $"String length {value.Length} exceeds maximum of {maxLength}",
+                parameterName
+            );
     }
 
     /// <summary>

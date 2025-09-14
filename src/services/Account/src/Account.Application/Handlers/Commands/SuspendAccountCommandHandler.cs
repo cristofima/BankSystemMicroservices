@@ -17,8 +17,8 @@ public class SuspendAccountCommandHandler : IRequestHandler<SuspendAccountComman
         ILogger<SuspendAccountCommandHandler> logger
     )
     {
-        Guard.AgainstNull(accountRepository, "accountRepository");
-        Guard.AgainstNull(logger, "logger");
+        Guard.AgainstNull(accountRepository, nameof(accountRepository));
+        Guard.AgainstNull(logger, nameof(logger));
 
         _accountRepository = accountRepository;
         _logger = logger;

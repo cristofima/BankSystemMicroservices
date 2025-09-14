@@ -1,3 +1,4 @@
+using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Kernel.Common;
 using BankSystem.Shared.Kernel.Infrastructure;
 using MassTransit;
@@ -17,24 +18,31 @@ public class DomainEventDispatcher : IDomainEventDispatcher
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<DomainEventDispatcher> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DomainEventDispatcher"/> class.
+    /// </summary>
     public DomainEventDispatcher(
         IMediator mediator,
         IPublishEndpoint publishEndpoint,
         ILogger<DomainEventDispatcher> logger
     )
     {
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _publishEndpoint =
-            publishEndpoint ?? throw new ArgumentNullException(nameof(publishEndpoint));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(mediator, nameof(mediator));
+        Guard.AgainstNull(publishEndpoint, nameof(publishEndpoint));
+        Guard.AgainstNull(logger, nameof(logger));
+
+        _mediator = mediator;
+        _publishEndpoint = publishEndpoint;
+        _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task DispatchEventsAsync(
         IAggregateRoot aggregateRoot,
         CancellationToken cancellationToken = default
     )
     {
-        if (aggregateRoot?.DomainEvents?.Any() != true)
+        if (aggregateRoot.DomainEvents.Count == 0)
             return;
 
         var events = aggregateRoot.DomainEvents.ToList();
@@ -55,13 +63,14 @@ public class DomainEventDispatcher : IDomainEventDispatcher
         );
     }
 
+    /// <inheritdoc/>
     public async Task DispatchEventsAsync(
         IEnumerable<IAggregateRoot> aggregateRoots,
         CancellationToken cancellationToken = default
     )
     {
-        var aggregates = aggregateRoots?.Where(ar => ar.DomainEvents?.Any() == true).ToList();
-        if (aggregates?.Any() != true)
+        var aggregates = aggregateRoots.Where(ar => ar.DomainEvents.Count > 0).ToList();
+        if (aggregates.Count == 0)
             return;
 
         _logger.LogDebug(
@@ -75,6 +84,7 @@ public class DomainEventDispatcher : IDomainEventDispatcher
         }
     }
 
+    /// <inheritdoc/>
     public async Task DispatchEventAsync(
         MediatRDomainEvent domainEvent,
         CancellationToken cancellationToken = default

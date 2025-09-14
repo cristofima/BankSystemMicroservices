@@ -23,16 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Account.Application\BankSystem.Account.Application.csproj" />
+    <ProjectReference Include="..\..\src\BankSystem.Shared.Infrastructure\BankSystem.Shared.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <Using Include="Moq" />
-    <Using Include="FluentAssertions"/>
-    <Using Include="AutoMapper"/>
-    <Using Include="BankSystem.Shared.Kernel.Common"/>
-    <Using Include="BankSystem.Shared.Domain.ValueObjects"/>
+    <Using Include="FluentAssertions" />
   </ItemGroup>
 
 </Project>

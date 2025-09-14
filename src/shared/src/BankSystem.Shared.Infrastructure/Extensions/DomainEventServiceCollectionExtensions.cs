@@ -6,7 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace BankSystem.Shared.Infrastructure.Extensions;
 
 /// <summary>
-/// Extension methods for configuring domain event emission services.
+/// Extension methods for configuring domain event services in the dependency injection container.
+/// Provides methods to register domain event emission, and dispatching services.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public static class DomainEventServiceCollectionExtensions

@@ -1,8 +1,6 @@
 ﻿using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.Validators;
 using BankSystem.Account.Domain.Enums;
-using BankSystem.Shared.Domain.ValueObjects;
-using FluentAssertions;
 
 namespace BankSystem.Account.Application.UnitTests.Validators;
 
@@ -35,6 +33,8 @@ public class CreateAccountCommandValidatorTests
 
         // Assert
         validationResult.IsValid.Should().BeFalse();
-        validationResult.Errors.Should().ContainSingle(e => e.ErrorMessage == "Invalid currency code");
+        validationResult
+            .Errors.Should()
+            .ContainSingle(e => e.ErrorMessage == "Invalid currency code");
     }
 }

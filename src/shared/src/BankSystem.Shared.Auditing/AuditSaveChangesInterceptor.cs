@@ -15,7 +15,7 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
 
     public AuditSaveChangesInterceptor(ICurrentUser currentUser)
     {
-        Guard.AgainstNull(currentUser, nameof(currentUser));
+        Guard.AgainstNull(currentUser);
         _currentUser = currentUser;
     }
 
@@ -47,6 +47,10 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                     e is { Entity: AuditedEntity, State: EntityState.Added or EntityState.Modified }
                 ) ?? [];
 
+        var userName = string.IsNullOrWhiteSpace(_currentUser.UserName)
+            ? "system"
+            : _currentUser.UserName;
+
         foreach (var entry in entries)
         {
             var entity = (AuditedEntity)entry.Entity;
@@ -54,13 +58,13 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
             switch (entry.State)
             {
                 case EntityState.Modified:
-                    entity.UpdatedAt = DateTime.UtcNow;
-                    entity.UpdatedBy = _currentUser.UserName;
+                    entity.UpdatedAt = DateTimeOffset.UtcNow;
+                    entity.UpdatedBy = userName;
                     break;
 
                 case EntityState.Added:
-                    entity.CreatedAt = DateTime.UtcNow;
-                    entity.CreatedBy = _currentUser.UserName;
+                    entity.CreatedAt = DateTimeOffset.UtcNow;
+                    entity.CreatedBy = userName;
                     break;
             }
         }

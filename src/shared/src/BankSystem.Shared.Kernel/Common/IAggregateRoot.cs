@@ -15,11 +15,6 @@ public interface IAggregateRoot
     IReadOnlyCollection<IDomainEvent> DomainEvents { get; }
 
     /// <summary>
-    /// Adds a domain event to the aggregate.
-    /// </summary>
-    void AddDomainEvent(IDomainEvent domainEvent);
-
-    /// <summary>
     /// Clears all domain events.
     /// </summary>
     void ClearDomainEvents();
