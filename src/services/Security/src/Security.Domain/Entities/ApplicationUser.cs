@@ -57,7 +57,7 @@ public class ApplicationUser : IdentityUser
     {
         LastLoginAt = DateTimeOffset.UtcNow;
         FailedLoginAttempts = 0;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void RecordFailedLogin()
@@ -76,6 +76,6 @@ public class ApplicationUser : IdentityUser
     public void ResetLockout()
     {
         FailedLoginAttempts = 0;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }
