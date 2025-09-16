@@ -1,15 +1,13 @@
+using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.Kernel.Common;
+using BankSystem.Shared.Kernel.Events;
+
 namespace BankSystem.Shared.Domain.Common;
 
-/// <summary>
-/// Base class for aggregate roots.
-/// </summary>
-public abstract class AggregateRoot<TId> : Entity<TId>
+public abstract class AggregateRoot<TId> : Entity<TId>, IAggregateRoot
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
-    /// <summary>
-    /// Domain events produced by this aggregate.
-    /// </summary>
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     /// <summary>
@@ -17,11 +15,9 @@ public abstract class AggregateRoot<TId> : Entity<TId>
     /// </summary>
     protected void AddDomainEvent(IDomainEvent domainEvent)
     {
+        Guard.AgainstNull(domainEvent);
         _domainEvents.Add(domainEvent);
     }
 
-    /// <summary>
-    /// Clears all domain events.
-    /// </summary>
     public void ClearDomainEvents() => _domainEvents.Clear();
 }

@@ -14,7 +14,8 @@ public class TokenCleanupBackgroundService : BackgroundService
 
     public TokenCleanupBackgroundService(
         IServiceProvider serviceProvider,
-        ILogger<TokenCleanupBackgroundService> logger)
+        ILogger<TokenCleanupBackgroundService> logger
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -52,10 +53,10 @@ public class TokenCleanupBackgroundService : BackgroundService
             var dbContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
 
             // Remove tokens that expired more than 24 hours ago
-            var cutoffDate = DateTime.UtcNow.AddDays(-1);
+            var cutoffDate = DateTimeOffset.UtcNow.AddDays(-1);
 
-            var expiredTokens = await dbContext.RefreshTokens
-                .Where(rt => rt.ExpiryDate < cutoffDate)
+            var expiredTokens = await dbContext
+                .RefreshTokens.Where(rt => rt.ExpiryDate < cutoffDate)
                 .ToListAsync(cancellationToken);
 
             if (expiredTokens.Count > 0)

@@ -31,7 +31,7 @@ public class TokenRevocationService : ITokenRevocationService
         var cacheKey = $"revoked_token_{jwtId}";
         var expiryTime = expiry ?? TimeSpan.FromHours(24); // Default to 24 hours
 
-        _memoryCache.Set(cacheKey, DateTime.UtcNow, expiryTime);
+        _memoryCache.Set(cacheKey, DateTimeOffset.UtcNow, expiryTime);
 
         _logger.LogInformation("Token {JwtId} added to revocation cache", jwtId);
 
@@ -55,4 +55,3 @@ public class TokenRevocationService : ITokenRevocationService
         return Task.CompletedTask;
     }
 }
-

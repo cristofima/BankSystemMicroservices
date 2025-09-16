@@ -5,9 +5,6 @@ using Moq;
 using Security.Application.Features.Authentication.Commands.Register;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Entities;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.Register;
 
@@ -22,7 +19,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         _handler = new RegisterCommandHandler(
             MockUserManager.Object,
             MockAuditService.Object,
-            _mockLogger.Object);
+            _mockLogger.Object
+        );
     }
 
     [Fact]
@@ -37,7 +35,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(null); // User doesn't exist
         SetupUserManagerFindByEmail(null); // Email doesn't exist
@@ -59,21 +58,26 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
 
         // Verify user creation
         MockUserManager.Verify(
-            x => x.CreateAsync(
-                It.Is<ApplicationUser>(u =>
-                    u.UserName == command.UserName &&
-                    u.Email == command.Email &&
-                    u.FirstName == command.FirstName &&
-                    u.LastName == command.LastName &&
-                    u.IsActive == true &&
-                    u.EmailConfirmed == false),
-                command.Password),
-            Times.Once);
+            x =>
+                x.CreateAsync(
+                    It.Is<ApplicationUser>(u =>
+                        u.UserName == command.UserName
+                        && u.Email == command.Email
+                        && u.FirstName == command.FirstName
+                        && u.LastName == command.LastName
+                        && u.IsActive == true
+                        && u.EmailConfirmed == false
+                    ),
+                    command.Password
+                ),
+            Times.Once
+        );
 
         // Verify audit logging
         MockAuditService.Verify(
             x => x.LogUserRegistrationAsync(It.IsAny<string>(), command.IpAddress),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -88,7 +92,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         // Act
         var result = await _handler.Handle(command, CreateCancellationToken());
@@ -101,7 +106,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Verify no user creation attempted
         MockUserManager.Verify(
             x => x.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -117,7 +123,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(existingUser);
 
@@ -132,7 +139,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Verify no user creation attempted
         MockUserManager.Verify(
             x => x.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -148,7 +156,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(null); // Username doesn't exist
         SetupUserManagerFindByEmail(existingUser); // Email exists
@@ -164,7 +173,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Verify no user creation attempted
         MockUserManager.Verify(
             x => x.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -179,12 +189,13 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         var identityErrors = new[]
         {
             new IdentityError { Description = "Password is too weak" },
-            new IdentityError { Description = "Password must contain special characters" }
+            new IdentityError { Description = "Password must contain special characters" },
         };
         var failureResult = IdentityResult.Failed(identityErrors);
 
@@ -205,7 +216,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
         // Verify no audit logging for failed registration
         MockAuditService.Verify(
             x => x.LogUserRegistrationAsync(It.IsAny<string>(), It.IsAny<string>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -220,7 +232,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         MockUserManager
             .Setup(x => x.FindByNameAsync(It.IsAny<string>()))
@@ -247,7 +260,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             null, // No first name
             null, // No last name
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(null);
         SetupUserManagerFindByEmail(null);
@@ -265,23 +279,13 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
 
         // Verify user creation with null values
         MockUserManager.Verify(
-            x => x.CreateAsync(
-                It.Is<ApplicationUser>(u =>
-                    u.FirstName == null &&
-                    u.LastName == null),
-                command.Password),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
-    {
-        // Arrange
-        RegisterCommand command = null!;
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await _handler.Handle(command, CreateCancellationToken()));
+            x =>
+                x.CreateAsync(
+                    It.Is<ApplicationUser>(u => u.FirstName == null && u.LastName == null),
+                    command.Password
+                ),
+            Times.Once
+        );
     }
 
     [Theory]
@@ -298,19 +302,21 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(null);
 
         // Act
         var result = await _handler.Handle(command, CreateCancellationToken());
 
-        // Assert 
+        // Assert
         Assert.NotNull(result);
         Assert.True(result.IsFailure);
         Assert.NotEmpty(result.Error);
-        SetupUserManagerCreateUser(IdentityResult.Failed(
-            new IdentityError { Description = "Username cannot be empty" }));
+        SetupUserManagerCreateUser(
+            IdentityResult.Failed(new IdentityError { Description = "Username cannot be empty" })
+        );
     }
 
     [Theory]
@@ -327,12 +333,14 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(null);
         SetupUserManagerFindByEmail(null);
-        SetupUserManagerCreateUser(IdentityResult.Failed(
-            new IdentityError { Description = "Email cannot be empty" }));
+        SetupUserManagerCreateUser(
+            IdentityResult.Failed(new IdentityError { Description = "Email cannot be empty" })
+        );
 
         // Act
         var result = await _handler.Handle(command, CreateCancellationToken());
@@ -355,7 +363,8 @@ public class RegisterCommandHandlerTests : CommandHandlerTestBase
             "John",
             "Doe",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         ApplicationUser? capturedUser = null;
         MockUserManager

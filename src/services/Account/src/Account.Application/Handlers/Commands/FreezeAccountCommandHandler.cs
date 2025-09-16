@@ -17,8 +17,8 @@ public class FreezeAccountCommandHandler : IRequestHandler<FreezeAccountCommand,
         ILogger<FreezeAccountCommandHandler> logger
     )
     {
-        Guard.AgainstNull(accountRepository, "accountRepository");
-        Guard.AgainstNull(logger, "logger");
+        Guard.AgainstNull(accountRepository);
+        Guard.AgainstNull(logger);
 
         _accountRepository = accountRepository;
         _logger = logger;

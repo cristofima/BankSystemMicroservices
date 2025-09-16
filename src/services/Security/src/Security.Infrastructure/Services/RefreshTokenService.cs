@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -6,7 +8,6 @@ using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Entities;
 using Security.Infrastructure.Data;
-using System.Security.Cryptography;
 
 namespace Security.Infrastructure.Services;
 
@@ -24,12 +25,16 @@ public class RefreshTokenService : IRefreshTokenService
         SecurityDbContext context,
         ILogger<RefreshTokenService> logger,
         IOptions<JwtOptions> jwtOptions,
-        IOptions<SecurityOptions> securityOptions)
+        IOptions<SecurityOptions> securityOptions
+    )
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
-        _securityOptions = securityOptions?.Value ?? throw new ArgumentNullException(nameof(securityOptions));
+        Guard.AgainstNull(context);
+        Guard.AgainstNull(logger);
+
+        _context = context;
+        _logger = logger;
+        _jwtOptions = jwtOptions.Value;
+        _securityOptions = securityOptions.Value;
     }
 
     public async Task<RefreshToken?> CreateRefreshTokenAsync(
@@ -38,13 +43,20 @@ public class RefreshTokenService : IRefreshTokenService
         string jwtId,
         string? ipAddress = null,
         string? deviceInfo = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
             await EnforceSessionLimitAsync(userId, ipAddress, cancellationToken);
 
-            var refreshToken = CreateRefreshTokenEntity(userId, userName, jwtId, ipAddress, deviceInfo);
+            var refreshToken = CreateRefreshTokenEntity(
+                userId,
+                userName,
+                jwtId,
+                ipAddress,
+                deviceInfo
+            );
 
             _context.RefreshTokens.Add(refreshToken);
             await _context.SaveChangesAsync(cancellationToken);
@@ -59,13 +71,21 @@ public class RefreshTokenService : IRefreshTokenService
         }
     }
 
-    private async Task EnforceSessionLimitAsync(string userId, string? ipAddress, CancellationToken cancellationToken)
+    private async Task EnforceSessionLimitAsync(
+        string userId,
+        string? ipAddress,
+        CancellationToken cancellationToken
+    )
     {
         if (_securityOptions.TokenSecurity.MaxConcurrentSessions <= 0)
             return;
 
-        var currentTime = DateTime.UtcNow;
-        var activeTokensCount = await GetActiveTokensCountAsync(userId, currentTime, cancellationToken);
+        var currentTime = DateTimeOffset.UtcNow;
+        var activeTokensCount = await GetActiveTokensCountAsync(
+            userId,
+            currentTime,
+            cancellationToken
+        );
 
         if (activeTokensCount >= _securityOptions.TokenSecurity.MaxConcurrentSessions)
         {
@@ -73,51 +93,78 @@ public class RefreshTokenService : IRefreshTokenService
         }
     }
 
-    private async Task<int> GetActiveTokensCountAsync(string userId, DateTime currentTime, CancellationToken cancellationToken)
+    private async Task<int> GetActiveTokensCountAsync(
+        string userId,
+        DateTimeOffset currentTime,
+        CancellationToken cancellationToken
+    )
     {
-        return await _context.RefreshTokens
-            .CountAsync(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime, cancellationToken);
+        return await _context.RefreshTokens.CountAsync(
+            rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime,
+            cancellationToken
+        );
     }
 
-    private async Task RevokeOldestTokenAsync(string userId, string? ipAddress, DateTime currentTime, CancellationToken cancellationToken)
+    private async Task RevokeOldestTokenAsync(
+        string userId,
+        string? ipAddress,
+        DateTimeOffset currentTime,
+        CancellationToken cancellationToken
+    )
     {
-        var oldestToken = await _context.RefreshTokens
-            .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime)
+        var oldestToken = await _context
+            .RefreshTokens.Where(rt =>
+                rt.UserId == userId && !rt.IsRevoked && rt.ExpiryDate > currentTime
+            )
             .OrderBy(rt => rt.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (oldestToken != null)
         {
             oldestToken.Revoke(ipAddress, "Exceeded maximum concurrent sessions");
-            _logger.LogInformation("Revoked oldest token for user {UserId} due to session limit", userId);
+            _logger.LogInformation(
+                "Revoked oldest token for user {UserId} due to session limit",
+                userId
+            );
         }
     }
 
-    private RefreshToken CreateRefreshTokenEntity(string userId, string userName, string jwtId, string? ipAddress, string? deviceInfo)
+    private RefreshToken CreateRefreshTokenEntity(
+        string userId,
+        string userName,
+        string jwtId,
+        string? ipAddress,
+        string? deviceInfo
+    )
     {
         return new RefreshToken
         {
             Token = GenerateSecureToken(),
             JwtId = jwtId,
             UserId = userId,
-            ExpiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
+            ExpiryDate = DateTimeOffset.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
             CreatedByIp = ipAddress,
             DeviceInfo = deviceInfo,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = userName
+            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedBy = userName,
         };
     }
 
     private void LogSuccessfulTokenCreation(string userId, string? ipAddress)
     {
-        _logger.LogInformation("Created refresh token for user {UserId} from IP {IpAddress}", userId, ipAddress);
+        _logger.LogInformation(
+            "Created refresh token for user {UserId} from IP {IpAddress}",
+            userId,
+            ipAddress
+        );
     }
 
     public async Task<RefreshToken?> ValidateRefreshTokenAsync(
         string token,
         string jwtId,
         string userId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
@@ -143,10 +190,15 @@ public class RefreshTokenService : IRefreshTokenService
         }
     }
 
-    private async Task<RefreshToken?> FindRefreshTokenAsync(string token, CancellationToken cancellationToken)
+    private async Task<RefreshToken?> FindRefreshTokenAsync(
+        string token,
+        CancellationToken cancellationToken
+    )
     {
-        return await _context.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.Token == token, cancellationToken);
+        return await _context.RefreshTokens.FirstOrDefaultAsync(
+            rt => rt.Token == token,
+            cancellationToken
+        );
     }
 
     private void LogInvalidTokenAttempt(string userId)
@@ -186,7 +238,8 @@ public class RefreshTokenService : IRefreshTokenService
         string newJwtId,
         string? ipAddress = null,
         string? deviceInfo = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
@@ -199,12 +252,12 @@ public class RefreshTokenService : IRefreshTokenService
                 Token = GenerateSecureToken(),
                 JwtId = newJwtId,
                 UserId = oldToken.UserId,
-                ExpiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
+                ExpiryDate = DateTimeOffset.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
                 CreatedByIp = ipAddress,
                 DeviceInfo = deviceInfo ?? oldToken.DeviceInfo,
                 ReplacedByToken = null, // Will be set when this token is replaced
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = oldToken.CreatedBy
+                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedBy = oldToken.CreatedBy,
             };
 
             // Set the replacement chain
@@ -213,8 +266,11 @@ public class RefreshTokenService : IRefreshTokenService
             _context.RefreshTokens.Add(newToken);
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Refreshed token for user {UserId} from IP {IpAddress}",
-                oldToken.UserId, ipAddress);
+            _logger.LogInformation(
+                "Refreshed token for user {UserId} from IP {IpAddress}",
+                oldToken.UserId,
+                ipAddress
+            );
 
             return newToken;
         }
@@ -229,30 +285,43 @@ public class RefreshTokenService : IRefreshTokenService
         string token,
         string? ipAddress = null,
         string? reason = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var refreshToken = await _context.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Token == token, cancellationToken);
+            var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(
+                rt => rt.Token == token,
+                cancellationToken
+            );
 
             if (refreshToken == null)
             {
-                _logger.LogWarning("Attempted to revoke non-existent token from IP {IpAddress}", ipAddress);
+                _logger.LogWarning(
+                    "Attempted to revoke non-existent token from IP {IpAddress}",
+                    ipAddress
+                );
                 return Result.Failure("Token not found");
             }
 
             if (refreshToken.IsRevoked)
             {
-                _logger.LogWarning("Attempted to revoke already revoked token from IP {IpAddress}", ipAddress);
+                _logger.LogWarning(
+                    "Attempted to revoke already revoked token from IP {IpAddress}",
+                    ipAddress
+                );
                 return Result.Failure("Token already revoked");
             }
 
             refreshToken.Revoke(ipAddress, reason ?? "Manual revocation");
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Revoked token for user {UserId} from IP {IpAddress}. Reason: {Reason}",
-                refreshToken.UserId, ipAddress, reason);
+            _logger.LogInformation(
+                "Revoked token for user {UserId} from IP {IpAddress}. Reason: {Reason}",
+                refreshToken.UserId,
+                ipAddress,
+                reason
+            );
 
             return Result.Success();
         }
@@ -267,12 +336,13 @@ public class RefreshTokenService : IRefreshTokenService
         string userId,
         string? ipAddress = null,
         string? reason = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var activeTokens = await _context.RefreshTokens
-                .Where(rt => rt.UserId == userId && !rt.IsRevoked)
+            var activeTokens = await _context
+                .RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked)
                 .ToListAsync(cancellationToken);
 
             if (activeTokens.Count == 0)
@@ -288,8 +358,13 @@ public class RefreshTokenService : IRefreshTokenService
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Revoked {TokenCount} tokens for user {UserId} from IP {IpAddress}. Reason: {Reason}",
-                activeTokens.Count, userId, ipAddress, reason);
+            _logger.LogInformation(
+                "Revoked {TokenCount} tokens for user {UserId} from IP {IpAddress}. Reason: {Reason}",
+                activeTokens.Count,
+                userId,
+                ipAddress,
+                reason
+            );
 
             return Result.Success();
         }
@@ -304,11 +379,14 @@ public class RefreshTokenService : IRefreshTokenService
     {
         try
         {
-            var cutoffDate = DateTime.UtcNow.AddDays(-_securityOptions.TokenSecurity.CleanupExpiredTokensAfterDays);
+            var cutoffDate = DateTimeOffset.UtcNow.AddDays(
+                -_securityOptions.TokenSecurity.CleanupExpiredTokensAfterDays
+            );
 
-            var expiredTokens = await _context.RefreshTokens
-                .Where(rt => rt.ExpiryDate < cutoffDate ||
-                           (rt.IsRevoked && rt.RevokedAt < cutoffDate))
+            var expiredTokens = await _context
+                .RefreshTokens.Where(rt =>
+                    rt.ExpiryDate < cutoffDate || (rt.IsRevoked && rt.RevokedAt < cutoffDate)
+                )
                 .ToListAsync(cancellationToken);
 
             if (expiredTokens.Count > 0)
@@ -316,7 +394,10 @@ public class RefreshTokenService : IRefreshTokenService
                 _context.RefreshTokens.RemoveRange(expiredTokens);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                _logger.LogInformation("Cleaned up {TokenCount} expired/revoked tokens", expiredTokens.Count);
+                _logger.LogInformation(
+                    "Cleaned up {TokenCount} expired/revoked tokens",
+                    expiredTokens.Count
+                );
             }
         }
         catch (Exception ex)

@@ -1,4 +1,6 @@
-﻿namespace BankSystem.Shared.Domain.Exceptions;
+﻿using BankSystem.Shared.Domain.Validation;
+
+namespace BankSystem.Shared.Domain.Exceptions;
 
 public class CustomValidationException : Exception
 {
@@ -11,10 +13,16 @@ public class CustomValidationException : Exception
     /// </summary>
     /// <param name="errors">The validation errors.</param>
     /// <param name="title">The title of the exception.</param>
-    public CustomValidationException(IReadOnlyDictionary<string, string[]> errors, string title = "Validation Error")
+    public CustomValidationException(
+        IReadOnlyDictionary<string, string[]> errors,
+        string title = "Validation Error"
+    )
         : base("One or more validation errors occurred.")
     {
-        Errors = errors ?? throw new ArgumentNullException(nameof(errors));
-        Title = title ?? throw new ArgumentNullException(nameof(title));
+        Guard.AgainstNull(Errors);
+        Guard.AgainstNullOrEmpty(Title);
+
+        Errors = errors;
+        Title = title;
     }
 }

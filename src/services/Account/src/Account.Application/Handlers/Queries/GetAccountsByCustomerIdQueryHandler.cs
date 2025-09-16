@@ -4,6 +4,7 @@ using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Application.Queries;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.Kernel.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -24,10 +25,10 @@ public class GetAccountsByCustomerIdQueryHandler
         ILogger<GetAccountsByCustomerIdQueryHandler> logger
     )
     {
-        Guard.AgainstNull(accountRepository, "accountRepository");
-        Guard.AgainstNull(currentUser, "currentUser");
-        Guard.AgainstNull(mapper, "mapper");
-        Guard.AgainstNull(logger, "logger");
+        Guard.AgainstNull(accountRepository);
+        Guard.AgainstNull(currentUser);
+        Guard.AgainstNull(mapper);
+        Guard.AgainstNull(logger);
 
         _accountRepository = accountRepository;
         _currentUser = currentUser;

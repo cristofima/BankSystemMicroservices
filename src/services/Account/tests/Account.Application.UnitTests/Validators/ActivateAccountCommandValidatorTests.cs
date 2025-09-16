@@ -1,6 +1,5 @@
 ﻿using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.Validators;
-using FluentAssertions;
 
 namespace BankSystem.Account.Application.UnitTests.Validators;
 
@@ -20,6 +19,8 @@ public class ActivateAccountCommandValidatorTests
 
         // Assert
         validationResult.IsValid.Should().BeFalse();
-        validationResult.Errors.Should().ContainSingle(e => e.ErrorMessage == "Account ID is required");
+        validationResult
+            .Errors.Should()
+            .ContainSingle(e => e.ErrorMessage == "Account ID is required");
     }
 }

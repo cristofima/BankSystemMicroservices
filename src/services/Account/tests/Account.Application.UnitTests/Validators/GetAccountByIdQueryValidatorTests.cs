@@ -1,6 +1,5 @@
 using BankSystem.Account.Application.Queries;
 using BankSystem.Account.Application.Validators;
-using FluentAssertions;
 using FluentValidation.TestHelper;
 
 namespace BankSystem.Account.Application.UnitTests.Validators;
@@ -33,7 +32,8 @@ public class GetAccountByIdQueryValidatorTests
         var result = _validator.TestValidate(query);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.AccountId)
+        result
+            .ShouldHaveValidationErrorFor(x => x.AccountId)
             .WithErrorMessage("Account ID is required");
     }
 }

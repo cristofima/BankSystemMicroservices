@@ -20,7 +20,7 @@ public class RefreshToken : AuditedEntity
     /// <summary>
     /// When this refresh token expires
     /// </summary>
-    public DateTime ExpiryDate { get; set; }
+    public DateTimeOffset ExpiryDate { get; set; }
 
     /// <summary>
     /// Whether this token has been manually invalidated/revoked
@@ -30,7 +30,7 @@ public class RefreshToken : AuditedEntity
     /// <summary>
     /// Date when token was revoked (if applicable)
     /// </summary>
-    public DateTime? RevokedAt { get; set; }
+    public DateTimeOffset? RevokedAt { get; set; }
 
     /// <summary>
     /// Reason for revocation
@@ -68,13 +68,13 @@ public class RefreshToken : AuditedEntity
     public string? DeviceInfo { get; set; }
 
     // Domain methods
-    public bool IsExpired => DateTime.UtcNow >= ExpiryDate;
+    public bool IsExpired => DateTimeOffset.UtcNow >= ExpiryDate;
     public bool IsActive => !IsRevoked && !IsExpired;
 
     public void Revoke(string? ipAddress = null, string? reason = null)
     {
         IsRevoked = true;
-        RevokedAt = DateTime.UtcNow;
+        RevokedAt = DateTimeOffset.UtcNow;
         RevokedByIp = ipAddress;
         RevocationReason = reason;
     }

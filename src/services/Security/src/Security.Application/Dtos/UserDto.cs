@@ -11,4 +11,5 @@ public record UserResponse(
     string? LastName,
     bool IsEmailConfirmed,
     bool IsActive,
-    DateTime CreatedAt);
+    DateTimeOffset CreatedAt
+);

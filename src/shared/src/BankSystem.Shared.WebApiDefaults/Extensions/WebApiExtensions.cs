@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
-using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Infrastructure.Extensions;
+using BankSystem.Shared.Kernel.Common;
 using BankSystem.Shared.WebApiDefaults.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -70,8 +70,49 @@ public static class WebApiExtensions
         // Add custom current user service
         services.AddScoped<ICurrentUser, CurrentUser>();
 
-        // Add authorization
-        services.AddAuthorization();
+        // Add authorization with banking-specific policies
+        services.AddAuthorization(options =>
+        {
+            // Default policy requires authentication
+            options.FallbackPolicy = options.DefaultPolicy;
+
+            // Banking-specific policies
+            options.AddPolicy(
+                "CustomerAccess",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireClaim("role", "Customer", "Admin");
+                }
+            );
+
+            options.AddPolicy(
+                "AdminAccess",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireClaim("role", "Admin");
+                }
+            );
+
+            options.AddPolicy(
+                "ManagerAccess",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireClaim("role", "Manager", "Admin");
+                }
+            );
+
+            options.AddPolicy(
+                "TellerAccess",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireClaim("role", "Teller", "Manager", "Admin");
+                }
+            );
+        });
 
         // Add OpenAPI/Swagger
         services.AddOpenApi();

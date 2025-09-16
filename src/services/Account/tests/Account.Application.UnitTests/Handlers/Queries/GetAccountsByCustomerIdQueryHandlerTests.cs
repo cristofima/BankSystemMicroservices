@@ -1,13 +1,10 @@
-using AutoMapper;
 using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Handlers.Queries;
 using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Application.Queries;
 using BankSystem.Account.Domain.Enums;
-using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;
 
 namespace BankSystem.Account.Application.UnitTests.Handlers.Queries;
@@ -28,7 +25,6 @@ public class GetAccountsByCustomerIdQueryHandlerTests
         var mockLogger = new Mock<ILogger<GetAccountsByCustomerIdQueryHandler>>();
 
         _mockCurrentUser.Setup(s => s.CustomerId).Returns(Guid.NewGuid());
-        _mockCurrentUser.Setup(s => s.UserId).Returns(Guid.NewGuid());
         _mockCurrentUser.Setup(s => s.UserName).Returns(TestUserName);
 
         _handler = new GetAccountsByCustomerIdQueryHandler(

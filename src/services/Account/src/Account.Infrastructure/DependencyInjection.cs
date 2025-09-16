@@ -3,7 +3,11 @@ using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Account.Infrastructure.Repositories;
 using BankSystem.Shared.Auditing;
+using BankSystem.Shared.Infrastructure.DomainEvents;
+using BankSystem.Shared.Infrastructure.Extensions;
+using BankSystem.Shared.Kernel.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,7 +38,10 @@ public static class DependencyInjection
                     }
                 );
 
-                options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
+                foreach (var interceptor in sp.GetServices<SaveChangesInterceptor>())
+                {
+                    options.AddInterceptors(interceptor);
+                }
 
                 // Enable sensitive data logging only in development
                 if (configuration.GetValue<bool>("Database:EnableSensitiveDataLogging"))
@@ -42,8 +49,17 @@ public static class DependencyInjection
             }
         );
 
-        services.AddScoped<AuditSaveChangesInterceptor>();
+        // Domain Events infra (emitter/dispatcher)
+        services.AddDomainEventEmission();
+
         services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<SaveChangesInterceptor, DomainEventDispatchInterceptor>();
+        services.AddScoped<SaveChangesInterceptor, AuditSaveChangesInterceptor>();
+
+        services.AddEntityFrameworkOutbox<AccountDbContext>(
+            configuration,
+            DatabaseEngine.PostgreSql
+        );
 
         return services;
     }

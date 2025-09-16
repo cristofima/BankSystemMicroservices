@@ -1,18 +1,20 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Security.Application.Interfaces;
-using BankSystem.Shared.Domain.Common;
 using Security.Domain.Entities;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace Security.Application.Features.Authentication.Commands.RefreshToken;
 
 /// <summary>
 /// Handler for refresh token command
 /// </summary>
-public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<RefreshTokenResponse>>
+public class RefreshTokenCommandHandler
+    : IRequestHandler<RefreshTokenCommand, Result<RefreshTokenResponse>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
@@ -25,19 +27,27 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService,
         ISecurityAuditService auditService,
-        ILogger<RefreshTokenCommandHandler> logger)
+        ILogger<RefreshTokenCommandHandler> logger
+    )
     {
-        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
-        _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
-        _refreshTokenService = refreshTokenService ?? throw new ArgumentNullException(nameof(refreshTokenService));
-        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(userManager);
+        Guard.AgainstNull(tokenService);
+        Guard.AgainstNull(refreshTokenService);
+        Guard.AgainstNull(auditService);
+        Guard.AgainstNull(logger);
+
+        _userManager = userManager;
+        _tokenService = tokenService;
+        _refreshTokenService = refreshTokenService;
+        _auditService = auditService;
+        _logger = logger;
     }
 
-    public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
+    public async Task<Result<RefreshTokenResponse>> Handle(
+        RefreshTokenCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         try
         {
             _logger.LogInformation("Token refresh attempt from IP {IpAddress}", request.IpAddress);
@@ -48,7 +58,12 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
             var (jwtId, userId) = tokenValidationResult.Value;
 
-            var refreshTokenValidationResult = await ValidateRefreshTokenAsync(request, jwtId, userId, cancellationToken);
+            var refreshTokenValidationResult = await ValidateRefreshTokenAsync(
+                request,
+                jwtId,
+                userId,
+                cancellationToken
+            );
             if (refreshTokenValidationResult.IsFailure)
                 return Result<RefreshTokenResponse>.Failure(refreshTokenValidationResult.Error);
 
@@ -60,20 +75,32 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
             var user = userValidationResult.Value!; // Safe because we checked IsFailure above
 
-            var newTokensResult = await GenerateNewTokensAsync(user, refreshToken, request, cancellationToken);
+            var newTokensResult = await GenerateNewTokensAsync(
+                user,
+                refreshToken,
+                request,
+                cancellationToken
+            );
             if (newTokensResult.IsFailure)
                 return Result<RefreshTokenResponse>.Failure(newTokensResult.Error);
 
             await _auditService.LogTokenRefreshAsync(user.Id, request.IpAddress);
 
-            _logger.LogInformation("Token successfully refreshed for user {UserId} from IP {IpAddress}",
-                user.Id, request.IpAddress);
+            _logger.LogInformation(
+                "Token successfully refreshed for user {UserId} from IP {IpAddress}",
+                user.Id,
+                request.IpAddress
+            );
 
             return Result<RefreshTokenResponse>.Success(newTokensResult.Value!);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during token refresh from IP {IpAddress}", request.IpAddress);
+            _logger.LogError(
+                ex,
+                "Error during token refresh from IP {IpAddress}",
+                request.IpAddress
+            );
             return Result<RefreshTokenResponse>.Failure("An error occurred during token refresh");
         }
     }
@@ -83,16 +110,26 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
         if (principal == null)
         {
-            _logger.LogWarning("Token refresh failed - invalid access token from IP {IpAddress}", request.IpAddress);
+            _logger.LogWarning(
+                "Token refresh failed - invalid access token from IP {IpAddress}",
+                request.IpAddress
+            );
             return Result<(string, string)>.Failure("Invalid token");
         }
 
-        var jwtId = principal.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti)?.Value;
-        var userId = principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+        var jwtId = principal
+            .Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti)
+            ?.Value;
+        var userId = principal
+            .Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)
+            ?.Value;
 
         if (string.IsNullOrEmpty(jwtId) || string.IsNullOrEmpty(userId))
         {
-            _logger.LogWarning("Token refresh failed - missing claims in access token from IP {IpAddress}", request.IpAddress);
+            _logger.LogWarning(
+                "Token refresh failed - missing claims in access token from IP {IpAddress}",
+                request.IpAddress
+            );
             return Result<(string, string)>.Failure("Invalid token");
         }
 
@@ -103,19 +140,28 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         RefreshTokenCommand request,
         string jwtId,
         string userId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var refreshToken = await _refreshTokenService.ValidateRefreshTokenAsync(
             request.RefreshToken,
             jwtId,
             userId,
-            cancellationToken);
+            cancellationToken
+        );
 
         if (refreshToken == null)
         {
-            _logger.LogWarning("Token refresh failed - invalid refresh token for user {UserId} from IP {IpAddress}",
-                userId, request.IpAddress);
-            await _auditService.LogFailedAuthenticationAsync(userId, request.IpAddress, "Invalid refresh token");
+            _logger.LogWarning(
+                "Token refresh failed - invalid refresh token for user {UserId} from IP {IpAddress}",
+                userId,
+                request.IpAddress
+            );
+            await _auditService.LogFailedAuthenticationAsync(
+                userId,
+                request.IpAddress,
+                "Invalid refresh token"
+            );
             return Result<Domain.Entities.RefreshToken>.Failure("Invalid refresh token");
         }
 
@@ -127,7 +173,10 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null || !user.IsActive)
         {
-            _logger.LogWarning("Token refresh failed - user {UserId} not found or inactive", userId);
+            _logger.LogWarning(
+                "Token refresh failed - user {UserId} not found or inactive",
+                userId
+            );
             return Result<ApplicationUser>.Failure("Invalid refresh token");
         }
 
@@ -138,7 +187,8 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         ApplicationUser user,
         Domain.Entities.RefreshToken oldRefreshToken,
         RefreshTokenCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var newAccessToken = await GenerateAccessTokenAsync(user);
         var newRefreshToken = await _refreshTokenService.RefreshTokenAsync(
@@ -146,7 +196,8 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
             newAccessToken.JwtId,
             request.IpAddress,
             request.DeviceInfo,
-            cancellationToken);
+            cancellationToken
+        );
 
         if (newRefreshToken == null)
         {
@@ -158,12 +209,17 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
             newAccessToken.Token,
             newRefreshToken.Token,
             newAccessToken.Expiry,
-            newRefreshToken.ExpiryDate);
+            newRefreshToken.ExpiryDate
+        );
 
         return Result<RefreshTokenResponse>.Success(response);
     }
 
-    private async Task<(string Token, string JwtId, DateTime Expiry)> GenerateAccessTokenAsync(ApplicationUser user)
+    private async Task<(
+        string Token,
+        string JwtId,
+        DateTimeOffset Expiry
+    )> GenerateAccessTokenAsync(ApplicationUser user)
     {
         var claims = CreateClaimsForUser(user);
         await AddRoleClaimsAsync(user, claims);
@@ -173,13 +229,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
     private static List<Claim> CreateClaimsForUser(ApplicationUser user)
     {
-        return new List<Claim>
-        {
+        return
+        [
             new(ClaimTypes.Name, user.UserName!),
             new(ClaimTypes.NameIdentifier, user.Id),
             new("clientId", user.ClientId.ToString()),
-            new(ClaimTypes.Email, user.Email!)
-        };
+            new(ClaimTypes.Email, user.Email!),
+        ];
     }
 
     private async Task AddRoleClaimsAsync(ApplicationUser user, List<Claim> claims)

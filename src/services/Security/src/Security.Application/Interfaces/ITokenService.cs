@@ -1,5 +1,5 @@
-﻿using Security.Domain.Entities;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Security.Domain.Entities;
 
 namespace Security.Application.Interfaces;
 
@@ -11,9 +11,10 @@ public interface ITokenService
     /// <summary>
     /// Creates an access token for the given user with claims
     /// </summary>
-    Task<(string Token, string JwtId, DateTime Expiry)> CreateAccessTokenAsync(
+    Task<(string Token, string JwtId, DateTimeOffset Expiry)> CreateAccessTokenAsync(
         ApplicationUser user,
-        IEnumerable<Claim> claims);
+        IEnumerable<Claim> claims
+    );
 
     /// <summary>
     /// Validates an expired access token and returns the principal

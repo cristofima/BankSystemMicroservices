@@ -1,5 +1,4 @@
-using BankSystem.Security.Infrastructure.IntegrationTests.Common;
-using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Kernel.Common;
 using DotNet.Testcontainers.Builders;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

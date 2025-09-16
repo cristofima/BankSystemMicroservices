@@ -1,5 +1,5 @@
 using BankSystem.Account.Domain.ValueObjects;
-using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Events;
 
 namespace BankSystem.Account.Domain.Events;
 
@@ -11,8 +11,5 @@ public record AccountCreatedEvent(
     Guid CustomerId,
     AccountNumber AccountNumber,
     string AccountType,
-    DateTime CreatedAt) : IDomainEvent
-{
-    public Guid Id { get; } = Guid.NewGuid();
-    public DateTime OccurredOn { get; } = DateTime.UtcNow;
-}
+    DateTimeOffset CreatedAt
+) : DomainEvent { }

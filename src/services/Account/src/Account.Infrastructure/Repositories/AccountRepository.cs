@@ -1,4 +1,4 @@
-using BankSystem.Account.Application.Interfaces;
+﻿using BankSystem.Account.Application.Interfaces;
 using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Shared.Domain.Validation;
@@ -18,29 +18,41 @@ public class AccountRepository : IAccountRepository
 
     public AccountRepository(AccountDbContext context, ILogger<AccountRepository> logger)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(context);
+        Guard.AgainstNull(logger);
+
+        _context = context;
+        _logger = logger;
     }
 
     /// <inheritdoc />
-    public async Task<AccountEntity?> GetByIdAsync(Guid accountId, CancellationToken cancellationToken = default)
+    public async Task<AccountEntity?> GetByIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default
+    )
     {
-        Guard.AgainstEmptyGuid(accountId, nameof(accountId));
+        Guard.AgainstEmptyGuid(accountId);
 
-        _logger.LogDebug("Retrieving account by ID: {AccountId}", accountId);
+        _logger.LogDebug("Retrieving account: {AccountId}", accountId);
 
-        return await _context.Accounts.FindAsync([accountId], cancellationToken: cancellationToken);
+        return await _context.Accounts.FirstOrDefaultAsync(
+            a => a.Id == accountId,
+            cancellationToken
+        );
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<AccountEntity>> GetByCustomerIdAsync(Guid customerId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<AccountEntity>> GetByCustomerIdAsync(
+        Guid customerId,
+        CancellationToken cancellationToken = default
+    )
     {
-        Guard.AgainstEmptyGuid(customerId, nameof(customerId));
+        Guard.AgainstEmptyGuid(customerId);
 
         _logger.LogDebug("Retrieving accounts for customer: {CustomerId}", customerId);
 
-        return await _context.Accounts
-            .Where(a => a.CustomerId == customerId)
+        return await _context
+            .Accounts.Where(a => a.CustomerId == customerId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
@@ -48,37 +60,51 @@ public class AccountRepository : IAccountRepository
     /// <inheritdoc />
     public async Task AddAsync(AccountEntity account, CancellationToken cancellationToken = default)
     {
-        Guard.AgainstNull(account, nameof(account));
+        Guard.AgainstNull(account);
 
         _logger.LogDebug("Adding new account: {AccountId}", account.Id);
 
         _context.Accounts.Add(account);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Account {AccountId} added successfully", account.Id);
     }
 
     /// <inheritdoc />
-    public async Task UpdateAsync(AccountEntity account, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(
+        AccountEntity account,
+        CancellationToken cancellationToken = default
+    )
     {
-        Guard.AgainstNull(account, nameof(account));
+        Guard.AgainstNull(account);
 
         _logger.LogDebug("Updating account: {AccountId}", account.Id);
 
         _context.Accounts.Update(account);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Account {AccountId} updated successfully", account.Id);
     }
 
     /// <inheritdoc />
-    public async Task<bool> AccountNumberExistsAsync(string accountNumber, CancellationToken cancellationToken = default)
+    public async Task<bool> AccountNumberExistsAsync(
+        string accountNumber,
+        CancellationToken cancellationToken = default
+    )
     {
-        Guard.AgainstNullOrEmpty(accountNumber, nameof(accountNumber));
+        Guard.AgainstNullOrEmpty(accountNumber);
+        var account = new AccountNumber(accountNumber);
 
-        _logger.LogDebug("Checking if account number exists: {AccountNumber}", accountNumber);
+        _logger.LogDebug(
+            "Checking if account number exists: {AccountNumber}",
+            account.GetMaskedValue()
+        );
 
-        return await _context.Accounts
-            .AnyAsync(a => a.AccountNumber.Equals(new AccountNumber(accountNumber)), cancellationToken);
+        return await _context.Accounts.AnyAsync(
+            a => a.AccountNumber.Equals(account),
+            cancellationToken
+        );
     }
 }
