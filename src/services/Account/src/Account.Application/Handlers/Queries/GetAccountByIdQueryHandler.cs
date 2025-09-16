@@ -21,9 +21,9 @@ public class GetAccountByIdQueryHandler : IRequestHandler<GetAccountByIdQuery, R
         ILogger<GetAccountByIdQueryHandler> logger
     )
     {
-        Guard.AgainstNull(accountRepository, nameof(accountRepository));
-        Guard.AgainstNull(mapper, nameof(mapper));
-        Guard.AgainstNull(logger, nameof(logger));
+        Guard.AgainstNull(accountRepository);
+        Guard.AgainstNull(mapper);
+        Guard.AgainstNull(logger);
 
         _accountRepository = accountRepository;
         _mapper = mapper;

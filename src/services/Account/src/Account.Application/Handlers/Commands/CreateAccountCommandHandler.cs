@@ -26,10 +26,10 @@ public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand,
         ILogger<CreateAccountCommandHandler> logger
     )
     {
-        Guard.AgainstNull(accountRepository, nameof(accountRepository));
-        Guard.AgainstNull(currentUser, nameof(currentUser));
-        Guard.AgainstNull(mapper, nameof(mapper));
-        Guard.AgainstNull(logger, nameof(logger));
+        Guard.AgainstNull(accountRepository);
+        Guard.AgainstNull(currentUser);
+        Guard.AgainstNull(mapper);
+        Guard.AgainstNull(logger);
 
         _accountRepository = accountRepository;
         _currentUser = currentUser;

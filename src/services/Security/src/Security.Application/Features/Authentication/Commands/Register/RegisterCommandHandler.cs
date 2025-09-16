@@ -1,9 +1,10 @@
+using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Security.Application.Dtos;
 using Security.Application.Interfaces;
-using BankSystem.Shared.Domain.Common;
 using Security.Domain.Entities;
 
 namespace Security.Application.Features.Authentication.Commands.Register;
@@ -20,17 +21,23 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
     public RegisterCommandHandler(
         UserManager<ApplicationUser> userManager,
         ISecurityAuditService auditService,
-        ILogger<RegisterCommandHandler> logger)
+        ILogger<RegisterCommandHandler> logger
+    )
     {
-        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
-        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(userManager);
+        Guard.AgainstNull(auditService);
+        Guard.AgainstNull(logger);
+
+        _userManager = userManager;
+        _auditService = auditService;
+        _logger = logger;
     }
 
-    public async Task<Result<UserResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public async Task<Result<UserResponse>> Handle(
+        RegisterCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         try
         {
             _logger.LogInformation("Processing registration for user {UserName}", request.UserName);
@@ -47,8 +54,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
 
             await _auditService.LogUserRegistrationAsync(user.Id, request.IpAddress);
 
-            _logger.LogInformation("User {UserName} registered successfully with ID {UserId}",
-                request.UserName, user.Id);
+            _logger.LogInformation(
+                "User {UserName} registered successfully with ID {UserId}",
+                request.UserName,
+                user.Id
+            );
 
             var userResponse = CreateUserResponse(user);
             return Result<UserResponse>.Success(userResponse);
@@ -101,7 +111,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
             LastName = request.LastName,
             ClientId = Guid.NewGuid(), // Generate unique client ID
             CreatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
     }
 
@@ -112,7 +122,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            _logger.LogWarning("User registration failed for {UserName}: {Errors}", user.UserName, errors);
+            _logger.LogWarning(
+                "User registration failed for {UserName}: {Errors}",
+                user.UserName,
+                errors
+            );
             return Result.Failure($"Registration failed: {errors}");
         }
 
@@ -129,6 +143,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
             user.LastName,
             user.EmailConfirmed,
             user.IsActive,
-            user.CreatedAt);
+            user.CreatedAt
+        );
     }
 }

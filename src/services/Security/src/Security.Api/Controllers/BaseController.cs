@@ -1,3 +1,4 @@
+using BankSystem.Shared.Domain.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Security.Api.Services;
 
@@ -14,10 +15,14 @@ public abstract class BaseController : ControllerBase
 
     protected BaseController(
         IHttpContextInfoService httpContextInfoService,
-        IApiResponseService apiResponseService)
+        IApiResponseService apiResponseService
+    )
     {
-        HttpContextInfoService = httpContextInfoService ?? throw new ArgumentNullException(nameof(httpContextInfoService));
-        ApiResponseService = apiResponseService ?? throw new ArgumentNullException(nameof(apiResponseService));
+        Guard.AgainstNull(httpContextInfoService);
+        Guard.AgainstNull(apiResponseService);
+
+        HttpContextInfoService = httpContextInfoService;
+        ApiResponseService = apiResponseService;
     }
 
     /// <summary>
@@ -41,7 +46,10 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult ValidationError(string message)
     {
-        var problemDetails = ApiResponseService.CreateValidationFailedResponse(message, Request.Path);
+        var problemDetails = ApiResponseService.CreateValidationFailedResponse(
+            message,
+            Request.Path
+        );
         return BadRequest(problemDetails);
     }
 
@@ -50,7 +58,10 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult AuthenticationFailed(string message)
     {
-        var problemDetails = ApiResponseService.CreateAuthenticationFailedResponse(message, Request.Path);
+        var problemDetails = ApiResponseService.CreateAuthenticationFailedResponse(
+            message,
+            Request.Path
+        );
         return Unauthorized(problemDetails);
     }
 
@@ -68,7 +79,12 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult Conflict(string message)
     {
-        var problemDetails = ApiResponseService.CreateProblemDetails("Conflict", message, 409, Request.Path);
+        var problemDetails = ApiResponseService.CreateProblemDetails(
+            "Conflict",
+            message,
+            409,
+            Request.Path
+        );
         return Conflict(problemDetails);
     }
 
@@ -77,7 +93,12 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult UnprocessableEntity(string message)
     {
-        var problemDetails = ApiResponseService.CreateProblemDetails("Unprocessable Entity", message, 422, Request.Path);
+        var problemDetails = ApiResponseService.CreateProblemDetails(
+            "Unprocessable Entity",
+            message,
+            422,
+            Request.Path
+        );
         return UnprocessableEntity(problemDetails);
     }
 

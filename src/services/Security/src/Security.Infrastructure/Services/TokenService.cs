@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Entities;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Security.Infrastructure.Services;
 
@@ -20,7 +20,7 @@ public class TokenService : ITokenService
 
     public TokenService(IOptions<JwtOptions> jwtOptions)
     {
-        _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+        _jwtOptions = jwtOptions.Value;
 
         if (string.IsNullOrWhiteSpace(_jwtOptions.Key))
             throw new ArgumentException("JWT key cannot be null or empty", nameof(jwtOptions));
@@ -31,7 +31,8 @@ public class TokenService : ITokenService
 
     public Task<(string Token, string JwtId, DateTime Expiry)> CreateAccessTokenAsync(
         ApplicationUser user,
-        IEnumerable<Claim> claims)
+        IEnumerable<Claim> claims
+    )
     {
         var jwtId = Guid.NewGuid().ToString();
         var expiry = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpiryInMinutes);
@@ -42,14 +43,18 @@ public class TokenService : ITokenService
             new(JwtRegisteredClaimNames.Sub, user.Id),
             new(ClaimTypes.NameIdentifier, user.Id),
             new(JwtRegisteredClaimNames.Jti, jwtId),
-            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+            new(
+                JwtRegisteredClaimNames.Iat,
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                ClaimValueTypes.Integer64
+            ),
         };
 
         // Add all other claims except sub and name identifier to avoid duplicates/overwrites
         allClaims.AddRange(
             claims.Where(claim =>
-                claim.Type != JwtRegisteredClaimNames.Sub &&
-                claim.Type != ClaimTypes.NameIdentifier)
+                claim.Type != JwtRegisteredClaimNames.Sub && claim.Type != ClaimTypes.NameIdentifier
+            )
         );
 
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -58,7 +63,7 @@ public class TokenService : ITokenService
             Expires = expiry,
             SigningCredentials = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256),
             Issuer = _jwtOptions.Issuer,
-            Audience = _jwtOptions.Audience
+            Audience = _jwtOptions.Audience,
         };
 
         var token = _tokenHandler.CreateToken(tokenDescriptor);
@@ -78,7 +83,7 @@ public class TokenService : ITokenService
             ValidIssuer = _jwtOptions.Issuer,
             ValidAudience = _jwtOptions.Audience,
             ValidateLifetime = false, // Don't validate expiry for refresh tokens
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
 
         try
@@ -101,7 +106,10 @@ public class TokenService : ITokenService
         try
         {
             var jwtToken = _tokenHandler.ReadJwtToken(token);
-            return jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
+            return jwtToken.Header.Alg.Equals(
+                SecurityAlgorithms.HmacSha256,
+                StringComparison.InvariantCultureIgnoreCase
+            );
         }
         catch
         {

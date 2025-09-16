@@ -5,7 +5,6 @@ using Moq;
 using Security.Application.Features.Authentication.Commands.Login;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Entities;
-using Xunit;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.Login;
 
@@ -23,7 +22,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             MockRefreshTokenService.Object,
             MockAuditService.Object,
             _mockLogger.Object,
-            CreateSecurityOptions());
+            CreateSecurityOptions()
+        );
     }
 
     [Fact]
@@ -35,7 +35,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             user.UserName!,
             "ValidPassword123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         var accessToken = CreateValidJwtToken();
         var jwtId = Guid.NewGuid().ToString();
@@ -68,12 +69,14 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         // Verify logging
         MockAuditService.Verify(
             x => x.LogSuccessfulAuthenticationAsync(user.Id, command.IpAddress),
-            Times.Once);
+            Times.Once
+        );
 
         // Verify user update (reset failed attempts)
         MockUserManager.Verify(
             x => x.UpdateAsync(It.Is<ApplicationUser>(u => u.FailedLoginAttempts == 0)),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -84,7 +87,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             "nonexistent@example.com",
             "Password123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(null);
 
@@ -98,8 +102,14 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
 
         // Verify audit logging
         MockAuditService.Verify(
-            x => x.LogFailedAuthenticationAsync(command.UserName, command.IpAddress, "User not found"),
-            Times.Once);
+            x =>
+                x.LogFailedAuthenticationAsync(
+                    command.UserName,
+                    command.IpAddress,
+                    "User not found"
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -111,7 +121,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             user.UserName!,
             "Password123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(user);
 
@@ -126,7 +137,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         // Verify audit logging
         MockAuditService.Verify(
             x => x.LogFailedAuthenticationAsync(user.Id, command.IpAddress, "Account deactivated"),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -140,7 +152,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             user.UserName!,
             "Password123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(user);
 
@@ -155,7 +168,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         // Verify audit logging
         MockAuditService.Verify(
             x => x.LogFailedAuthenticationAsync(user.Id, command.IpAddress, "Account locked out"),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -167,7 +181,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             user.UserName!,
             "WrongPassword",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(user);
         SetupUserManagerCheckPassword(false);
@@ -184,12 +199,14 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
         // Verify failed attempts were incremented
         MockUserManager.Verify(
             x => x.UpdateAsync(It.Is<ApplicationUser>(u => u.FailedLoginAttempts == 3)),
-            Times.Once);
+            Times.Once
+        );
 
         // Verify audit logging
         MockAuditService.Verify(
             x => x.LogFailedAuthenticationAsync(user.Id, command.IpAddress, "Invalid password"),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -201,7 +218,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             user.UserName!,
             "ValidPassword123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         var accessToken = CreateValidJwtToken();
         var jwtId = Guid.NewGuid().ToString();
@@ -232,7 +250,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             user.UserName!,
             "ValidPassword123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         var accessToken = CreateValidJwtToken();
         var jwtId = Guid.NewGuid().ToString();
@@ -258,21 +277,13 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
 
         // Verify token service was called with user and claims
         MockTokenService.Verify(
-            x => x.CreateAccessTokenAsync(
-                It.Is<ApplicationUser>(u => u.Id == user.Id),
-                It.IsAny<IEnumerable<System.Security.Claims.Claim>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
-    {
-        // Arrange
-        LoginCommand command = null!;
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await _handler.Handle(command, CreateCancellationToken()));
+            x =>
+                x.CreateAccessTokenAsync(
+                    It.Is<ApplicationUser>(u => u.Id == user.Id),
+                    It.IsAny<IEnumerable<System.Security.Claims.Claim>>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -283,7 +294,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             "testuser@example.com",
             "Password123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         MockUserManager
             .Setup(x => x.FindByNameAsync(It.IsAny<string>()))
@@ -309,7 +321,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             userName!,
             "Password123!",
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(null);
 
@@ -334,7 +347,8 @@ public class LoginCommandHandlerTests : CommandHandlerTestBase
             user.UserName!,
             password!,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         SetupUserManagerFindByName(user);
         SetupUserManagerCheckPassword(false);

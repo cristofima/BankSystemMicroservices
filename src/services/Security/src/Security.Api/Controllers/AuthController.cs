@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using System.Net;
+using BankSystem.Shared.Domain.Validation;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Security.Api.Services;
@@ -8,7 +10,6 @@ using Security.Application.Features.Authentication.Commands.Logout;
 using Security.Application.Features.Authentication.Commands.RefreshToken;
 using Security.Application.Features.Authentication.Commands.Register;
 using Security.Application.Features.Authentication.Commands.RevokeToken;
-using System.Net;
 
 namespace Security.Api.Controllers;
 
@@ -29,11 +30,15 @@ public class AuthController : BaseController
         IMediator mediator,
         ILogger<AuthController> logger,
         IHttpContextInfoService httpContextInfoService,
-        IApiResponseService apiResponseService)
+        IApiResponseService apiResponseService
+    )
         : base(httpContextInfoService, apiResponseService)
     {
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(mediator);
+        Guard.AgainstNull(logger);
+
+        _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>
@@ -54,11 +59,15 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
     public async Task<IActionResult> Login(
         [FromBody] LoginDto request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
-        _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}",
-            request.UserName, clientIpAddress);
+        _logger.LogInformation(
+            "Login attempt for user {UserName} from IP {IpAddress}",
+            request.UserName,
+            clientIpAddress
+        );
 
         if (!ModelState.IsValid)
             return ValidationError(InvalidRequestDataMessage);
@@ -81,7 +90,8 @@ public class AuthController : BaseController
             request.UserName,
             request.Password,
             clientIpAddress,
-            HttpContextInfoService.GetDeviceInfo());
+            HttpContextInfoService.GetDeviceInfo()
+        );
     }
 
     private IActionResult HandleLoginFailure(string userName, string error)
@@ -96,7 +106,8 @@ public class AuthController : BaseController
             tokenData.AccessToken,
             tokenData.RefreshToken,
             tokenData.AccessTokenExpiry,
-            tokenData.RefreshTokenExpiry);
+            tokenData.RefreshTokenExpiry
+        );
     }
 
     private void LogSuccessfulLogin(string userName)
@@ -120,7 +131,8 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> RefreshToken(
         [FromBody] RefreshTokenRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
         _logger.LogInformation("Token refresh attempt from IP {IpAddress}", clientIpAddress);
@@ -140,18 +152,26 @@ public class AuthController : BaseController
         return Success(response);
     }
 
-    private RefreshTokenCommand CreateRefreshTokenCommand(RefreshTokenRequest request, string clientIpAddress)
+    private RefreshTokenCommand CreateRefreshTokenCommand(
+        RefreshTokenRequest request,
+        string clientIpAddress
+    )
     {
         return new RefreshTokenCommand(
             request.AccessToken,
             request.RefreshToken,
             clientIpAddress,
-            HttpContextInfoService.GetDeviceInfo());
+            HttpContextInfoService.GetDeviceInfo()
+        );
     }
 
     private IActionResult HandleRefreshTokenFailure(string clientIpAddress, string error)
     {
-        _logger.LogWarning("Token refresh failed from IP {IpAddress}: {Error}", clientIpAddress, error);
+        _logger.LogWarning(
+            "Token refresh failed from IP {IpAddress}: {Error}",
+            clientIpAddress,
+            error
+        );
         return AuthenticationFailed(error);
     }
 
@@ -178,7 +198,8 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
     public async Task<IActionResult> RevokeToken(
         [FromBody] RevokeTokenRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
         _logger.LogInformation("Token revocation attempt from IP {IpAddress}", clientIpAddress);
@@ -196,17 +217,21 @@ public class AuthController : BaseController
         return SuccessNoContent();
     }
 
-    private static RevokeTokenCommand CreateRevokeTokenCommand(RevokeTokenRequest request, string clientIpAddress)
+    private static RevokeTokenCommand CreateRevokeTokenCommand(
+        RevokeTokenRequest request,
+        string clientIpAddress
+    )
     {
-        return new RevokeTokenCommand(
-            request.Token,
-            clientIpAddress,
-            "Manual revocation");
+        return new RevokeTokenCommand(request.Token, clientIpAddress, "Manual revocation");
     }
 
     private IActionResult HandleTokenRevocationFailure(string clientIpAddress, string error)
     {
-        _logger.LogWarning("Token revocation failed from IP {IpAddress}: {Error}", clientIpAddress, error);
+        _logger.LogWarning(
+            "Token revocation failed from IP {IpAddress}: {Error}",
+            clientIpAddress,
+            error
+        );
         return ValidationError(error);
     }
 
@@ -252,7 +277,11 @@ public class AuthController : BaseController
 
     private void LogLogoutAttempt(string userId, string clientIpAddress)
     {
-        _logger.LogInformation("Logout attempt for user {UserId} from IP {IpAddress}", userId, clientIpAddress);
+        _logger.LogInformation(
+            "Logout attempt for user {UserId} from IP {IpAddress}",
+            userId,
+            clientIpAddress
+        );
     }
 
     private IActionResult HandleLogoutFailure(string userId, string error)
@@ -284,7 +313,8 @@ public class AuthController : BaseController
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
     public async Task<IActionResult> Register(
         [FromBody] RegisterDto request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var clientIpAddress = HttpContextInfoService.GetClientIpAddress();
         LogRegistrationAttempt(request.UserName, clientIpAddress);
@@ -304,7 +334,11 @@ public class AuthController : BaseController
 
     private void LogRegistrationAttempt(string userName, string clientIpAddress)
     {
-        _logger.LogInformation("Registration attempt for user {UserName} from IP {IpAddress}", userName, clientIpAddress);
+        _logger.LogInformation(
+            "Registration attempt for user {UserName} from IP {IpAddress}",
+            userName,
+            clientIpAddress
+        );
     }
 
     private RegisterCommand CreateRegisterCommand(RegisterDto request, string clientIpAddress)
@@ -317,7 +351,8 @@ public class AuthController : BaseController
             request.FirstName,
             request.LastName,
             clientIpAddress,
-            HttpContextInfoService.GetDeviceInfo());
+            HttpContextInfoService.GetDeviceInfo()
+        );
     }
 
     private IActionResult HandleRegistrationFailure(string userName, string error)

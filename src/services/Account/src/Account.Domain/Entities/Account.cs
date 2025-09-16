@@ -60,9 +60,9 @@ public class Account : AggregateRoot<Guid>
         Currency currency
     )
     {
-        Guard.AgainstNullOrEmpty(accountNumber, "accountNumber");
-        Guard.AgainstNullOrEmpty(currency, "currency");
-        Guard.AgainstEmptyGuid(customerId, "customerId");
+        Guard.AgainstNullOrEmpty(accountNumber);
+        Guard.AgainstNullOrEmpty(currency);
+        Guard.AgainstEmptyGuid(customerId);
 
         Id = Guid.NewGuid();
         AccountNumber = accountNumber;
@@ -139,7 +139,7 @@ public class Account : AggregateRoot<Guid>
     /// <param name="reason">The reason for freezing the account.</param>
     public Result Freeze(string reason)
     {
-        Guard.AgainstNullOrEmpty(reason, "reason");
+        Guard.AgainstNullOrEmpty(reason);
 
         if (Status == AccountStatus.Frozen)
             return Result.Failure("Account is already frozen");
@@ -159,7 +159,7 @@ public class Account : AggregateRoot<Guid>
     /// <param name="reason">The reason for closing the account.</param>
     public Result Close(string reason)
     {
-        Guard.AgainstNullOrEmpty(reason, "reason");
+        Guard.AgainstNullOrEmpty(reason);
 
         if (Status == AccountStatus.Closed)
             return Result.Failure("Account is already closed");

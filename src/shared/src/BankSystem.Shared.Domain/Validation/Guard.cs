@@ -16,10 +16,10 @@ public static class Guard
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentNullException">Thrown when value is null</exception>
     public static void AgainstNull<T>(
-        T value,
+        T? value,
         [CallerArgumentExpression("value")] string? parameterName = null
     )
-        where T : class?
+        where T : class
     {
         if (value is null)
             throw new ArgumentNullException(parameterName);
@@ -31,7 +31,10 @@ public static class Guard
     /// <param name="value">The string value to check</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is null or empty</exception>
-    public static void AgainstNullOrEmpty(string value, string parameterName)
+    public static void AgainstNullOrEmpty(
+        string value,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Value cannot be null or empty", parameterName);
@@ -56,7 +59,10 @@ public static class Guard
     /// <param name="value">The decimal value to check</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is negative</exception>
-    public static void AgainstNegative(decimal value, string parameterName)
+    public static void AgainstNegative(
+        decimal value,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
     {
         if (value < 0)
             throw new ArgumentException($"Value cannot be negative: {value}", parameterName);
@@ -68,7 +74,10 @@ public static class Guard
     /// <param name="value">The decimal value to check</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is zero or negative</exception>
-    public static void AgainstZeroOrNegative(decimal value, string parameterName)
+    public static void AgainstZeroOrNegative(
+        decimal value,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
     {
         if (value <= 0)
             throw new ArgumentException($"Value must be positive: {value}", parameterName);
@@ -80,7 +89,10 @@ public static class Guard
     /// <param name="value">The integer value to check</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is zero or negative</exception>
-    public static void AgainstZeroOrNegative(int value, string parameterName)
+    public static void AgainstZeroOrNegative(
+        int value,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
     {
         if (value <= 0)
             throw new ArgumentException($"Value must be positive: {value}", parameterName);
@@ -98,7 +110,7 @@ public static class Guard
         decimal value,
         decimal min,
         decimal max,
-        string parameterName
+        [CallerArgumentExpression("value")] string? parameterName = null
     )
     {
         if (value < min || value > max)
@@ -114,7 +126,10 @@ public static class Guard
     /// <param name="value">The Guid value to check</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is Guid.Empty</exception>
-    public static void AgainstEmptyGuid(Guid value, string parameterName)
+    public static void AgainstEmptyGuid(
+        Guid value,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
     {
         if (value == Guid.Empty)
             throw new ArgumentException("Guid cannot be empty", parameterName);
@@ -127,7 +142,10 @@ public static class Guard
     /// <param name="value">The enum value to check</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is not a valid enum value</exception>
-    public static void AgainstInvalidEnum<TEnum>(TEnum value, string parameterName)
+    public static void AgainstInvalidEnum<TEnum>(
+        TEnum value,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
         where TEnum : struct, Enum
     {
         if (!Enum.IsDefined(value))
@@ -141,7 +159,11 @@ public static class Guard
     /// <param name="maxLength">The maximum allowed length</param>
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when string exceeds maximum length</exception>
-    public static void AgainstExcessiveLength(string value, int maxLength, string parameterName)
+    public static void AgainstExcessiveLength(
+        string value,
+        int maxLength,
+        [CallerArgumentExpression("value")] string? parameterName = null
+    )
     {
         if (!string.IsNullOrEmpty(value) && value.Length > maxLength)
             throw new ArgumentException(

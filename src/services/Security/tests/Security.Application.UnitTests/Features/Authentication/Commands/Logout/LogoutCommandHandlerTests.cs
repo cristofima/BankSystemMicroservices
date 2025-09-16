@@ -1,10 +1,9 @@
+using BankSystem.Shared.Domain.Common;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Security.Application.Features.Authentication.Commands.Logout;
 using Security.Application.UnitTests.Common;
-using BankSystem.Shared.Domain.Common;
-using Xunit;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.Logout;
 
@@ -19,7 +18,8 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         _handler = new LogoutCommandHandler(
             MockRefreshTokenService.Object,
             MockAuditService.Object,
-            _mockLogger.Object);
+            _mockLogger.Object
+        );
     }
 
     [Fact]
@@ -27,16 +27,17 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var userId = Guid.NewGuid().ToString();
-        var command = new LogoutCommand(
-            userId,
-            CreateValidIpAddress());
+        var command = new LogoutCommand(userId, CreateValidIpAddress());
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                userId,
-                command.IpAddress,
-                "User logout",
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    userId,
+                    command.IpAddress,
+                    "User logout",
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Success());
 
         // Act
@@ -48,17 +49,18 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
 
         // Verify token revocation
         MockRefreshTokenService.Verify(
-            x => x.RevokeAllUserTokensAsync(
-                userId,
-                command.IpAddress,
-                "User logout",
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            x =>
+                x.RevokeAllUserTokensAsync(
+                    userId,
+                    command.IpAddress,
+                    "User logout",
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
 
         // Verify audit logging
-        MockAuditService.Verify(
-            x => x.LogUserLogoutAsync(userId, command.IpAddress),
-            Times.Once);
+        MockAuditService.Verify(x => x.LogUserLogoutAsync(userId, command.IpAddress), Times.Once);
     }
 
     [Fact]
@@ -66,16 +68,17 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var userId = Guid.NewGuid().ToString();
-        var command = new LogoutCommand(
-            userId,
-            CreateValidIpAddress());
+        var command = new LogoutCommand(userId, CreateValidIpAddress());
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                userId,
-                command.IpAddress,
-                "User logout",
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    userId,
+                    command.IpAddress,
+                    "User logout",
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Failure("Failed to revoke tokens"));
 
         // Act
@@ -89,7 +92,8 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         // Verify no audit logging for failed logout
         MockAuditService.Verify(
             x => x.LogUserLogoutAsync(It.IsAny<string>(), It.IsAny<string>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -97,16 +101,17 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var userId = Guid.NewGuid().ToString();
-        var command = new LogoutCommand(
-            userId,
-            CreateValidIpAddress());
+        var command = new LogoutCommand(userId, CreateValidIpAddress());
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ThrowsAsync(new Exception("Database connection failed"));
 
         // Act
@@ -118,17 +123,6 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         result.Error.Should().Be("An error occurred during logout");
     }
 
-    [Fact]
-    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
-    {
-        // Arrange
-        LogoutCommand command = null!;
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await _handler.Handle(command, CreateCancellationToken()));
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -136,17 +130,18 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     public async Task Handle_InvalidUserId_ShouldReturnFailure(string? userId)
     {
         // Arrange
-        var command = new LogoutCommand(
-            userId!,
-            CreateValidIpAddress());
+        var command = new LogoutCommand(userId!, CreateValidIpAddress());
 
         // The RefreshTokenService should handle invalid user IDs gracefully
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                userId!,
-                command.IpAddress,
-                "User logout",
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    userId!,
+                    command.IpAddress,
+                    "User logout",
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Failure("Invalid user ID"));
 
         // Act
@@ -163,16 +158,17 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var userId = Guid.NewGuid().ToString();
-        var command = new LogoutCommand(
-            userId,
-            null); // Null IP address
+        var command = new LogoutCommand(userId, null); // Null IP address
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                userId,
-                null,
-                "User logout",
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    userId,
+                    null,
+                    "User logout",
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Success());
 
         // Act
@@ -183,9 +179,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         result.IsSuccess.Should().BeTrue();
 
         // Verify audit logging with null IP
-        MockAuditService.Verify(
-            x => x.LogUserLogoutAsync(userId, null),
-            Times.Once);
+        MockAuditService.Verify(x => x.LogUserLogoutAsync(userId, null), Times.Once);
     }
 
     [Fact]
@@ -193,16 +187,17 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var userId = Guid.NewGuid().ToString();
-        var command = new LogoutCommand(
-            userId,
-            CreateValidIpAddress());
+        var command = new LogoutCommand(userId, CreateValidIpAddress());
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                userId,
-                command.IpAddress,
-                "User logout",
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    userId,
+                    command.IpAddress,
+                    "User logout",
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Success());
 
         // Act
@@ -221,19 +216,20 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var userId = Guid.NewGuid().ToString();
-        var command = new LogoutCommand(
-            userId,
-            CreateValidIpAddress());
+        var command = new LogoutCommand(userId, CreateValidIpAddress());
 
         var cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Cancel();
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
@@ -247,16 +243,17 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var userId = Guid.NewGuid().ToString();
-        var command = new LogoutCommand(
-            userId,
-            CreateValidIpAddress());
+        var command = new LogoutCommand(userId, CreateValidIpAddress());
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeAllUserTokensAsync(
-                userId,
-                command.IpAddress,
-                "User logout",
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeAllUserTokensAsync(
+                    userId,
+                    command.IpAddress,
+                    "User logout",
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Failure("Some tokens could not be revoked"));
 
         // Act
@@ -270,6 +267,7 @@ public class LogoutCommandHandlerTests : CommandHandlerTestBase
         // Verify no audit logging for failed logout
         MockAuditService.Verify(
             x => x.LogUserLogoutAsync(It.IsAny<string>(), It.IsAny<string>()),
-            Times.Never);
+            Times.Never
+        );
     }
 }

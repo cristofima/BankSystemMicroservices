@@ -18,8 +18,11 @@ public class AccountRepository : IAccountRepository
 
     public AccountRepository(AccountDbContext context, ILogger<AccountRepository> logger)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(context);
+        Guard.AgainstNull(logger);
+
+        _context = context;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -28,7 +31,7 @@ public class AccountRepository : IAccountRepository
         CancellationToken cancellationToken = default
     )
     {
-        Guard.AgainstEmptyGuid(accountId, nameof(accountId));
+        Guard.AgainstEmptyGuid(accountId);
 
         _logger.LogDebug("Retrieving account: {AccountId}", accountId);
 
@@ -44,7 +47,7 @@ public class AccountRepository : IAccountRepository
         CancellationToken cancellationToken = default
     )
     {
-        Guard.AgainstEmptyGuid(customerId, nameof(customerId));
+        Guard.AgainstEmptyGuid(customerId);
 
         _logger.LogDebug("Retrieving accounts for customer: {CustomerId}", customerId);
 
@@ -57,7 +60,7 @@ public class AccountRepository : IAccountRepository
     /// <inheritdoc />
     public async Task AddAsync(AccountEntity account, CancellationToken cancellationToken = default)
     {
-        Guard.AgainstNull(account, nameof(account));
+        Guard.AgainstNull(account);
 
         _logger.LogDebug("Adding new account: {AccountId}", account.Id);
 
@@ -74,7 +77,7 @@ public class AccountRepository : IAccountRepository
         CancellationToken cancellationToken = default
     )
     {
-        Guard.AgainstNull(account, nameof(account));
+        Guard.AgainstNull(account);
 
         _logger.LogDebug("Updating account: {AccountId}", account.Id);
 
@@ -91,7 +94,7 @@ public class AccountRepository : IAccountRepository
         CancellationToken cancellationToken = default
     )
     {
-        Guard.AgainstNullOrEmpty(accountNumber, nameof(accountNumber));
+        Guard.AgainstNullOrEmpty(accountNumber);
 
         _logger.LogDebug("Checking if account number exists: {AccountNumber}", accountNumber);
 

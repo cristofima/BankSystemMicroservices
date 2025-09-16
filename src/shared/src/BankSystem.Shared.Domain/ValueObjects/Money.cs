@@ -1,4 +1,5 @@
 using BankSystem.Shared.Domain.Exceptions;
+using BankSystem.Shared.Domain.Validation;
 
 namespace BankSystem.Shared.Domain.ValueObjects;
 
@@ -13,11 +14,13 @@ public record Money
     // Primary constructor with validation
     public Money(decimal amount, Currency currency)
     {
-        ArgumentNullException.ThrowIfNull(currency);
+        Guard.AgainstNull(currency);
 
         // Allow negative balances, but enforce precision
         if (decimal.Round(amount, Currency.DecimalPlaces) != amount)
-            throw new DomainException($"Amount has too many decimal places for currency {currency.Code}");
+            throw new DomainException(
+                $"Amount has too many decimal places for currency {currency.Code}"
+            );
 
         Amount = amount;
         Currency = currency;
@@ -42,7 +45,9 @@ public record Money
     public Money Subtract(Money other)
     {
         if (Currency != other.Currency)
-            throw new DomainException($"Cannot subtract {other.Currency.Code} from {Currency.Code}");
+            throw new DomainException(
+                $"Cannot subtract {other.Currency.Code} from {Currency.Code}"
+            );
 
         return new Money(Amount - other.Amount, Currency);
     }
