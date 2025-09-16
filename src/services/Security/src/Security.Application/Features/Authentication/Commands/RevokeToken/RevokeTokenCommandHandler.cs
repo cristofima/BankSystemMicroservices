@@ -1,4 +1,5 @@
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Security.Application.Interfaces;
@@ -17,20 +18,29 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
     public RevokeTokenCommandHandler(
         IRefreshTokenService refreshTokenService,
         ISecurityAuditService auditService,
-        ILogger<RevokeTokenCommandHandler> logger)
+        ILogger<RevokeTokenCommandHandler> logger
+    )
     {
-        _refreshTokenService = refreshTokenService ?? throw new ArgumentNullException(nameof(refreshTokenService));
-        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(refreshTokenService);
+        Guard.AgainstNull(auditService);
+        Guard.AgainstNull(logger);
+
+        _refreshTokenService = refreshTokenService;
+        _auditService = auditService;
+        _logger = logger;
     }
 
-    public async Task<Result> Handle(RevokeTokenCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        RevokeTokenCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         try
         {
-            _logger.LogInformation("Token revocation attempt from IP {IpAddress}", request.IpAddress);
+            _logger.LogInformation(
+                "Token revocation attempt from IP {IpAddress}",
+                request.IpAddress
+            );
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -44,23 +54,35 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
         }
         catch (OperationCanceledException ex)
         {
-            _logger.LogWarning(ex, "Token revocation operation was cancelled from IP {IpAddress}", request.IpAddress);
+            _logger.LogWarning(
+                ex,
+                "Token revocation operation was cancelled from IP {IpAddress}",
+                request.IpAddress
+            );
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during token revocation from IP {IpAddress}", request.IpAddress);
+            _logger.LogError(
+                ex,
+                "Error during token revocation from IP {IpAddress}",
+                request.IpAddress
+            );
             return Result.Failure("An error occurred during token revocation");
         }
     }
 
-    private async Task<Result> RevokeTokenAsync(RevokeTokenCommand request, CancellationToken cancellationToken)
+    private async Task<Result> RevokeTokenAsync(
+        RevokeTokenCommand request,
+        CancellationToken cancellationToken
+    )
     {
         return await _refreshTokenService.RevokeTokenAsync(
             request.Token,
             request.IpAddress,
             request.Reason,
-            cancellationToken);
+            cancellationToken
+        );
     }
 
     private async Task HandleRevocationResultAsync(RevokeTokenCommand request, Result result)
@@ -77,13 +99,20 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, Res
 
     private async Task LogSuccessfulRevocationAsync(RevokeTokenCommand request)
     {
-        await _auditService.LogTokenRevocationAsync(request.Token, request.IpAddress, request.Reason);
+        await _auditService.LogTokenRevocationAsync(
+            request.Token,
+            request.IpAddress,
+            request.Reason
+        );
         _logger.LogInformation("Token successfully revoked from IP {IpAddress}", request.IpAddress);
     }
 
     private void LogFailedRevocation(RevokeTokenCommand request, string error)
     {
-        _logger.LogWarning("Token revocation failed from IP {IpAddress}: {Error}",
-            request.IpAddress, error);
+        _logger.LogWarning(
+            "Token revocation failed from IP {IpAddress}: {Error}",
+            request.IpAddress,
+            error
+        );
     }
 }

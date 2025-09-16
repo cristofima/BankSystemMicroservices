@@ -17,8 +17,8 @@ public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, R
         ILogger<CloseAccountCommandHandler> logger
     )
     {
-        Guard.AgainstNull(accountRepository, nameof(accountRepository));
-        Guard.AgainstNull(logger, nameof(logger));
+        Guard.AgainstNull(accountRepository);
+        Guard.AgainstNull(logger);
 
         _accountRepository = accountRepository;
         _logger = logger;

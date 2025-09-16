@@ -5,5 +5,5 @@ namespace BankSystem.Account.Domain.Events;
 /// <summary>
 /// Domain event raised when an account is suspended.
 /// </summary>
-public record AccountSuspendedEvent(Guid AccountId, string Reason, DateTime SuspendedAt)
+public record AccountSuspendedEvent(Guid AccountId, string Reason, DateTimeOffset SuspendedAt)
     : DomainEvent { }

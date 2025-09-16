@@ -15,7 +15,7 @@ public abstract class AggregateRoot<TId> : Entity<TId>, IAggregateRoot
     /// </summary>
     protected void AddDomainEvent(IDomainEvent domainEvent)
     {
-        Guard.AgainstNull(domainEvent, nameof(domainEvent));
+        Guard.AgainstNull(domainEvent);
         _domainEvents.Add(domainEvent);
     }
 

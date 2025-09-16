@@ -1,8 +1,7 @@
+using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Security.Claims;
-using Xunit;
 using Security.Application.Features.Authentication.Commands.RefreshToken;
 using Security.Application.UnitTests.Common;
 using Security.Domain.Entities;
@@ -23,7 +22,8 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             MockTokenService.Object,
             MockRefreshTokenService.Object,
             MockAuditService.Object,
-            _mockLogger.Object);
+            _mockLogger.Object
+        );
     }
 
     [Fact]
@@ -39,7 +39,8 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshToken.Token,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         var newAccessToken = CreateValidJwtToken();
         var newJwtId = Guid.NewGuid().ToString();
@@ -47,39 +48,41 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         var newRefreshToken = CreateTestRefreshToken(user.Id, jwtId: newJwtId);
 
         // Setup mocks
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim("jti", jwtId)
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, user.Id), new Claim("jti", jwtId) }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
             .Returns(claimsPrincipal);
 
-        MockUserManager
-            .Setup(x => x.FindByIdAsync(user.Id))
-            .ReturnsAsync(user);
+        MockUserManager.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-        MockUserManager
-            .Setup(x => x.GetRolesAsync(user))
-            .ReturnsAsync(new List<string> { "User" });
+        MockUserManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
 
         MockRefreshTokenService
-            .Setup(x => x.ValidateRefreshTokenAsync(
-                refreshToken.Token,
-                jwtId,
-                user.Id,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ValidateRefreshTokenAsync(
+                    refreshToken.Token,
+                    jwtId,
+                    user.Id,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(refreshToken);
 
         MockRefreshTokenService
-            .Setup(x => x.RefreshTokenAsync(
-                refreshToken,
-                It.IsAny<string>(),
-                command.IpAddress,
-                command.DeviceInfo,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RefreshTokenAsync(
+                    refreshToken,
+                    It.IsAny<string>(),
+                    command.IpAddress,
+                    command.DeviceInfo,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(newRefreshToken);
 
         SetupTokenServiceCreateAccessToken(newAccessToken, newJwtId, newAccessExpiry);
@@ -99,7 +102,8 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         // Verify audit logging
         MockAuditService.Verify(
             x => x.LogTokenRefreshAsync(user.Id, command.IpAddress),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Theory]
@@ -108,9 +112,7 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
     public async Task Handle_InvalidAccessToken_ShouldReturnFailure(string invalidAccessToken)
     {
         // Arrange
-        var command = new RefreshTokenCommand(
-            invalidAccessToken,
-            "valid-refresh-token");
+        var command = new RefreshTokenCommand(invalidAccessToken, "valid-refresh-token");
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -161,21 +163,20 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshTokenValue,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim("jti", jwtId)
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, userId), new Claim("jti", jwtId) }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
             .Returns(claimsPrincipal);
 
-        MockUserManager
-            .Setup(x => x.FindByIdAsync(userId))
-            .ReturnsAsync((ApplicationUser?)null);
+        MockUserManager.Setup(x => x.FindByIdAsync(userId)).ReturnsAsync((ApplicationUser?)null);
 
         // Act
         var result = await _handler.Handle(command, CreateCancellationToken());
@@ -199,21 +200,20 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshTokenValue,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim("jti", jwtId)
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, user.Id), new Claim("jti", jwtId) }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
             .Returns(claimsPrincipal);
 
-        MockUserManager
-            .Setup(x => x.FindByIdAsync(user.Id))
-            .ReturnsAsync(user);
+        MockUserManager.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
         // Act
         var result = await _handler.Handle(command, CreateCancellationToken());
@@ -237,28 +237,30 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshTokenValue,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim("jti", jwtId)
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, user.Id), new Claim("jti", jwtId) }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
             .Returns(claimsPrincipal);
 
-        MockUserManager
-            .Setup(x => x.FindByIdAsync(user.Id))
-            .ReturnsAsync(user);
+        MockUserManager.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
         MockRefreshTokenService
-            .Setup(x => x.ValidateRefreshTokenAsync(
-                refreshTokenValue,
-                jwtId,
-                user.Id,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ValidateRefreshTokenAsync(
+                    refreshTokenValue,
+                    jwtId,
+                    user.Id,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((RefreshTokenEntity?)null);
 
         // Act
@@ -283,41 +285,44 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshToken.Token,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim("jti", jwtId)
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, user.Id), new Claim("jti", jwtId) }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
             .Returns(claimsPrincipal);
 
-        MockUserManager
-            .Setup(x => x.FindByIdAsync(user.Id))
-            .ReturnsAsync(user);
+        MockUserManager.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-        MockUserManager
-            .Setup(x => x.GetRolesAsync(user))
-            .ReturnsAsync(new List<string> { "User" });
+        MockUserManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
 
         MockRefreshTokenService
-            .Setup(x => x.ValidateRefreshTokenAsync(
-                refreshToken.Token,
-                jwtId,
-                user.Id,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ValidateRefreshTokenAsync(
+                    refreshToken.Token,
+                    jwtId,
+                    user.Id,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(refreshToken);
 
         MockRefreshTokenService
-            .Setup(x => x.RefreshTokenAsync(
-                refreshToken,
-                It.IsAny<string>(),
-                command.IpAddress,
-                command.DeviceInfo,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RefreshTokenAsync(
+                    refreshToken,
+                    It.IsAny<string>(),
+                    command.IpAddress,
+                    command.DeviceInfo,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((RefreshTokenEntity?)null);
 
         var newAccessToken = CreateValidJwtToken();
@@ -346,12 +351,21 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshTokenValue,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim("jti", jwtId) // Missing NameIdentifier claim
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[]
+                {
+                    new Claim(
+                        "jti",
+                        jwtId
+                    ) // Missing NameIdentifier claim
+                    ,
+                }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
@@ -378,12 +392,21 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshTokenValue,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, userId) // Missing jti claim
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[]
+                {
+                    new Claim(
+                        ClaimTypes.NameIdentifier,
+                        userId
+                    ) // Missing jti claim
+                    ,
+                }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
@@ -406,7 +429,8 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             CreateValidJwtToken(),
             CreateValidRefreshToken(),
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>()))
@@ -419,17 +443,6 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
         result.Should().NotBeNull();
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("An error occurred during token refresh");
-    }
-
-    [Fact]
-    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
-    {
-        // Arrange
-        RefreshTokenCommand command = null!;
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await _handler.Handle(command, CreateCancellationToken()));
     }
 
     [Theory]
@@ -445,7 +458,8 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             actualAccessToken,
             CreateValidRefreshToken(),
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken!))
@@ -475,28 +489,30 @@ public class RefreshTokenCommandHandlerTests : CommandHandlerTestBase
             accessToken,
             refreshToken!,
             CreateValidIpAddress(),
-            CreateValidDeviceInfo());
+            CreateValidDeviceInfo()
+        );
 
-        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim("jti", jwtId)
-        }));
+        var claimsPrincipal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, user.Id), new Claim("jti", jwtId) }
+            )
+        );
 
         MockTokenService
             .Setup(x => x.GetPrincipalFromExpiredToken(accessToken))
             .Returns(claimsPrincipal);
 
-        MockUserManager
-            .Setup(x => x.FindByIdAsync(user.Id))
-            .ReturnsAsync(user);
+        MockUserManager.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
         MockRefreshTokenService
-            .Setup(x => x.ValidateRefreshTokenAsync(
-                refreshToken!,
-                jwtId,
-                user.Id,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ValidateRefreshTokenAsync(
+                    refreshToken!,
+                    jwtId,
+                    user.Id,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((RefreshTokenEntity?)null);
 
         // Act

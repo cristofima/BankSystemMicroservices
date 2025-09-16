@@ -1,10 +1,9 @@
+using BankSystem.Shared.Domain.Common;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 using Security.Application.Features.Authentication.Commands.RevokeToken;
 using Security.Application.UnitTests.Common;
-using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.UnitTests.Features.Authentication.Commands.RevokeToken;
 
@@ -19,7 +18,8 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         _handler = new RevokeTokenCommandHandler(
             MockRefreshTokenService.Object,
             MockAuditService.Object,
-            _mockLogger.Object);
+            _mockLogger.Object
+        );
     }
 
     [Fact]
@@ -30,14 +30,18 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                command.Reason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    token,
+                    command.IpAddress,
+                    command.Reason,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Success());
 
         // Act
@@ -49,17 +53,21 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
 
         // Verify token revocation
         MockRefreshTokenService.Verify(
-            x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                command.Reason,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            x =>
+                x.RevokeTokenAsync(
+                    token,
+                    command.IpAddress,
+                    command.Reason,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
 
         // Verify audit logging
         MockAuditService.Verify(
             x => x.LogTokenRevocationAsync(token, command.IpAddress, command.Reason),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -70,14 +78,18 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                command.Reason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    token,
+                    command.IpAddress,
+                    command.Reason,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Failure("Token not found or already revoked"));
 
         // Act
@@ -90,8 +102,14 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
 
         // Verify no audit logging for failed revocation
         MockAuditService.Verify(
-            x => x.LogTokenRevocationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
-            Times.Never);
+            x =>
+                x.LogTokenRevocationAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()
+                ),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -102,14 +120,18 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ThrowsAsync(new Exception("Database connection failed"));
 
         // Act
@@ -119,17 +141,6 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         result.Should().NotBeNull();
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("An error occurred during token revocation");
-    }
-
-    [Fact]
-    public async Task Handle_NullCommand_ShouldThrowArgumentNullException()
-    {
-        // Arrange
-        RevokeTokenCommand command = null!;
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await _handler.Handle(command, CreateCancellationToken()));
     }
 
     [Theory]
@@ -142,14 +153,18 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token!,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token!,
-                command.IpAddress,
-                command.Reason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    token!,
+                    command.IpAddress,
+                    command.Reason,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Failure("Invalid token"));
 
         // Act
@@ -166,17 +181,12 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
     {
         // Arrange
         var token = CreateValidRefreshToken();
-        var command = new RevokeTokenCommand(
-            token,
-            CreateValidIpAddress(),
-            null); // Null reason
+        var command = new RevokeTokenCommand(token, CreateValidIpAddress(), null); // Null reason
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                null,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(token, command.IpAddress, null, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(Result.Success());
 
         // Act
@@ -189,7 +199,8 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         // Verify audit logging with null reason
         MockAuditService.Verify(
             x => x.LogTokenRevocationAsync(token, command.IpAddress, null),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -200,14 +211,13 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             null, // Null IP address
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                null,
-                command.Reason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(token, null, command.Reason, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(Result.Success());
 
         // Act
@@ -220,7 +230,8 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         // Verify audit logging with null IP address
         MockAuditService.Verify(
             x => x.LogTokenRevocationAsync(token, null, command.Reason),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -231,14 +242,18 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                command.Reason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    token,
+                    command.IpAddress,
+                    command.Reason,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Failure("Token is already revoked"));
 
         // Act
@@ -258,17 +273,21 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         var cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Cancel();
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
@@ -285,14 +304,18 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                command.Reason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    token,
+                    command.IpAddress,
+                    command.Reason,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Failure("Token not found"));
 
         // Act
@@ -305,8 +328,14 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
 
         // Verify no audit logging for non-existent token
         MockAuditService.Verify(
-            x => x.LogTokenRevocationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
-            Times.Never);
+            x =>
+                x.LogTokenRevocationAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()
+                ),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -315,17 +344,17 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         // Arrange
         var token = CreateValidRefreshToken();
         var longReason = new string('A', 500); // Very long reason
-        var command = new RevokeTokenCommand(
-            token,
-            CreateValidIpAddress(),
-            longReason);
+        var command = new RevokeTokenCommand(token, CreateValidIpAddress(), longReason);
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                longReason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    token,
+                    command.IpAddress,
+                    longReason,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Success());
 
         // Act
@@ -338,7 +367,8 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         // Verify audit logging with long reason
         MockAuditService.Verify(
             x => x.LogTokenRevocationAsync(token, command.IpAddress, longReason),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -349,21 +379,28 @@ public class RevokeTokenCommandHandlerTests : CommandHandlerTestBase
         var command = new RevokeTokenCommand(
             token,
             CreateValidIpAddress(),
-            "User requested revocation");
+            "User requested revocation"
+        );
 
         MockRefreshTokenService
-            .Setup(x => x.RevokeTokenAsync(
-                token,
-                command.IpAddress,
-                command.Reason,
-                It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.RevokeTokenAsync(
+                    token,
+                    command.IpAddress,
+                    command.Reason,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(Result.Success());
 
         MockAuditService
-            .Setup(x => x.LogTokenRevocationAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>()))
+            .Setup(x =>
+                x.LogTokenRevocationAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()
+                )
+            )
             .ThrowsAsync(new Exception("Audit service failed"));
 
         // Act

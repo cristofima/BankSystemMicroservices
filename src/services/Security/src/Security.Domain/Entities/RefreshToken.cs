@@ -74,7 +74,7 @@ public class RefreshToken : AuditedEntity
     public void Revoke(string? ipAddress = null, string? reason = null)
     {
         IsRevoked = true;
-        RevokedAt = DateTime.UtcNow;
+        RevokedAt = DateTimeOffset.UtcNow;
         RevokedByIp = ipAddress;
         RevocationReason = reason;
     }

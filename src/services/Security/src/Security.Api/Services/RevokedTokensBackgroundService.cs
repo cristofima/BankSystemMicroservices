@@ -17,7 +17,8 @@ public class RevokedTokensBackgroundService : IHostedService
     public RevokedTokensBackgroundService(
         IServiceProvider serviceProvider,
         IMemoryCache memoryCache,
-        ILogger<RevokedTokensBackgroundService> logger)
+        ILogger<RevokedTokensBackgroundService> logger
+    )
     {
         _serviceProvider = serviceProvider;
         _memoryCache = memoryCache;
@@ -34,23 +35,26 @@ public class RevokedTokensBackgroundService : IHostedService
             var dbContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
 
             // Load all currently revoked tokens that haven't expired
-            var revokedTokens = await dbContext.RefreshTokens
-                .Where(rt => rt.IsRevoked && rt.ExpiryDate > DateTime.UtcNow)
+            var revokedTokens = await dbContext
+                .RefreshTokens.Where(rt => rt.IsRevoked && rt.ExpiryDate > DateTimeOffset.UtcNow)
                 .Select(rt => new { rt.JwtId, rt.ExpiryDate })
                 .ToListAsync(cancellationToken);
 
             foreach (var token in revokedTokens)
             {
                 var cacheKey = $"revoked_token_{token.JwtId}";
-                var remainingTime = token.ExpiryDate.Subtract(DateTime.UtcNow);
+                var remainingTime = token.ExpiryDate.Subtract(DateTimeOffset.UtcNow);
 
                 if (remainingTime > TimeSpan.Zero)
                 {
-                    _memoryCache.Set(cacheKey, DateTime.UtcNow, remainingTime);
+                    _memoryCache.Set(cacheKey, DateTimeOffset.UtcNow, remainingTime);
                 }
             }
 
-            _logger.LogInformation("Loaded {Count} revoked tokens into memory cache", revokedTokens.Count);
+            _logger.LogInformation(
+                "Loaded {Count} revoked tokens into memory cache",
+                revokedTokens.Count
+            );
         }
         catch (Exception ex)
         {

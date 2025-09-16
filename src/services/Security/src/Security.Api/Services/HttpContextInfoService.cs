@@ -1,3 +1,5 @@
+using BankSystem.Shared.Domain.Validation;
+
 namespace Security.Api.Services;
 
 /// <summary>
@@ -29,7 +31,9 @@ public class HttpContextInfoService : IHttpContextInfoService
 
     public HttpContextInfoService(IHttpContextAccessor httpContextAccessor)
     {
-        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        Guard.AgainstNull(httpContextAccessor);
+
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public string GetClientIpAddress()
@@ -38,10 +42,10 @@ public class HttpContextInfoService : IHttpContextInfoService
         if (context == null)
             return UnknownValue;
 
-        return context.Connection.RemoteIpAddress?.ToString() ??
-               context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ??
-               context.Request.Headers["X-Real-IP"].FirstOrDefault() ??
-               UnknownValue;
+        return context.Connection.RemoteIpAddress?.ToString()
+            ?? context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+            ?? context.Request.Headers["X-Real-IP"].FirstOrDefault()
+            ?? UnknownValue;
     }
 
     public string GetDeviceInfo()

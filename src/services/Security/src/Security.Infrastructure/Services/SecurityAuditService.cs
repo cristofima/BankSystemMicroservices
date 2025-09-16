@@ -1,3 +1,4 @@
+using BankSystem.Shared.Domain.Validation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Security.Application.Configuration;
@@ -17,29 +18,45 @@ public class SecurityAuditService : ISecurityAuditService
 
     public SecurityAuditService(
         ILogger<SecurityAuditService> logger,
-        IOptions<SecurityOptions> securityOptions)
+        IOptions<SecurityOptions> securityOptions
+    )
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _securityOptions = securityOptions?.Value ?? throw new ArgumentNullException(nameof(securityOptions));
+        Guard.AgainstNull(logger);
+
+        _logger = logger;
+        _securityOptions = securityOptions.Value;
     }
 
     public Task LogSuccessfulAuthenticationAsync(string userId, string? ipAddress)
     {
         if (_securityOptions.Audit.LogSuccessfulAuthentication)
         {
-            _logger.LogInformation("SECURITY_AUDIT: Successful authentication for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
+            _logger.LogInformation(
+                "SECURITY_AUDIT: Successful authentication for user {UserId} from IP {IpAddress} at {Timestamp}",
+                userId,
+                ipAddress ?? UnknownValue,
+                DateTimeOffset.UtcNow
+            );
         }
 
         return Task.CompletedTask;
     }
 
-    public Task LogFailedAuthenticationAsync(string userIdentifier, string? ipAddress, string reason)
+    public Task LogFailedAuthenticationAsync(
+        string userIdentifier,
+        string? ipAddress,
+        string reason
+    )
     {
         if (_securityOptions.Audit.LogFailedAuthentication)
         {
-            _logger.LogWarning("SECURITY_AUDIT: Failed authentication attempt for user {UserIdentifier} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
-                userIdentifier, ipAddress ?? UnknownValue, DateTime.UtcNow, reason);
+            _logger.LogWarning(
+                "SECURITY_AUDIT: Failed authentication attempt for user {UserIdentifier} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
+                userIdentifier,
+                ipAddress ?? UnknownValue,
+                DateTimeOffset.UtcNow,
+                reason
+            );
         }
 
         return Task.CompletedTask;
@@ -49,8 +66,12 @@ public class SecurityAuditService : ISecurityAuditService
     {
         if (_securityOptions.Audit.LogTokenOperations)
         {
-            _logger.LogInformation("SECURITY_AUDIT: Token refresh for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
+            _logger.LogInformation(
+                "SECURITY_AUDIT: Token refresh for user {UserId} from IP {IpAddress} at {Timestamp}",
+                userId,
+                ipAddress ?? UnknownValue,
+                DateTimeOffset.UtcNow
+            );
         }
 
         return Task.CompletedTask;
@@ -60,8 +81,13 @@ public class SecurityAuditService : ISecurityAuditService
     {
         if (_securityOptions.Audit.LogTokenOperations)
         {
-            _logger.LogInformation("SECURITY_AUDIT: Token revocation for token {TokenHash} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
-                HashToken(token), ipAddress ?? UnknownValue, DateTime.UtcNow, reason ?? "not specified");
+            _logger.LogInformation(
+                "SECURITY_AUDIT: Token revocation for token {TokenHash} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
+                HashToken(token),
+                ipAddress ?? UnknownValue,
+                DateTimeOffset.UtcNow,
+                reason ?? "not specified"
+            );
         }
 
         return Task.CompletedTask;
@@ -69,16 +95,26 @@ public class SecurityAuditService : ISecurityAuditService
 
     public Task LogPermissionChangeAsync(string userId, string action, string? ipAddress)
     {
-        _logger.LogInformation("SECURITY_AUDIT: Permission change for user {UserId} from IP {IpAddress} at {Timestamp}. Action: {Action}",
-            userId, ipAddress ?? UnknownValue, DateTime.UtcNow, action);
+        _logger.LogInformation(
+            "SECURITY_AUDIT: Permission change for user {UserId} from IP {IpAddress} at {Timestamp}. Action: {Action}",
+            userId,
+            ipAddress ?? UnknownValue,
+            DateTimeOffset.UtcNow,
+            action
+        );
 
         return Task.CompletedTask;
     }
 
     public Task LogSecurityViolationAsync(string userId, string violation, string? ipAddress)
     {
-        _logger.LogWarning("SECURITY_AUDIT: Security violation by user {UserId} from IP {IpAddress} at {Timestamp}. Violation: {Violation}",
-            userId, ipAddress ?? UnknownValue, DateTime.UtcNow, violation);
+        _logger.LogWarning(
+            "SECURITY_AUDIT: Security violation by user {UserId} from IP {IpAddress} at {Timestamp}. Violation: {Violation}",
+            userId,
+            ipAddress ?? UnknownValue,
+            DateTimeOffset.UtcNow,
+            violation
+        );
 
         return Task.CompletedTask;
     }
@@ -87,8 +123,12 @@ public class SecurityAuditService : ISecurityAuditService
     {
         if (_securityOptions.Audit.LogUserOperations)
         {
-            _logger.LogInformation("SECURITY_AUDIT: User registration for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
+            _logger.LogInformation(
+                "SECURITY_AUDIT: User registration for user {UserId} from IP {IpAddress} at {Timestamp}",
+                userId,
+                ipAddress ?? UnknownValue,
+                DateTimeOffset.UtcNow
+            );
         }
 
         return Task.CompletedTask;
@@ -98,8 +138,12 @@ public class SecurityAuditService : ISecurityAuditService
     {
         if (_securityOptions.Audit.LogUserOperations)
         {
-            _logger.LogInformation("SECURITY_AUDIT: User logout for user {UserId} from IP {IpAddress} at {Timestamp}",
-                userId, ipAddress ?? UnknownValue, DateTime.UtcNow);
+            _logger.LogInformation(
+                "SECURITY_AUDIT: User logout for user {UserId} from IP {IpAddress} at {Timestamp}",
+                userId,
+                ipAddress ?? UnknownValue,
+                DateTimeOffset.UtcNow
+            );
         }
 
         return Task.CompletedTask;

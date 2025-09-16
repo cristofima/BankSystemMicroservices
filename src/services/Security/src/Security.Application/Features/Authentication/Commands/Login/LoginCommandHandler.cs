@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -6,7 +8,6 @@ using Microsoft.Extensions.Options;
 using Security.Application.Configuration;
 using Security.Application.Interfaces;
 using Security.Domain.Entities;
-using System.Security.Claims;
 
 namespace Security.Application.Features.Authentication.Commands.Login;
 
@@ -28,8 +29,15 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         IRefreshTokenService refreshTokenService,
         ISecurityAuditService auditService,
         ILogger<LoginCommandHandler> logger,
-        IOptions<SecurityOptions> securityOptions)
+        IOptions<SecurityOptions> securityOptions
+    )
     {
+        Guard.AgainstNull(userManager);
+        Guard.AgainstNull(tokenService);
+        Guard.AgainstNull(refreshTokenService);
+        Guard.AgainstNull(auditService);
+        Guard.AgainstNull(logger);
+
         _userManager = userManager;
         _tokenService = tokenService;
         _refreshTokenService = refreshTokenService;
@@ -38,14 +46,18 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         _securityOptions = securityOptions.Value;
     }
 
-    public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<Result<LoginResponse>> Handle(
+        LoginCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         try
         {
-            _logger.LogInformation("Login attempt for user {UserName} from IP {IpAddress}",
-                request.UserName, request.IpAddress);
+            _logger.LogInformation(
+                "Login attempt for user {UserName} from IP {IpAddress}",
+                request.UserName,
+                request.IpAddress
+            );
 
             var userValidationResult = await ValidateUserForLoginAsync(request);
             if (userValidationResult.IsFailure)
@@ -64,8 +76,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
 
             await _auditService.LogSuccessfulAuthenticationAsync(user.Id, request.IpAddress);
 
-            _logger.LogInformation("User {UserId} successfully authenticated from IP {IpAddress}",
-                user.Id, request.IpAddress);
+            _logger.LogInformation(
+                "User {UserId} successfully authenticated from IP {IpAddress}",
+                user.Id,
+                request.IpAddress
+            );
 
             return Result<LoginResponse>.Success(tokenResult.Value!);
         }
@@ -82,22 +97,41 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         if (user == null)
         {
             _logger.LogWarning("Login failed - user {UserName} not found", request.UserName);
-            await _auditService.LogFailedAuthenticationAsync(request.UserName, request.IpAddress, "User not found");
+            await _auditService.LogFailedAuthenticationAsync(
+                request.UserName,
+                request.IpAddress,
+                "User not found"
+            );
             return Result<ApplicationUser>.Failure("Invalid username or password");
         }
 
         if (!user.IsActive)
         {
             _logger.LogWarning("Login failed - user {UserName} is deactivated", request.UserName);
-            await _auditService.LogFailedAuthenticationAsync(user.Id, request.IpAddress, "Account deactivated");
+            await _auditService.LogFailedAuthenticationAsync(
+                user.Id,
+                request.IpAddress,
+                "Account deactivated"
+            );
             return Result<ApplicationUser>.Failure("Account is deactivated");
         }
 
-        if (user.IsLockedOut(_securityOptions.MaxFailedLoginAttempts, _securityOptions.LockoutDuration))
+        if (
+            user.IsLockedOut(
+                _securityOptions.MaxFailedLoginAttempts,
+                _securityOptions.LockoutDuration
+            )
+        )
         {
             _logger.LogWarning("Login failed - user {UserName} is locked out", request.UserName);
-            await _auditService.LogFailedAuthenticationAsync(user.Id, request.IpAddress, "Account locked out");
-            return Result<ApplicationUser>.Failure("Account is temporarily locked due to multiple failed attempts");
+            await _auditService.LogFailedAuthenticationAsync(
+                user.Id,
+                request.IpAddress,
+                "Account locked out"
+            );
+            return Result<ApplicationUser>.Failure(
+                "Account is temporarily locked due to multiple failed attempts"
+            );
         }
 
         return Result<ApplicationUser>.Success(user);
@@ -120,7 +154,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         await _userManager.UpdateAsync(user);
 
         _logger.LogWarning("Login failed - invalid password for user {UserName}", request.UserName);
-        await _auditService.LogFailedAuthenticationAsync(user.Id, request.IpAddress, "Invalid password");
+        await _auditService.LogFailedAuthenticationAsync(
+            user.Id,
+            request.IpAddress,
+            "Invalid password"
+        );
     }
 
     private async Task HandleSuccessfulLoginAsync(ApplicationUser user)
@@ -129,7 +167,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         await _userManager.UpdateAsync(user);
     }
 
-    private async Task<Result<LoginResponse>> GenerateTokensAsync(ApplicationUser user, LoginCommand request, CancellationToken cancellationToken)
+    private async Task<Result<LoginResponse>> GenerateTokensAsync(
+        ApplicationUser user,
+        LoginCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var accessToken = await GenerateAccessTokenAsync(user);
         var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
@@ -138,7 +180,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
             accessToken.JwtId,
             request.IpAddress,
             request.DeviceInfo,
-            cancellationToken);
+            cancellationToken
+        );
 
         if (refreshToken == null)
         {
@@ -150,19 +193,24 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
             accessToken.Token,
             refreshToken.Token,
             accessToken.Expiry,
-            refreshToken.ExpiryDate);
+            refreshToken.ExpiryDate
+        );
 
         return Result<LoginResponse>.Success(response);
     }
 
-    private async Task<(string Token, string JwtId, DateTime Expiry)> GenerateAccessTokenAsync(ApplicationUser user)
+    private async Task<(
+        string Token,
+        string JwtId,
+        DateTimeOffset Expiry
+    )> GenerateAccessTokenAsync(ApplicationUser user)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, user.UserName!),
             new(ClaimTypes.NameIdentifier, user.Id),
             new("clientId", user.ClientId.ToString()),
-            new(ClaimTypes.Email, user.Email!)
+            new(ClaimTypes.Email, user.Email!),
         };
 
         // Add user roles (safely handle case where roles might not be configured)
@@ -176,7 +224,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         }
         catch (NotSupportedException ex)
         {
-            _logger.LogWarning(ex, "Role store not configured properly: {Error}. Proceeding without role claims.", ex.Message);
+            _logger.LogWarning(
+                ex,
+                "Role store not configured properly: {Error}. Proceeding without role claims.",
+                ex.Message
+            );
             // Continue without role claims - this allows the system to work even if roles aren't properly configured
         }
 

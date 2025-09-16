@@ -1,10 +1,11 @@
+using System.Net.Mime;
 using BankSystem.Account.Application.Commands;
 using BankSystem.Account.Application.DTOs;
 using BankSystem.Account.Application.Queries;
+using BankSystem.Shared.Domain.Validation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Mime;
 
 namespace BankSystem.Account.Api.Controllers;
 
@@ -22,8 +23,11 @@ public class AccountController : ApiControllerBase
 
     public AccountController(IMediator mediator, ILogger<AccountController> logger)
     {
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(mediator);
+        Guard.AgainstNull(logger);
+
+        _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>
@@ -43,24 +47,34 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AccountDto>> CreateAccount(
         [FromBody] CreateAccountCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var userName = User.Identity?.Name;
 
-        _logger.LogInformation("Creating account for user {UserName} with type {AccountType}",
-            userName, command.AccountType);
+        _logger.LogInformation(
+            "Creating account for user {UserName} with type {AccountType}",
+            userName,
+            command.AccountType
+        );
 
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
         {
-            _logger.LogWarning("Failed to create account for user {UserName}: {Error}",
-                userName, result.Error);
+            _logger.LogWarning(
+                "Failed to create account for user {UserName}: {Error}",
+                userName,
+                result.Error
+            );
             return HandleFailure(result, command.ValidationErrorTitle());
         }
 
-        _logger.LogInformation("Account {AccountId} created successfully for user {UserName}",
-            result.Value!.Id, userName);
+        _logger.LogInformation(
+            "Account {AccountId} created successfully for user {UserName}",
+            result.Value!.Id,
+            userName
+        );
 
         return StatusCode(201, result.Value);
     }
@@ -80,7 +94,8 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AccountDto>> GetAccountById(
         [FromRoute] Guid accountId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         _logger.LogInformation("Retrieving account with number {AccountId}", accountId);
 
@@ -109,7 +124,8 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<AccountDto>>> GetAccountsByCustomerId(
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var userName = User.Identity?.Name;
         _logger.LogInformation("Retrieving accounts for user {UserName}", userName);
@@ -143,14 +159,16 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> ActivateAccount(
         [FromBody] ActivateAccountCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         return await HandleAccountAction(
             command,
             "Activating",
             "activate",
             "activated",
-            cancellationToken);
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -170,14 +188,16 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> FreezeAccount(
         [FromBody] FreezeAccountCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         return await HandleAccountAction(
             command,
             "Freezing",
             "freeze",
             "frozen",
-            cancellationToken);
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -197,14 +217,16 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> SuspendAccount(
         [FromBody] SuspendAccountCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         return await HandleAccountAction(
             command,
             "Suspending",
             "suspend",
             "suspended",
-            cancellationToken);
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -224,14 +246,10 @@ public class AccountController : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> CloseAccount(
         [FromBody] CloseAccountCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        return await HandleAccountAction(
-            command,
-            "Closing",
-            "close",
-            "closed",
-            cancellationToken);
+        return await HandleAccountAction(command, "Closing", "close", "closed", cancellationToken);
     }
 
     private async Task<ActionResult> HandleAccountAction<TCommand>(
@@ -239,22 +257,35 @@ public class AccountController : ApiControllerBase
         string actionPresentTense,
         string actionVerb,
         string actionPastTense,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
         where TCommand : IAccountActionCommand
     {
-        _logger.LogInformation("{Action} account {AccountId}", actionPresentTense, command.AccountId);
+        _logger.LogInformation(
+            "{Action} account {AccountId}",
+            actionPresentTense,
+            command.AccountId
+        );
 
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
         {
-            _logger.LogWarning("Failed to {ActionVerb} account {AccountId}: {Error}",
-                actionVerb, command.AccountId, result.Error);
+            _logger.LogWarning(
+                "Failed to {ActionVerb} account {AccountId}: {Error}",
+                actionVerb,
+                command.AccountId,
+                result.Error
+            );
 
             return HandleFailure(result, command.ValidationErrorTitle());
         }
 
-        _logger.LogInformation("Account {AccountId} {ActionPastTense} successfully", command.AccountId, actionPastTense);
+        _logger.LogInformation(
+            "Account {AccountId} {ActionPastTense} successfully",
+            command.AccountId,
+            actionPastTense
+        );
         return NoContent();
     }
 }

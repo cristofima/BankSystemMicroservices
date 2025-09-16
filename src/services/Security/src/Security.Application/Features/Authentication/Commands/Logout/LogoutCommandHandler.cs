@@ -1,7 +1,8 @@
+using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Validation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Security.Application.Interfaces;
-using BankSystem.Shared.Domain.Common;
 
 namespace Security.Application.Features.Authentication.Commands.Logout;
 
@@ -17,17 +18,20 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
     public LogoutCommandHandler(
         IRefreshTokenService refreshTokenService,
         ISecurityAuditService auditService,
-        ILogger<LogoutCommandHandler> logger)
+        ILogger<LogoutCommandHandler> logger
+    )
     {
-        _refreshTokenService = refreshTokenService ?? throw new ArgumentNullException(nameof(refreshTokenService));
-        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Guard.AgainstNull(refreshTokenService);
+        Guard.AgainstNull(auditService);
+        Guard.AgainstNull(logger);
+
+        _refreshTokenService = refreshTokenService;
+        _auditService = auditService;
+        _logger = logger;
     }
 
     public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         try
         {
             _logger.LogInformation("Processing logout for user {UserId}", request.UserId);
@@ -44,7 +48,11 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
             var revokeResult = await RevokeUserTokensAsync(request, cancellationToken);
             if (!revokeResult.IsSuccess)
             {
-                _logger.LogWarning("Failed to revoke tokens for user {UserId}: {Error}", request.UserId, revokeResult.Error);
+                _logger.LogWarning(
+                    "Failed to revoke tokens for user {UserId}: {Error}",
+                    request.UserId,
+                    revokeResult.Error
+                );
                 return revokeResult;
             }
 
@@ -52,13 +60,20 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 
             await LogUserLogoutAsync(request);
 
-            _logger.LogInformation("Successfully processed logout for user {UserId}", request.UserId);
+            _logger.LogInformation(
+                "Successfully processed logout for user {UserId}",
+                request.UserId
+            );
 
             return Result.Success();
         }
         catch (OperationCanceledException ex)
         {
-            _logger.LogWarning(ex, "Logout operation was cancelled for user {UserId}", request.UserId);
+            _logger.LogWarning(
+                ex,
+                "Logout operation was cancelled for user {UserId}",
+                request.UserId
+            );
             throw;
         }
         catch (Exception ex)
@@ -68,9 +83,17 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
         }
     }
 
-    private async Task<Result> RevokeUserTokensAsync(LogoutCommand request, CancellationToken cancellationToken)
+    private async Task<Result> RevokeUserTokensAsync(
+        LogoutCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        return await _refreshTokenService.RevokeAllUserTokensAsync(request.UserId, request.IpAddress, "User logout", cancellationToken);
+        return await _refreshTokenService.RevokeAllUserTokensAsync(
+            request.UserId,
+            request.IpAddress,
+            "User logout",
+            cancellationToken
+        );
     }
 
     private async Task LogUserLogoutAsync(LogoutCommand request)
