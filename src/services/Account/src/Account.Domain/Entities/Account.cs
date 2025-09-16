@@ -41,7 +41,7 @@ public class Account : AggregateRoot<Guid>
     /// <summary>
     /// Gets the date and time when the account was closed (if applicable).
     /// </summary>
-    public DateTime? ClosedAt { get; private set; }
+    public DateTimeOffset? ClosedAt { get; private set; }
 
     // Private constructor for EF Core
     private Account() { }
@@ -90,7 +90,7 @@ public class Account : AggregateRoot<Guid>
                 customerId,
                 account.AccountNumber,
                 type.ToString(),
-                DateTime.UtcNow
+                DateTimeOffset.UtcNow
             )
         );
 
@@ -111,7 +111,7 @@ public class Account : AggregateRoot<Guid>
         Status = AccountStatus.Active;
 
         AddDomainEvent(
-            new AccountActivatedEvent(Id, CustomerId, AccountNumber.Value, DateTime.UtcNow)
+            new AccountActivatedEvent(Id, CustomerId, AccountNumber.Value, DateTimeOffset.UtcNow)
         );
         return Result.Success();
     }
@@ -122,14 +122,14 @@ public class Account : AggregateRoot<Guid>
     /// <param name="reason">The reason for suspension.</param>
     public Result Suspend(string reason)
     {
-        Guard.AgainstNullOrEmpty(reason, "reason");
+        Guard.AgainstNullOrEmpty(reason);
 
         if (Status == AccountStatus.Closed)
             return Result.Failure("Cannot suspend a closed account");
 
         Status = AccountStatus.Suspended;
 
-        AddDomainEvent(new AccountSuspendedEvent(Id, reason, DateTime.UtcNow));
+        AddDomainEvent(new AccountSuspendedEvent(Id, reason, DateTimeOffset.UtcNow));
         return Result.Success();
     }
 
@@ -168,7 +168,7 @@ public class Account : AggregateRoot<Guid>
             return Result.Failure("Cannot close account with non-zero balance");
 
         Status = AccountStatus.Closed;
-        ClosedAt = DateTime.UtcNow;
+        ClosedAt = DateTimeOffset.UtcNow;
 
         AddDomainEvent(new AccountClosedEvent(Id, AccountNumber, CustomerId, reason));
         return Result.Success();

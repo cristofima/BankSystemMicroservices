@@ -9,5 +9,5 @@ public abstract record DomainEvent : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();
     public DateTimeOffset OccurredOn { get; } = DateTimeOffset.UtcNow;
-    public int Version { get; init; } = 1;
+    public int Version => 1;
 }

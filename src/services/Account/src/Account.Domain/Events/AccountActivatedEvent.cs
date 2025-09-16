@@ -9,5 +9,5 @@ public record AccountActivatedEvent(
     Guid AccountId,
     Guid CustomerId,
     string AccountNumber,
-    DateTime ActivatedAt
+    DateTimeOffset ActivatedAt
 ) : DomainEvent { }

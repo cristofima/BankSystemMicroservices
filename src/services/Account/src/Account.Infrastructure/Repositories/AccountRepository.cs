@@ -95,11 +95,15 @@ public class AccountRepository : IAccountRepository
     )
     {
         Guard.AgainstNullOrEmpty(accountNumber);
+        var account = new AccountNumber(accountNumber);
 
-        _logger.LogDebug("Checking if account number exists: {AccountNumber}", accountNumber);
+        _logger.LogDebug(
+            "Checking if account number exists: {AccountNumber}",
+            account.GetMaskedValue()
+        );
 
         return await _context.Accounts.AnyAsync(
-            a => a.AccountNumber.Equals(new AccountNumber(accountNumber)),
+            a => a.AccountNumber.Equals(account),
             cancellationToken
         );
     }

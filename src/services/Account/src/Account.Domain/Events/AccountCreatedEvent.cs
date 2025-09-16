@@ -11,5 +11,5 @@ public record AccountCreatedEvent(
     Guid CustomerId,
     AccountNumber AccountNumber,
     string AccountType,
-    DateTime CreatedAt
+    DateTimeOffset CreatedAt
 ) : DomainEvent { }
