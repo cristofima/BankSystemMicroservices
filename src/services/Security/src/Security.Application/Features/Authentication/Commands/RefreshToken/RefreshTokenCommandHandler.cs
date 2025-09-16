@@ -215,9 +215,11 @@ public class RefreshTokenCommandHandler
         return Result<RefreshTokenResponse>.Success(response);
     }
 
-    private async Task<(string Token, string JwtId, DateTime Expiry)> GenerateAccessTokenAsync(
-        ApplicationUser user
-    )
+    private async Task<(
+        string Token,
+        string JwtId,
+        DateTimeOffset Expiry
+    )> GenerateAccessTokenAsync(ApplicationUser user)
     {
         var claims = CreateClaimsForUser(user);
         await AddRoleClaimsAsync(user, claims);
@@ -227,13 +229,13 @@ public class RefreshTokenCommandHandler
 
     private static List<Claim> CreateClaimsForUser(ApplicationUser user)
     {
-        return new List<Claim>
-        {
+        return
+        [
             new(ClaimTypes.Name, user.UserName!),
             new(ClaimTypes.NameIdentifier, user.Id),
             new("clientId", user.ClientId.ToString()),
             new(ClaimTypes.Email, user.Email!),
-        };
+        ];
     }
 
     private async Task AddRoleClaimsAsync(ApplicationUser user, List<Claim> claims)

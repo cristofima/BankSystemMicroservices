@@ -29,13 +29,13 @@ public class TokenService : ITokenService
         _tokenHandler = new JwtSecurityTokenHandler();
     }
 
-    public Task<(string Token, string JwtId, DateTime Expiry)> CreateAccessTokenAsync(
+    public Task<(string Token, string JwtId, DateTimeOffset Expiry)> CreateAccessTokenAsync(
         ApplicationUser user,
         IEnumerable<Claim> claims
     )
     {
         var jwtId = Guid.NewGuid().ToString();
-        var expiry = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpiryInMinutes);
+        var expiry = DateTimeOffset.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpiryInMinutes);
 
         // Always ensure both sub and name identifier are present and set to user.Id
         var allClaims = new List<Claim>
@@ -60,7 +60,7 @@ public class TokenService : ITokenService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(allClaims),
-            Expires = expiry,
+            Expires = expiry.DateTime,
             SigningCredentials = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256),
             Issuer = _jwtOptions.Issuer,
             Audience = _jwtOptions.Audience,

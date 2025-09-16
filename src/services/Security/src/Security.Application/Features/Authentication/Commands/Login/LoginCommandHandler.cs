@@ -199,9 +199,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         return Result<LoginResponse>.Success(response);
     }
 
-    private async Task<(string Token, string JwtId, DateTime Expiry)> GenerateAccessTokenAsync(
-        ApplicationUser user
-    )
+    private async Task<(
+        string Token,
+        string JwtId,
+        DateTimeOffset Expiry
+    )> GenerateAccessTokenAsync(ApplicationUser user)
     {
         var claims = new List<Claim>
         {

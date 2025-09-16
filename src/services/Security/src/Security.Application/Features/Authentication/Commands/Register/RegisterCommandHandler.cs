@@ -110,7 +110,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
             FirstName = request.FirstName,
             LastName = request.LastName,
             ClientId = Guid.NewGuid(), // Generate unique client ID
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
             IsActive = true,
         };
     }

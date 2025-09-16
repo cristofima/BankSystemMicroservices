@@ -80,7 +80,7 @@ public class RefreshTokenService : IRefreshTokenService
         if (_securityOptions.TokenSecurity.MaxConcurrentSessions <= 0)
             return;
 
-        var currentTime = DateTime.UtcNow;
+        var currentTime = DateTimeOffset.UtcNow;
         var activeTokensCount = await GetActiveTokensCountAsync(
             userId,
             currentTime,
@@ -95,7 +95,7 @@ public class RefreshTokenService : IRefreshTokenService
 
     private async Task<int> GetActiveTokensCountAsync(
         string userId,
-        DateTime currentTime,
+        DateTimeOffset currentTime,
         CancellationToken cancellationToken
     )
     {
@@ -108,7 +108,7 @@ public class RefreshTokenService : IRefreshTokenService
     private async Task RevokeOldestTokenAsync(
         string userId,
         string? ipAddress,
-        DateTime currentTime,
+        DateTimeOffset currentTime,
         CancellationToken cancellationToken
     )
     {
@@ -142,10 +142,10 @@ public class RefreshTokenService : IRefreshTokenService
             Token = GenerateSecureToken(),
             JwtId = jwtId,
             UserId = userId,
-            ExpiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
+            ExpiryDate = DateTimeOffset.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
             CreatedByIp = ipAddress,
             DeviceInfo = deviceInfo,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
             CreatedBy = userName,
         };
     }
@@ -252,11 +252,11 @@ public class RefreshTokenService : IRefreshTokenService
                 Token = GenerateSecureToken(),
                 JwtId = newJwtId,
                 UserId = oldToken.UserId,
-                ExpiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
+                ExpiryDate = DateTimeOffset.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiryInDays),
                 CreatedByIp = ipAddress,
                 DeviceInfo = deviceInfo ?? oldToken.DeviceInfo,
                 ReplacedByToken = null, // Will be set when this token is replaced
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 CreatedBy = oldToken.CreatedBy,
             };
 
@@ -379,7 +379,7 @@ public class RefreshTokenService : IRefreshTokenService
     {
         try
         {
-            var cutoffDate = DateTime.UtcNow.AddDays(
+            var cutoffDate = DateTimeOffset.UtcNow.AddDays(
                 -_securityOptions.TokenSecurity.CleanupExpiredTokensAfterDays
             );
 

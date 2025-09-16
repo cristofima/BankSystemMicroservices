@@ -2,6 +2,7 @@
 using BankSystem.Shared.Auditing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Security.Application.Configuration;
@@ -55,7 +56,10 @@ public static class DependencyInjection
                     }
                 );
 
-                options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
+                foreach (var interceptor in sp.GetServices<SaveChangesInterceptor>())
+                {
+                    options.AddInterceptors(interceptor);
+                }
 
                 // Enable sensitive data logging only in development
                 if (configuration.GetValue<bool>("Database:EnableSensitiveDataLogging"))
@@ -63,7 +67,7 @@ public static class DependencyInjection
             }
         );
 
-        services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddScoped<SaveChangesInterceptor, AuditSaveChangesInterceptor>();
 
         // Configure Identity with enhanced security
         services

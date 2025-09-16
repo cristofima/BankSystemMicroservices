@@ -35,7 +35,7 @@ public class SecurityAuditService : ISecurityAuditService
                 "SECURITY_AUDIT: Successful authentication for user {UserId} from IP {IpAddress} at {Timestamp}",
                 userId,
                 ipAddress ?? UnknownValue,
-                DateTime.UtcNow
+                DateTimeOffset.UtcNow
             );
         }
 
@@ -54,7 +54,7 @@ public class SecurityAuditService : ISecurityAuditService
                 "SECURITY_AUDIT: Failed authentication attempt for user {UserIdentifier} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
                 userIdentifier,
                 ipAddress ?? UnknownValue,
-                DateTime.UtcNow,
+                DateTimeOffset.UtcNow,
                 reason
             );
         }
@@ -70,7 +70,7 @@ public class SecurityAuditService : ISecurityAuditService
                 "SECURITY_AUDIT: Token refresh for user {UserId} from IP {IpAddress} at {Timestamp}",
                 userId,
                 ipAddress ?? UnknownValue,
-                DateTime.UtcNow
+                DateTimeOffset.UtcNow
             );
         }
 
@@ -85,7 +85,7 @@ public class SecurityAuditService : ISecurityAuditService
                 "SECURITY_AUDIT: Token revocation for token {TokenHash} from IP {IpAddress} at {Timestamp}. Reason: {Reason}",
                 HashToken(token),
                 ipAddress ?? UnknownValue,
-                DateTime.UtcNow,
+                DateTimeOffset.UtcNow,
                 reason ?? "not specified"
             );
         }
@@ -99,7 +99,7 @@ public class SecurityAuditService : ISecurityAuditService
             "SECURITY_AUDIT: Permission change for user {UserId} from IP {IpAddress} at {Timestamp}. Action: {Action}",
             userId,
             ipAddress ?? UnknownValue,
-            DateTime.UtcNow,
+            DateTimeOffset.UtcNow,
             action
         );
 
@@ -112,7 +112,7 @@ public class SecurityAuditService : ISecurityAuditService
             "SECURITY_AUDIT: Security violation by user {UserId} from IP {IpAddress} at {Timestamp}. Violation: {Violation}",
             userId,
             ipAddress ?? UnknownValue,
-            DateTime.UtcNow,
+            DateTimeOffset.UtcNow,
             violation
         );
 
@@ -127,7 +127,7 @@ public class SecurityAuditService : ISecurityAuditService
                 "SECURITY_AUDIT: User registration for user {UserId} from IP {IpAddress} at {Timestamp}",
                 userId,
                 ipAddress ?? UnknownValue,
-                DateTime.UtcNow
+                DateTimeOffset.UtcNow
             );
         }
 
@@ -142,7 +142,7 @@ public class SecurityAuditService : ISecurityAuditService
                 "SECURITY_AUDIT: User logout for user {UserId} from IP {IpAddress} at {Timestamp}",
                 userId,
                 ipAddress ?? UnknownValue,
-                DateTime.UtcNow
+                DateTimeOffset.UtcNow
             );
         }
 
