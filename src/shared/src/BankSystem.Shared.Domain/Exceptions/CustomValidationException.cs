@@ -19,8 +19,8 @@ public class CustomValidationException : Exception
     )
         : base("One or more validation errors occurred.")
     {
-        Guard.AgainstNull(Errors);
-        Guard.AgainstNullOrEmpty(Title);
+        Guard.AgainstNull(errors);
+        Guard.AgainstNullOrEmpty(title);
 
         Errors = errors;
         Title = title;
