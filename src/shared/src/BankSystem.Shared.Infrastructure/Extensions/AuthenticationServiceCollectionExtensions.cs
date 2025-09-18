@@ -10,14 +10,38 @@ using Microsoft.IdentityModel.Tokens;
 namespace BankSystem.Shared.Infrastructure.Extensions;
 
 /// <summary>
-/// Extension methods for configuring authentication
+/// Provides extension methods for configuring JWT authentication and authorization services
+/// in the dependency injection container. This class contains methods to set up secure
+/// JWT-based authentication with proper token validation and security event handling.
 /// </summary>
+/// <remarks>
+/// This static class extends IServiceCollection to provide fluent configuration methods
+/// for JWT authentication. The methods configure authentication schemes, token validation
+/// parameters, and security event handlers to ensure secure API access across the banking
+/// system microservices.
+/// </remarks>
 [ExcludeFromCodeCoverage]
 public static class AuthenticationServiceCollectionExtensions
 {
     /// <summary>
-    /// Configure JWT authentication
+    /// Configures JWT Bearer authentication with comprehensive security validation parameters
+    /// and event handlers for the banking system. This method sets up token validation,
+    /// issuer and audience verification, and security event logging.
     /// </summary>
+    /// <param name="services">The IServiceCollection to add the authentication services to</param>
+    /// <param name="configuration">The IConfiguration instance containing JWT settings from appsettings</param>
+    /// <returns>The same IServiceCollection instance for method chaining</returns>
+    /// <remarks>
+    /// This method configures JWT authentication with the following security features:
+    /// - Issuer and audience validation for token integrity
+    /// - Signing key validation using symmetric encryption
+    /// - Zero clock skew tolerance for precise timing validation
+    /// - Mandatory token expiration and signature requirements
+    /// - Comprehensive authentication failure logging
+    /// - Claims identity validation for authorized access
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">Thrown when the required JWT Key configuration is missing</exception>
+    /// <exception cref="ArgumentNullException">Thrown when services or configuration parameters are null</exception>
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services,
         IConfiguration configuration
