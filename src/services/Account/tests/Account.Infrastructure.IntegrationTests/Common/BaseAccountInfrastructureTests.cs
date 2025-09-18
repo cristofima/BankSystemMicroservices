@@ -127,8 +127,9 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
         configurationBuilder.AddInMemoryCollection(
             new Dictionary<string, string>
             {
-                // Database Configuration
                 ["ConnectionStrings:DefaultConnection"] = _sqlContainer.GetConnectionString(),
+                ["ConnectionStrings:AzureServiceBus"] =
+                    "Endpoint=sb://xxx.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=xxx",
             }!
         );
 
