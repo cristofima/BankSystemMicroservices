@@ -73,9 +73,6 @@ public static class WebApiExtensions
         // Add authorization with banking-specific policies
         services.AddAuthorization(options =>
         {
-            // Default policy requires authentication
-            options.FallbackPolicy = options.DefaultPolicy;
-
             // Banking-specific policies
             options.AddPolicy(
                 "CustomerAccess",

@@ -202,7 +202,7 @@ public abstract class BaseSecurityInfrastructureTest : IAsyncLifetime
         var dbContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
 
         // Ensure database is created and migrations are applied
-        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Database.MigrateAsync();
     }
 
     /// <summary>
