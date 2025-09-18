@@ -128,7 +128,7 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
             new Dictionary<string, string>
             {
                 ["ConnectionStrings:DefaultConnection"] = _sqlContainer.GetConnectionString(),
-                ["ConnectionStrings:AzureServiceBus"] =
+                ["MassTransit:AzureServiceBus:ConnectionString"] =
                     "Endpoint=sb://xxx.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=xxx",
             }!
         );

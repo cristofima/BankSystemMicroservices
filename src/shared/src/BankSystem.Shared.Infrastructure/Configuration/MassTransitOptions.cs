@@ -19,9 +19,19 @@ public class MassTransitOptions
     public OutboxConfiguration Outbox { get; set; } = new();
 
     /// <summary>
-    /// Azure Service Bus transport configuration settings.
+    /// Azure Service Bus basic configuration settings.
     /// </summary>
-    public AzureServiceBusTransportConfiguration AzureServiceBus { get; set; } = new();
+    public AzureServiceBusConfiguration AzureServiceBus { get; set; } = new();
+
+    /// <summary>
+    /// Retry configuration for handling transient failures.
+    /// </summary>
+    public RetryConfiguration Retry { get; set; } = new();
+
+    /// <summary>
+    /// Circuit breaker configuration for fault tolerance.
+    /// </summary>
+    public CircuitBreakerConfiguration CircuitBreaker { get; set; } = new();
 }
 
 /// <summary>
@@ -51,99 +61,15 @@ public class OutboxConfiguration
 }
 
 /// <summary>
-/// MassTransit configuration options for Azure Service Bus transport.
-/// Provides comprehensive settings for message queuing, retry policies, circuit breakers, and performance tuning.
+/// Azure Service Bus configuration settings.
 /// </summary>
-public class AzureServiceBusTransportConfiguration
+public class AzureServiceBusConfiguration
 {
     /// <summary>
     /// Azure Service Bus connection string. Required for production environments.
     /// </summary>
     [Required(ErrorMessage = "Azure Service Bus connection string is required")]
     public string ConnectionString { get; set; } = string.Empty;
-
-    // Transport Configuration
-    /// <summary>
-    /// Transport-specific configuration settings for Azure Service Bus.
-    /// </summary>
-    public TransportConfiguration Transport { get; set; } = new();
-
-    // Retry Configuration
-    /// <summary>
-    /// Message retry configuration for handling transient failures.
-    /// </summary>
-    public RetryConfiguration Retry { get; set; } = new();
-
-    // Timeout Configuration
-    /// <summary>
-    /// Timeout settings for various operations.
-    /// </summary>
-    public TimeoutConfiguration Timeout { get; set; } = new();
-
-    // Performance Configuration
-    /// <summary>
-    /// Performance and concurrency settings.
-    /// </summary>
-    public PerformanceConfiguration Performance { get; set; } = new();
-
-    // Circuit Breaker Configuration
-    /// <summary>
-    /// Circuit breaker configuration for fault tolerance.
-    /// </summary>
-    public bool EnableCircuitBreaker { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the detailed circuit breaker configuration settings.
-    /// Provides configuration options for failure thresholds, timeout settings,
-    /// and recovery behavior when the circuit breaker is enabled.
-    /// </summary>
-    public CircuitBreakerConfiguration CircuitBreaker { get; set; } = new();
-
-    // Development Configuration
-    /// <summary>
-    /// Development environment specific settings.
-    /// </summary>
-    public DevelopmentConfiguration Development { get; set; } = new();
-}
-
-/// <summary>
-/// Transport-specific configuration for Azure Service Bus.
-/// </summary>
-public class TransportConfiguration
-{
-    /// <summary>
-    /// Enable topic partitioning for better scalability. Default is false.
-    /// </summary>
-    public bool EnablePartitioning { get; set; } = false;
-
-    /// <summary>
-    /// Require sessions for FIFO message processing. Default is false.
-    /// </summary>
-    public bool RequiresSession { get; set; } = false;
-
-    /// <summary>
-    /// Maximum number of delivery attempts before moving to dead letter queue. Default is 5.
-    /// </summary>
-    [Range(1, 100, ErrorMessage = "Max delivery count must be between 1 and 100")]
-    public int MaxDeliveryCount { get; set; } = 5;
-
-    /// <summary>
-    /// Duration (in minutes) that a message lock is held. Default is 5 minutes.
-    /// </summary>
-    [Range(1, 300, ErrorMessage = "Lock duration must be between 1 and 300 minutes")]
-    public int LockDurationMinutes { get; set; } = 5;
-
-    /// <summary>
-    /// Default topic name for domain events. Can be overridden per message type.
-    /// </summary>
-    [Required]
-    public string DefaultTopicName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Default subscription name for this service instance.
-    /// </summary>
-    [Required]
-    public string DefaultSubscriptionName { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -177,48 +103,6 @@ public class RetryConfiguration
 }
 
 /// <summary>
-/// Timeout configuration for various operations.
-/// </summary>
-public class TimeoutConfiguration
-{
-    /// <summary>
-    /// Request timeout in seconds. Default is 30 seconds.
-    /// </summary>
-    [Range(1, 300, ErrorMessage = "Request timeout must be between 1 and 300 seconds")]
-    public int RequestTimeoutSeconds { get; set; } = 30;
-
-    /// <summary>
-    /// Message time to live in minutes. Default is 1440 minutes (24 hours).
-    /// </summary>
-    [Range(1, 20160, ErrorMessage = "Message TTL must be between 1 minute and 14 days")]
-    public int MessageTimeToLiveMinutes { get; set; } = 1440; // 24 hours
-}
-
-/// <summary>
-/// Performance and concurrency configuration.
-/// </summary>
-public class PerformanceConfiguration
-{
-    /// <summary>
-    /// Number of messages to prefetch for better throughput. Default is 32.
-    /// </summary>
-    [Range(1, 1000, ErrorMessage = "Prefetch count must be between 1 and 1000")]
-    public int PrefetchCount { get; set; } = 32;
-
-    /// <summary>
-    /// Maximum number of concurrent messages being processed. Default is 16.
-    /// </summary>
-    [Range(1, 100, ErrorMessage = "Concurrent message limit must be between 1 and 100")]
-    public int ConcurrentMessageLimit { get; set; } = 16;
-
-    /// <summary>
-    /// Maximum number of concurrent calls to message handlers. Default is 16.
-    /// </summary>
-    [Range(1, 100, ErrorMessage = "Max concurrent calls must be between 1 and 100")]
-    public int MaxConcurrentCalls { get; set; } = 16;
-}
-
-/// <summary>
 /// Circuit breaker configuration for fault tolerance.
 /// Uses the circuit breaker pattern to prevent cascade failures.
 /// </summary>
@@ -247,20 +131,4 @@ public class CircuitBreakerConfiguration
     /// </summary>
     [Range(1, 60, ErrorMessage = "Tracking period must be between 1 and 60 minutes")]
     public int TrackingPeriodMinutes { get; set; } = 1;
-}
-
-/// <summary>
-/// Development environment specific configuration.
-/// </summary>
-public class DevelopmentConfiguration
-{
-    /// <summary>
-    /// Use in-memory transport instead of Azure Service Bus for development. Default is true.
-    /// </summary>
-    public bool UseInMemoryForDevelopment { get; set; }
-
-    /// <summary>
-    /// Enable detailed logging for debugging purposes. Default is false.
-    /// </summary>
-    public bool EnableDetailedLogging { get; set; } = false;
 }

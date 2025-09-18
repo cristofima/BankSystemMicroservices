@@ -1,4 +1,5 @@
 ﻿using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.Infrastructure.Configuration;
 using BankSystem.Shared.Infrastructure.DomainEvents;
 using BankSystem.Shared.Kernel.Common;
 using MassTransit;
@@ -24,10 +25,11 @@ public static class OutboxServiceCollectionExtensions
     /// <summary>
     /// Configures comprehensive Outbox pattern support with Azure Service Bus integration,
     /// Entity Framework Core outbox implementation, and production-ready fault tolerance mechanisms.
+    /// MassTransit configuration is automatically loaded from the 'MassTransit' section in appsettings.json.
     /// </summary>
     /// <typeparam name="TDbContext">The Entity Framework DbContext type for the microservice that will store outbox messages.</typeparam>
     /// <param name="services">The service collection to configure with outbox pattern dependencies.</param>
-    /// <param name="configuration">The configuration instance containing connection strings and service settings.</param>
+    /// <param name="configuration">The configuration instance containing connection strings and MassTransit settings.</param>
     /// <param name="databaseEngine">The database engine type (PostgreSQL or SqlServer) for optimal outbox configuration.</param>
     /// <param name="serviceName">The name of the microservice used for endpoint naming and message routing.</param>
     /// <param name="configureMessageTypes">Action delegate to configure message types and topology specific to the service.</param>
@@ -72,6 +74,18 @@ public static class OutboxServiceCollectionExtensions
         Guard.AgainstNullOrEmpty(serviceName);
         Guard.AgainstNull(configureMessageTypes);
 
+        services
+            .AddOptions<MassTransitOptions>()
+            .Bind(configuration.GetSection(MassTransitOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Get configuration for immediate use
+        var massTransitSection = configuration.GetSection(MassTransitOptions.SectionName);
+        var options = new MassTransitOptions();
+        massTransitSection.Bind(options);
+        var outboxOptions = options.Outbox;
+
         // Add the enhanced domain event dispatcher
         services.AddScoped<IDbContextDomainEventDispatcher, DbContextDomainEventDispatcher>();
 
@@ -104,33 +118,26 @@ public static class OutboxServiceCollectionExtensions
                         );
                 }
 
-                // Configure specific bus outbox with delivery service settings
-                outboxConfig.UseBusOutbox(busOutboxConfig =>
-                {
-                    // Delivery service configuration
-                    busOutboxConfig.MessageDeliveryLimit = 10;
-                    busOutboxConfig.MessageDeliveryTimeout = TimeSpan.FromMinutes(5);
-                });
-
-                // Configure delivery service with retry limits and timeout settings
-                outboxConfig.QueryDelay = TimeSpan.FromSeconds(1);
-                outboxConfig.QueryMessageLimit = 100;
-                outboxConfig.QueryTimeout = TimeSpan.FromSeconds(30);
+                // Configure delivery service query settings
+                outboxConfig.QueryDelay = TimeSpan.FromSeconds(outboxOptions.QueryDelaySeconds);
 
                 // Configure duplicate detection with time-based deduplication window
-                outboxConfig.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
+                outboxConfig.DuplicateDetectionWindow = TimeSpan.FromMinutes(
+                    outboxOptions.DuplicateDetectionWindowMinutes
+                );
 
-                outboxConfig.DisableInboxCleanupService();
+                // Conditionally disable inbox cleanup service based on configuration
+                if (outboxOptions.DisableInboxCleanupService)
+                {
+                    outboxConfig.DisableInboxCleanupService();
+                }
             });
 
             // Configure Azure Service Bus with enhanced patterns
             config.UsingAzureServiceBus(
                 (context, cfg) =>
                 {
-                    var connectionString = configuration.GetConnectionString("AzureServiceBus");
-                    Guard.AgainstNullOrEmpty(connectionString);
-
-                    cfg.Host(connectionString);
+                    cfg.Host(options.AzureServiceBus.ConnectionString);
 
                     // Delegate message type configuration to the microservice
                     // This allows each service to explicitly control its message topology
@@ -139,21 +146,27 @@ public static class OutboxServiceCollectionExtensions
                     // Enhanced retry policy configuration
                     cfg.UseMessageRetry(retry =>
                     {
+                        var retryConfig = options.Retry;
                         retry.Exponential(
-                            3,
-                            TimeSpan.FromSeconds(1),
-                            TimeSpan.FromMinutes(1),
-                            TimeSpan.FromSeconds(5)
+                            retryConfig.RetryLimit,
+                            TimeSpan.FromSeconds(retryConfig.InitialRetryIntervalSeconds),
+                            TimeSpan.FromSeconds(retryConfig.MaxRetryIntervalSeconds),
+                            TimeSpan.FromSeconds(retryConfig.RetryIntervalIncrementSeconds)
                         );
                     });
 
                     // Circuit breaker configuration for fault tolerance
                     cfg.UseCircuitBreaker(cb =>
                     {
-                        cb.TrackingPeriod = TimeSpan.FromMinutes(1);
-                        cb.TripThreshold = 15;
-                        cb.ActiveThreshold = 10;
-                        cb.ResetInterval = TimeSpan.FromMinutes(5);
+                        var circuitBreakerConfig = options.CircuitBreaker;
+                        cb.TrackingPeriod = TimeSpan.FromMinutes(
+                            circuitBreakerConfig.TrackingPeriodMinutes
+                        );
+                        cb.TripThreshold = circuitBreakerConfig.TripThreshold;
+                        cb.ActiveThreshold = circuitBreakerConfig.ActiveThreshold;
+                        cb.ResetInterval = TimeSpan.FromMinutes(
+                            circuitBreakerConfig.ResetIntervalMinutes
+                        );
                     });
 
                     // Configure automatic endpoints for all registered consumers
