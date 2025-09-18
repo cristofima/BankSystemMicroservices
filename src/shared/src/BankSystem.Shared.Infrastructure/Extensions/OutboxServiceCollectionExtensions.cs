@@ -118,6 +118,8 @@ public static class OutboxServiceCollectionExtensions
                         );
                 }
 
+                outboxConfig.UseBusOutbox();
+
                 // Configure delivery service query settings
                 outboxConfig.QueryDelay = TimeSpan.FromSeconds(outboxOptions.QueryDelaySeconds);
 
