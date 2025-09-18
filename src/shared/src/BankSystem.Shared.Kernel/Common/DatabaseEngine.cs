@@ -14,9 +14,4 @@ public enum DatabaseEngine
     /// PostgreSQL database.
     /// </summary>
     PostgreSql = 2,
-
-    /// <summary>
-    /// Azure Cosmos DB.
-    /// </summary>
-    CosmosDb = 3,
 }

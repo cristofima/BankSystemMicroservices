@@ -13,9 +13,9 @@ public class OutboxOptionsTests
         // Arrange
         var configurationData = new Dictionary<string, string>
         {
-            [$"{OutboxOptions.SectionName}:QueryDelaySeconds"] = "2",
-            [$"{OutboxOptions.SectionName}:DuplicateDetectionWindowMinutes"] = "10",
-            [$"{OutboxOptions.SectionName}:DisableInboxCleanupService"] = "true",
+            [$"{MassTransitOptions.SectionName}:Outbox:QueryDelaySeconds"] = "2",
+            [$"{MassTransitOptions.SectionName}:Outbox:DuplicateDetectionWindowMinutes"] = "10",
+            [$"{MassTransitOptions.SectionName}:Outbox:DisableInboxCleanupService"] = "true",
         };
 
         var configuration = new ConfigurationBuilder()
@@ -23,34 +23,36 @@ public class OutboxOptionsTests
             .Build();
 
         var services = new ServiceCollection();
-        services.Configure<OutboxOptions>(configuration.GetSection(OutboxOptions.SectionName));
+        services.Configure<MassTransitOptions>(
+            configuration.GetSection(MassTransitOptions.SectionName)
+        );
 
         // Act
         using var serviceProvider = services.BuildServiceProvider();
-        var options = serviceProvider.GetRequiredService<IOptions<OutboxOptions>>().Value;
+        var options = serviceProvider.GetRequiredService<IOptions<MassTransitOptions>>().Value;
 
         // Assert
-        options.QueryDelaySeconds.Should().Be(2);
-        options.DuplicateDetectionWindowMinutes.Should().Be(10);
-        options.DisableInboxCleanupService.Should().BeTrue();
+        options.Outbox.QueryDelaySeconds.Should().Be(2);
+        options.Outbox.DuplicateDetectionWindowMinutes.Should().Be(10);
+        options.Outbox.DisableInboxCleanupService.Should().BeTrue();
     }
 
     [Fact]
     public void OutboxOptions_WithDefaults_ShouldHaveExpectedValues()
     {
         // Arrange & Act
-        var options = new OutboxOptions();
+        var options = new MassTransitOptions();
 
         // Assert
-        options.QueryDelaySeconds.Should().Be(1);
-        options.DuplicateDetectionWindowMinutes.Should().Be(5);
-        options.DisableInboxCleanupService.Should().BeFalse();
+        options.Outbox.QueryDelaySeconds.Should().Be(1);
+        options.Outbox.DuplicateDetectionWindowMinutes.Should().Be(5);
+        options.Outbox.DisableInboxCleanupService.Should().BeFalse();
     }
 
     [Fact]
     public void OutboxOptions_SectionName_ShouldBeCorrect()
     {
         // Act & Assert
-        OutboxOptions.SectionName.Should().Be("MassTransit.Outbox");
+        MassTransitOptions.SectionName.Should().Be("MassTransit");
     }
 }

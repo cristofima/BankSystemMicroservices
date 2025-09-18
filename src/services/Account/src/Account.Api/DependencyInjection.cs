@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BankSystem.Account.Api.Middlewares;
 using BankSystem.Account.Application.Behaviours;
-using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Shared.WebApiDefaults.Extensions;
 
 namespace BankSystem.Account.Api;
@@ -32,9 +31,6 @@ public static class DependencyInjection
             config.RegisterServicesFromAssembly(typeof(Application.IAssemblyReference).Assembly);
             config.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
         });
-
-        // Add health checks
-        services.AddDbContextHealthCheck<AccountDbContext>();
 
         return services;
     }
