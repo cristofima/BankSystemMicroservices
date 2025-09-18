@@ -1,4 +1,5 @@
-﻿using BankSystem.Shared.Kernel.Common;
+﻿using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.Kernel.Common;
 using BankSystem.Shared.Kernel.Events;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -27,9 +28,11 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
         IPublishEndpoint publishEndpoint
     )
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _publishEndpoint =
-            publishEndpoint ?? throw new ArgumentNullException(nameof(publishEndpoint));
+        Guard.AgainstNull(logger);
+        Guard.AgainstNull(publishEndpoint);
+
+        _logger = logger;
+        _publishEndpoint = publishEndpoint;
     }
 
     /// <summary>
@@ -38,16 +41,16 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
     /// Events are not cleared from aggregates to allow EF Core to process them in the outbox pattern.
     /// </summary>
     /// <param name="dbContext">Entity Framework DbContext for transaction coordination.</param>
-    /// <param name="aggregates">Collection of aggregate roots containing domain events to dispatch.</param>
+    /// <param name="aggregatesWithEvents">Collection of aggregate roots containing domain events to dispatch.</param>
     /// <param name="cancellationToken">Cancellation token for async operation.</param>
     /// <returns>Task representing the asynchronous dispatch operation.</returns>
     public async Task DispatchEventsWithDbContextAsync(
         DbContext dbContext,
-        IEnumerable<IAggregateRoot> aggregates,
+        IEnumerable<IAggregateRoot> aggregatesWithEvents,
         CancellationToken cancellationToken = default
     )
     {
-        var aggregateList = aggregates.ToList();
+        var aggregateList = aggregatesWithEvents.ToList();
         _logger.LogDebug(
             "Starting enhanced outbox dispatch for {Count} aggregates",
             aggregateList.Count
@@ -55,13 +58,12 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
 
         try
         {
-            // Use IPublishEndpoint from DbContext, not IBus directly
-            // This is essential for proper outbox pattern integration
+            aggregateList = aggregateList
+                .Where(aggregate => aggregate.DomainEvents.Count != 0)
+                .ToList();
+
             foreach (var aggregate in aggregateList)
             {
-                if (!aggregate.DomainEvents.Any())
-                    continue;
-
                 _logger.LogDebug(
                     "Processing {EventCount} events for aggregate {AggregateType} {AggregateId}",
                     aggregate.DomainEvents.Count,
@@ -184,7 +186,7 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
     }
 
     /// <summary>
-    /// Dispatches a single domain event directly. 
+    /// Dispatches a single domain event directly.
     /// Note: This method is not fully implemented as events should be dispatched through aggregates with DbContext for enhanced metadata.
     /// </summary>
     /// <param name="domainEvent">The domain event to dispatch</param>
@@ -216,30 +218,41 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
     {
         // Extract service name from event type (e.g., "AccountCreatedEvent" -> "Account")
         // This assumes event naming convention: {Service}{Action}Event
-        if (eventType.EndsWith("Event", StringComparison.OrdinalIgnoreCase))
+        if (!eventType.EndsWith("Event", StringComparison.OrdinalIgnoreCase))
+            return eventType;
+
+        // Remove "Event" suffix and try to extract service name
+        var withoutEvent = eventType[..^5]; // Remove "Event"
+
+        // Look for common action patterns and extract service name
+        var actionPatterns = new[]
         {
-            // Remove "Event" suffix and try to extract service name
-            var withoutEvent = eventType[..^5]; // Remove "Event"
-            
-            // Look for common action patterns and extract service name
-            var actionPatterns = new[] { "Created", "Updated", "Deleted", "Activated", "Deactivated", 
-                                       "Suspended", "Closed", "Opened", "Processed", "Completed", 
-                                       "Failed", "Cancelled", "Approved", "Rejected" };
-            
-            foreach (var pattern in actionPatterns)
+            "Created",
+            "Updated",
+            "Deleted",
+            "Activated",
+            "Deactivated",
+            "Suspended",
+            "Closed",
+            "Opened",
+            "Processed",
+            "Completed",
+            "Failed",
+            "Cancelled",
+            "Approved",
+            "Rejected",
+        };
+
+        foreach (var pattern in actionPatterns)
+        {
+            if (withoutEvent.EndsWith(pattern, StringComparison.OrdinalIgnoreCase))
             {
-                if (withoutEvent.EndsWith(pattern, StringComparison.OrdinalIgnoreCase))
-                {
-                    return withoutEvent[..^pattern.Length];
-                }
+                return withoutEvent[..^pattern.Length];
             }
-            
-            // If no pattern found, return the event name without "Event"
-            return withoutEvent;
         }
-        
-        // Fallback: return as is if doesn't end with "Event"
-        return eventType;
+
+        // If no pattern found, return the event name without "Event"
+        return withoutEvent;
     }
 
     /// <summary>
