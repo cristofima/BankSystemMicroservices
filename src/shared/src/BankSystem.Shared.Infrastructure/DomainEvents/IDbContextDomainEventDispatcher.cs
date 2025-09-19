@@ -1,5 +1,4 @@
 using BankSystem.Shared.Kernel.Common;
-using BankSystem.Shared.Kernel.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankSystem.Shared.Infrastructure.DomainEvents;
@@ -15,7 +14,7 @@ namespace BankSystem.Shared.Infrastructure.DomainEvents;
 /// implementation ensures that both data changes and event publishing are atomically committed,
 /// preventing scenarios where data is saved but events fail to publish or vice versa.
 /// </remarks>
-public interface IDbContextDomainEventDispatcher : IDomainEventDispatcher
+public interface IDbContextDomainEventDispatcher
 {
     /// <summary>
     /// Dispatches domain events from aggregate root entities within the same database transaction

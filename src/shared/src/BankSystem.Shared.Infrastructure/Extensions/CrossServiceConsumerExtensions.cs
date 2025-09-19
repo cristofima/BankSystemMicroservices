@@ -47,15 +47,15 @@ public static class CrossServiceConsumerExtensions
     /// <exception cref="ArgumentException">
     /// Thrown when consumerServiceName or sourceDomainName is empty or whitespace.
     /// </exception>
-    public static void ConfigureCrossServiceConsumption(
+    public static void ConfigureCrossServiceSubscription(
         this IServiceBusBusFactoryConfigurator cfg,
         string consumerServiceName,
         string sourceDomainName,
         Action<IServiceBusSubscriptionEndpointConfigurator> configureConsumers
     )
     {
-        var subscriptionName = $"{consumerServiceName.ToLower()}-service";
-        var topicName = $"{sourceDomainName.ToLower()}-events";
+        var subscriptionName = $"{consumerServiceName.ToLowerInvariant()}-service";
+        var topicName = $"{sourceDomainName.ToLowerInvariant()}-events";
 
         cfg.SubscriptionEndpoint(
             subscriptionName,
