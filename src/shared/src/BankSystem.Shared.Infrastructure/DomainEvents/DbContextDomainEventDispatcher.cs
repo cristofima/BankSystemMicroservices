@@ -1,6 +1,5 @@
 ﻿using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Kernel.Common;
-using BankSystem.Shared.Kernel.Events;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace BankSystem.Shared.Infrastructure.DomainEvents;
 
 /// <summary>
-/// Enhanced domain event dispatcher implementing Outbox pattern best practices.
+/// Domain event dispatcher implementing Outbox pattern best practices.
 /// Provides reliable domain event publishing through MassTransit's Entity Framework Outbox integration.
 /// Events are stored in database tables and delivered by background services for guaranteed delivery.
 /// </summary>
@@ -59,11 +58,25 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
         try
         {
             aggregateList = aggregateList
-                .Where(aggregate => aggregate.DomainEvents.Count != 0)
+                .Where(aggregate => aggregate.DomainEvents.Count > 0)
                 .ToList();
+
+            var eventCount = aggregateList.Sum(a => a.DomainEvents.Count);
+            _logger.LogDebug(
+                "Starting enhanced outbox dispatch for {AggregateCount} aggregates with {EventCount} events",
+                aggregateList.Count,
+                eventCount
+            );
+
+            if (eventCount == 0)
+            {
+                _logger.LogDebug("No domain events to dispatch.");
+                return;
+            }
 
             foreach (var aggregate in aggregateList)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 _logger.LogDebug(
                     "Processing {EventCount} events for aggregate {AggregateType} {AggregateId}",
                     aggregate.DomainEvents.Count,
@@ -93,12 +106,16 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
                             context =>
                             {
                                 // Set message headers and properties for enhanced routing and observability
-                                context.MessageId = NewId.NextGuid();
+                                context.MessageId = domainEvent.EventId;
                                 context.CorrelationId = domainEvent.EventId;
                                 context.TimeToLive = TimeSpan.FromDays(7);
 
                                 // Add custom headers for routing and filtering
                                 context.Headers.Set("EventType", eventType);
+                                context.Headers.Set(
+                                    "AggregateId",
+                                    GetAggregateId(aggregate) ?? "Unknown"
+                                );
                                 context.Headers.Set("Version", domainEvent.Version);
                                 context.Headers.Set("OccurredOn", domainEvent.OccurredOn);
                                 context.Headers.Set("Source", GetSourceFromEventType(eventType));
@@ -133,8 +150,10 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
                 );
             }
 
+            var totalEvents = aggregateList.Sum(a => a.DomainEvents.Count);
             _logger.LogInformation(
-                "Successfully stored {Count} aggregate events in Outbox for background processing (events preserved for EF Core)",
+                "Successfully stored {EventCount} domain events from {AggregateCount} aggregates in Outbox for background processing (events preserved for EF Core)",
+                totalEvents,
                 aggregateList.Count
             );
         }
@@ -143,69 +162,6 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
             _logger.LogError(ex, "Error in enhanced outbox dispatch process");
             throw;
         }
-    }
-
-    /// <summary>
-    /// Dispatches domain events from a single aggregate root by delegating to the collection method.
-    /// </summary>
-    /// <param name="aggregateRoot">The aggregate root containing domain events to dispatch</param>
-    /// <param name="cancellationToken">Token to monitor for cancellation requests</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    public async Task DispatchEventsAsync(
-        IAggregateRoot aggregateRoot,
-        CancellationToken cancellationToken = default
-    )
-    {
-        await DispatchEventsAsync([aggregateRoot], cancellationToken);
-    }
-
-    /// <summary>
-    /// Dispatches domain events from multiple aggregate roots for outbox pattern processing.
-    /// This method validates the aggregates and delegates to DbContext-based dispatch for enhanced metadata.
-    /// </summary>
-    /// <param name="aggregateRoots">Collection of aggregate roots containing domain events</param>
-    /// <param name="cancellationToken">Token to monitor for cancellation requests</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    public Task DispatchEventsAsync(
-        IEnumerable<IAggregateRoot> aggregateRoots,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var aggregateList = aggregateRoots.ToList();
-        _logger.LogDebug(
-            "Starting to dispatch {Count} aggregates with events",
-            aggregateList.Count
-        );
-
-        _logger.LogInformation(
-            "Successfully processed {Count} aggregates for outbox dispatch",
-            aggregateList.Count
-        );
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Dispatches a single domain event directly.
-    /// Note: This method is not fully implemented as events should be dispatched through aggregates with DbContext for enhanced metadata.
-    /// </summary>
-    /// <param name="domainEvent">The domain event to dispatch</param>
-    /// <param name="cancellationToken">Token to monitor for cancellation requests</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    public async Task DispatchEventAsync(
-        IDomainEvent domainEvent,
-        CancellationToken cancellationToken = default
-    )
-    {
-        _logger.LogDebug(
-            "Dispatching single domain event: {EventType}",
-            domainEvent.GetType().Name
-        );
-
-        _logger.LogWarning(
-            "Direct event dispatch not implemented - events should be dispatched through aggregates with DbContext"
-        );
-        await Task.CompletedTask;
     }
 
     /// <summary>
