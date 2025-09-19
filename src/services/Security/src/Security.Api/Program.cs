@@ -1,10 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using BankSystem.ServiceDefaults;
 using BankSystem.Shared.WebApiDefaults.Extensions;
 using Security.Api;
 using Security.Api.Middleware;
 using Security.Application;
 using Security.Infrastructure;
-using System.Diagnostics.CodeAnalysis;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -29,5 +29,4 @@ app.MapControllers();
 await app.RunAsync();
 
 [ExcludeFromCodeCoverage]
-public static partial class Program
-{ }
+public static partial class Program { }

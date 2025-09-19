@@ -32,7 +32,7 @@ public static class Guard
     /// <param name="parameterName">The name of the parameter being checked</param>
     /// <exception cref="ArgumentException">Thrown when value is null or empty</exception>
     public static void AgainstNullOrEmpty(
-        string value,
+        string? value,
         [CallerArgumentExpression("value")] string? parameterName = null
     )
     {

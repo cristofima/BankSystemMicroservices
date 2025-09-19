@@ -1,11 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BankSystem.Account.Application.Interfaces;
+using BankSystem.Account.Domain.Events;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Account.Infrastructure.Repositories;
 using BankSystem.Shared.Auditing;
 using BankSystem.Shared.Infrastructure.DomainEvents;
 using BankSystem.Shared.Infrastructure.Extensions;
 using BankSystem.Shared.Kernel.Common;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -49,18 +51,39 @@ public static class DependencyInjection
             }
         );
 
-        // Domain Events infra (emitter/dispatcher)
-        services.AddDomainEventEmission();
-
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<SaveChangesInterceptor, DomainEventDispatchInterceptor>();
         services.AddScoped<SaveChangesInterceptor, AuditSaveChangesInterceptor>();
 
-        services.AddEntityFrameworkOutbox<AccountDbContext>(
+        // Configure MassTransit with Outbox Support
+        services.AddMassTransitOutboxSupport<AccountDbContext>(
             configuration,
-            DatabaseEngine.PostgreSql
+            DatabaseEngine.PostgreSql,
+            "Account",
+            configureMessageTypes: ConfigureAccountMessageTypes
         );
 
         return services;
+    }
+
+    /// <summary>
+    /// Configures message types specific to the Account domain.
+    /// This method defines all domain events and message types that the Account service publishes.
+    /// </summary>
+    /// <param name="busConfigurator">The bus configurator to configure message types with.</param>
+    private static void ConfigureAccountMessageTypes(
+        IServiceBusBusFactoryConfigurator busConfigurator
+    )
+    {
+        // Configure Account domain publishing using best practices pattern
+        // This creates the "account-events" topic for Account domain events
+        busConfigurator.ConfigureDomainPublishing(
+            "account",
+            typeof(AccountCreatedEvent),
+            typeof(AccountSuspendedEvent),
+            typeof(AccountActivatedEvent),
+            typeof(AccountClosedEvent),
+            typeof(AccountFrozenEvent)
+        );
     }
 }

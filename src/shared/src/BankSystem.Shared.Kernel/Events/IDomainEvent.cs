@@ -1,12 +1,10 @@
-using MediatR;
-
 namespace BankSystem.Shared.Kernel.Events;
 
 /// <summary>
 /// Represents a domain event that occurred within the domain model.
 /// Domain events are used for internal communication within the same bounded context.
 /// </summary>
-public interface IDomainEvent : INotification
+public interface IDomainEvent
 {
     /// <summary>
     /// Unique identifier for the event
