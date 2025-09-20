@@ -14,6 +14,8 @@ namespace BankSystem.Shared.Infrastructure.Extensions;
 /// </remarks>
 public static class CrossServiceConsumerExtensions
 {
+    private static readonly char[] InvalidCharacters = ['/', '\\', '#', '?'];
+
     /// <summary>
     /// Configures cross-service event consumption with explicit consumer specification and standardized
     /// Azure Service Bus subscription endpoint configuration.
@@ -53,7 +55,17 @@ public static class CrossServiceConsumerExtensions
         Guard.AgainstNull(context);
         Guard.AgainstNull(configureConsumers);
         Guard.AgainstNullOrEmpty(consumerServiceName);
-        Guard.AgainstNullOrEmpty(consumerServiceName);
+        Guard.AgainstNullOrEmpty(sourceDomainName);
+
+        Guard.Against(
+            consumerServiceName.IndexOfAny(InvalidCharacters) >= 0,
+            "consumerServiceName contains invalid characters for Azure Service Bus entities."
+        );
+
+        Guard.Against(
+            sourceDomainName.IndexOfAny(InvalidCharacters) >= 0,
+            "sourceDomainName contains invalid characters for Azure Service Bus entities."
+        );
 
         var subscriptionName = $"{consumerServiceName.ToLowerInvariant()}-service";
         var topicName = $"{sourceDomainName.ToLowerInvariant()}-events";
