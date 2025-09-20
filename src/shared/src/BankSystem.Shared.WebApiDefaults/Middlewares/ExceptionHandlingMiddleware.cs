@@ -1,17 +1,18 @@
-﻿using BankSystem.Shared.Domain.Exceptions;
-using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using BankSystem.Shared.Domain.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 
-namespace BankSystem.Account.Api.Middlewares;
+namespace BankSystem.Shared.WebApiDefaults.Middlewares;
 
 [ExcludeFromCodeCoverage]
 public sealed class ExceptionHandlingMiddleware : IMiddleware
 {
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger) => _logger = logger;
+    public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger) =>
+        _logger = logger;
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -56,13 +57,13 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         exception switch
         {
             CustomValidationException => StatusCodes.Status400BadRequest,
-            _ => StatusCodes.Status500InternalServerError
+            _ => StatusCodes.Status500InternalServerError,
         };
 
     private static string GetTitle(Exception exception) =>
         exception switch
         {
             CustomValidationException validationException => validationException.Title,
-            _ => "Internal Server Error"
+            _ => "Internal Server Error",
         };
 }

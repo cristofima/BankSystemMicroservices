@@ -4,6 +4,7 @@ using Asp.Versioning;
 using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Infrastructure.Extensions;
 using BankSystem.Shared.Kernel.Common;
+using BankSystem.Shared.WebApiDefaults.Middlewares;
 using BankSystem.Shared.WebApiDefaults.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -172,6 +173,9 @@ public static class WebApiExtensions
             );
         });
 
+        // Add Middlewares
+        services.AddTransient<ExceptionHandlingMiddleware>();
+
         return services;
     }
 
@@ -195,10 +199,12 @@ public static class WebApiExtensions
     }
 
     /// <summary>
-    /// Configures the common Web API middleware pipeline for all microservices.
-    /// This includes API-specific middleware like authentication, CORS, and documentation.
-    /// Note: Use this AFTER configuring Aspire ServiceDefaults middleware.
+    /// Configures the common Web API middleware pipeline for all microservices and map the controllers.
     /// </summary>
+    /// <remarks>
+    /// This includes API-specific middleware like authentication, CORS, and documentation.
+    /// Note: Use this AFTER configuring Aspire MapDefaultEndpoints middleware.
+    /// </remarks>
     /// <param name="app">The web application</param>
     /// <param name="apiTitle">The title for the API documentation</param>
     /// <returns>The web application for chaining</returns>
@@ -222,6 +228,9 @@ public static class WebApiExtensions
             app.UseHsts(); // HTTP Strict Transport Security
         }
 
+        // Middlewares
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         // Core middleware pipeline (order matters!)
         app.UseHttpsRedirection();
 
@@ -244,6 +253,9 @@ public static class WebApiExtensions
                 return Results.Redirect(redirectTarget);
             }
         );
+
+        // Map controllers
+        app.MapControllers();
 
         return app;
     }
