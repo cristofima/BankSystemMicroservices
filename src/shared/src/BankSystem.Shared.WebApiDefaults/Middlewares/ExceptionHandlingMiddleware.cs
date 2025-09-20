@@ -37,17 +37,18 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
             Type = $"https://httpstatuses.com/{statusCode}",
             Title = GetTitle(exception),
             Status = statusCode,
-            Detail = exception.Message,
+            Detail = "An unexpected error occurred. Please try again later.",
         };
 
         if (exception is CustomValidationException validationException)
         {
+            response.Detail = exception.Message;
             response.Extensions["errors"] = validationException.Errors;
         }
 
         response.Extensions["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
 
-        httpContext.Response.ContentType = "application/json";
+        httpContext.Response.ContentType = "application/problem+json";
         httpContext.Response.StatusCode = statusCode;
 
         await httpContext.Response.WriteAsync(JsonSerializer.Serialize(response));
