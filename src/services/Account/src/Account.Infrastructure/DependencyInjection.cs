@@ -28,6 +28,19 @@ public static class DependencyInjection
             configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Database connection string not configured");
 
+        ConfigureDb(services, configuration, connectionString);
+        ConfigureInterceptors(services);
+        ConfigureMessaging(services, configuration);
+
+        return services;
+    }
+
+    private static void ConfigureDb(
+        IServiceCollection services,
+        IConfiguration configuration,
+        string connectionString
+    )
+    {
         services.AddDbContext<AccountDbContext>(
             (sp, options) =>
             {
@@ -50,20 +63,26 @@ public static class DependencyInjection
                     options.EnableSensitiveDataLogging();
             }
         );
+    }
 
+    private static void ConfigureInterceptors(IServiceCollection services)
+    {
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<SaveChangesInterceptor, DomainEventDispatchInterceptor>();
         services.AddScoped<SaveChangesInterceptor, AuditSaveChangesInterceptor>();
+    }
 
-        // Configure MassTransit with Outbox Support
+    private static void ConfigureMessaging(
+        IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
         services.AddMassTransitOutboxSupport<AccountDbContext>(
             configuration,
             DatabaseEngine.PostgreSql,
             "Account",
             configureMessageTypes: ConfigureAccountMessageTypes
         );
-
-        return services;
     }
 
     /// <summary>
@@ -71,8 +90,10 @@ public static class DependencyInjection
     /// This method defines all domain events and message types that the Account service publishes.
     /// </summary>
     /// <param name="busConfigurator">The bus configurator to configure message types with.</param>
+    /// <param name="_">The registration context for configuring consumers.</param>
     private static void ConfigureAccountMessageTypes(
-        IServiceBusBusFactoryConfigurator busConfigurator
+        IServiceBusBusFactoryConfigurator busConfigurator,
+        IRegistrationContext _
     )
     {
         // Configure Account domain publishing using best practices pattern

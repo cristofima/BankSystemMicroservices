@@ -29,7 +29,7 @@ public static class DependencyInjection
         );
 
         // Add Security-specific health checks
-        services.AddDbContextHealthCheck<SecurityDbContext>("database");
+        services.AddDbContextHealthCheck<SecurityDbContext>();
 
         // Add memory cache for token revocation
         services.AddMemoryCache();

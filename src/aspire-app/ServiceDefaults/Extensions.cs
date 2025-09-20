@@ -83,7 +83,7 @@ public static partial class Extensions
             }
         });
 
-        // Add Serilog configuration (from ChatGPT conversation)
+        // Add Serilog configuration
         builder.AddSerilogLogging();
 
         return builder;
@@ -91,7 +91,6 @@ public static partial class Extensions
 
     /// <summary>
     /// Configures Serilog as the primary logging provider.
-    /// Based on best practices from ChatGPT conversation.
     /// </summary>
     public static TBuilder AddSerilogLogging<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder

@@ -1,17 +1,18 @@
-﻿using BankSystem.Shared.Domain.Exceptions;
-using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using BankSystem.Shared.Domain.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 
-namespace BankSystem.Account.Api.Middlewares;
+namespace BankSystem.Shared.WebApiDefaults.Middlewares;
 
 [ExcludeFromCodeCoverage]
 public sealed class ExceptionHandlingMiddleware : IMiddleware
 {
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger) => _logger = logger;
+    public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger) =>
+        _logger = logger;
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -36,17 +37,18 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
             Type = $"https://httpstatuses.com/{statusCode}",
             Title = GetTitle(exception),
             Status = statusCode,
-            Detail = exception.Message,
+            Detail = "An unexpected error occurred. Please try again later.",
         };
 
         if (exception is CustomValidationException validationException)
         {
+            response.Detail = exception.Message;
             response.Extensions["errors"] = validationException.Errors;
         }
 
         response.Extensions["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
 
-        httpContext.Response.ContentType = "application/json";
+        httpContext.Response.ContentType = "application/problem+json";
         httpContext.Response.StatusCode = statusCode;
 
         await httpContext.Response.WriteAsync(JsonSerializer.Serialize(response));
@@ -56,13 +58,13 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         exception switch
         {
             CustomValidationException => StatusCodes.Status400BadRequest,
-            _ => StatusCodes.Status500InternalServerError
+            _ => StatusCodes.Status500InternalServerError,
         };
 
     private static string GetTitle(Exception exception) =>
         exception switch
         {
             CustomValidationException validationException => validationException.Title,
-            _ => "Internal Server Error"
+            _ => "Internal Server Error",
         };
 }

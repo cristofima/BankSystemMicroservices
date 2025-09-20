@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using BankSystem.Account.Api.Middlewares;
 using BankSystem.Account.Application.Behaviours;
+using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Shared.WebApiDefaults.Extensions;
 
 namespace BankSystem.Account.Api;
@@ -14,17 +14,9 @@ public static class DependencyInjection
     )
     {
         // Add shared service defaults with Controllers configuration
-        services.AddWebApiDefaults(
-            configuration,
-            "Account API",
-            configureControllers: options =>
-            {
-                // Global model validation
-                options.ModelValidatorProviders.Clear();
-            }
-        );
+        services.AddWebApiDefaults(configuration, "Account API");
 
-        services.AddTransient<ExceptionHandlingMiddleware>();
+        services.AddDbContextHealthCheck<AccountDbContext>();
 
         services.AddMediatR(config =>
         {

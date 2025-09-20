@@ -23,9 +23,6 @@ app.UseMiddleware<TokenRevocationMiddleware>();
 // Use service defaults middleware pipeline
 app.UseWebApiDefaults("Security API");
 
-// Map controllers
-app.MapControllers();
-
 await app.RunAsync();
 
 [ExcludeFromCodeCoverage]
