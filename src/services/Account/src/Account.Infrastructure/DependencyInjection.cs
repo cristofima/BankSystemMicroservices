@@ -71,8 +71,10 @@ public static class DependencyInjection
     /// This method defines all domain events and message types that the Account service publishes.
     /// </summary>
     /// <param name="busConfigurator">The bus configurator to configure message types with.</param>
+    /// <param name="context">The registration context for configuring consumers.</param>
     private static void ConfigureAccountMessageTypes(
-        IServiceBusBusFactoryConfigurator busConfigurator
+        IServiceBusBusFactoryConfigurator busConfigurator,
+        IRegistrationContext context
     )
     {
         // Configure Account domain publishing using best practices pattern

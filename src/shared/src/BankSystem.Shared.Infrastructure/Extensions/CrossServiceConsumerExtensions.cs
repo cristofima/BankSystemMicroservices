@@ -1,3 +1,4 @@
+using BankSystem.Shared.Domain.Validation;
 using MassTransit;
 
 namespace BankSystem.Shared.Infrastructure.Extensions;
@@ -18,23 +19,17 @@ public static class CrossServiceConsumerExtensions
     /// Azure Service Bus subscription endpoint configuration.
     /// </summary>
     /// <param name="cfg">The MassTransit Service Bus factory configurator for setting up messaging endpoints.</param>
+    /// <param name="context">The registration context providing access to registered consumers for configuration.</param>
     /// <param name="consumerServiceName">The name of the consuming service (e.g., "security", "notification").</param>
     /// <param name="sourceDomainName">The source domain name that publishes events (e.g., "account", "transaction").</param>
     /// <param name="configureConsumers">Action delegate to configure specific consumers for the subscription endpoint.</param>
     /// <remarks>
     /// <para>
     /// This method creates a dedicated Azure Service Bus subscription endpoint following the naming convention:
-    /// - Subscription Name: "{consumerServiceName}-service"
-    /// - Topic Name: "{sourceDomainName}-events"
-    /// </para>
-    /// <para>
-    /// The endpoint is configured with production-ready settings including:
-    /// - Message TTL: 14 days
-    /// - Dead letter queue: Enabled on expiration
-    /// - Max delivery attempts: 5
-    /// - Lock duration: 10 minutes
-    /// - Prefetch count: 5 messages
-    /// - Concurrent processing: 3 messages
+    /// <list type="bullet">
+    /// <item>Subscription Name: "{consumerServiceName}-service"</item>
+    /// <item>Topic Name: "{sourceDomainName}-events"</item>
+    /// </list>
     /// </para>
     /// <para>
     /// Consume topology is disabled to prevent automatic queue creation and ensure explicit control
@@ -42,18 +37,24 @@ public static class CrossServiceConsumerExtensions
     /// </para>
     /// </remarks>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when cfg, consumerServiceName, sourceDomainName, or configureConsumers is null.
+    /// Thrown when context or configureConsumers is null.
     /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown when consumerServiceName or sourceDomainName is empty or whitespace.
     /// </exception>
     public static void ConfigureCrossServiceSubscription(
         this IServiceBusBusFactoryConfigurator cfg,
+        IRegistrationContext context,
         string consumerServiceName,
         string sourceDomainName,
-        Action<IServiceBusSubscriptionEndpointConfigurator> configureConsumers
+        Action<IServiceBusSubscriptionEndpointConfigurator, IRegistrationContext> configureConsumers
     )
     {
+        Guard.AgainstNull(context);
+        Guard.AgainstNull(configureConsumers);
+        Guard.AgainstNullOrEmpty(consumerServiceName);
+        Guard.AgainstNullOrEmpty(consumerServiceName);
+
         var subscriptionName = $"{consumerServiceName.ToLowerInvariant()}-service";
         var topicName = $"{sourceDomainName.ToLowerInvariant()}-events";
 
@@ -67,12 +68,13 @@ public static class CrossServiceConsumerExtensions
                 endpointConfigurator.DefaultMessageTimeToLive = TimeSpan.FromDays(14);
                 endpointConfigurator.EnableDeadLetteringOnMessageExpiration = true;
                 endpointConfigurator.MaxDeliveryCount = 5;
-                endpointConfigurator.LockDuration = TimeSpan.FromMinutes(10);
+                endpointConfigurator.LockDuration = TimeSpan.FromMinutes(5);
                 endpointConfigurator.PrefetchCount = 5;
                 endpointConfigurator.ConcurrentMessageLimit = 3;
 
                 // Configure domain-specific consumers through the provided configuration action
-                configureConsumers(endpointConfigurator);
+                // Pass both the endpoint configurator and registration context for proper consumer configuration
+                configureConsumers(endpointConfigurator, context);
             }
         );
     }
