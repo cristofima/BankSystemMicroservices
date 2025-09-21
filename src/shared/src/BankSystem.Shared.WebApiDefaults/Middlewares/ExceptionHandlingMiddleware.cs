@@ -20,37 +20,36 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
     public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger) =>
         _logger = logger;
 
-    public async Task InvokeAsync(HttpContext httpContext, RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         try
         {
-            await next(httpContext);
+            await next(context);
         }
-        catch (OperationCanceledException oce)
-            when (httpContext.RequestAborted.IsCancellationRequested)
+        catch (OperationCanceledException oce) when (context.RequestAborted.IsCancellationRequested)
         {
             _logger.LogInformation(oce, "Request was canceled by the client.");
         }
         catch (Exception e)
         {
-            if (httpContext.Response.HasStarted)
+            if (context.Response.HasStarted)
             {
                 _logger.LogWarning(e, "Response has already started; skipping ProblemDetails.");
                 throw;
             }
 
-            var correlationId = GetCorrelationId(httpContext);
+            var correlationId = GetCorrelationId(context);
 
             _logger.LogError(
                 e,
                 "Unhandled exception while processing {Method} {Path}. TraceId={TraceId}, CorrelationId={CorrelationId}",
-                httpContext.Request.Method,
-                httpContext.Request.Path.Value,
-                Activity.Current?.Id ?? httpContext.TraceIdentifier,
+                context.Request.Method,
+                context.Request.Path.Value,
+                Activity.Current?.Id ?? context.TraceIdentifier,
                 correlationId
             );
 
-            await HandleExceptionAsync(httpContext, e);
+            await HandleExceptionAsync(context, e);
         }
     }
 

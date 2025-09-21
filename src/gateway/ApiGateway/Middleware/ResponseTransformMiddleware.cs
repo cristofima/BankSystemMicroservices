@@ -12,6 +12,9 @@ public class ResponseTransformMiddleware
     private readonly ILogger<ResponseTransformMiddleware> _logger;
     private const string CorrelationIdHeaderName = "X-Correlation-ID";
 
+    private static readonly JsonSerializerOptions JsonOptions =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = false };
+
     public ResponseTransformMiddleware(
         RequestDelegate next,
         ILogger<ResponseTransformMiddleware> logger
@@ -85,14 +88,7 @@ public class ResponseTransformMiddleware
             };
 
             // Serialize to JSON
-            var jsonResponse = JsonSerializer.Serialize(
-                problemDetails,
-                new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = false,
-                }
-            );
+            var jsonResponse = JsonSerializer.Serialize(problemDetails, JsonOptions);
 
             // Update response headers
             context.Response.ContentType = "application/problem+json";
