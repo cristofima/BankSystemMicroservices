@@ -1,76 +1,72 @@
 namespace BankSystem.ApiGateway.Middleware;
 
 /// <summary>
-/// Middleware that ensures every request has a correlation ID for distributed tracing.
-/// Creates a new correlation ID if one doesn't exist or validates the existing one.
+/// Middleware to handle correlation ID generation and propagation for distributed tracing.
+/// Ensures every request has a correlation ID for tracking across microservices.
 /// </summary>
 public class CorrelationIdMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<CorrelationIdMiddleware> _logger;
-    private const string CorrelationIdHeaderName = "X-Correlation-ID";
+    private static readonly string CorrelationIdHeaderName = "X-Correlation-ID";
 
     public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
     {
-        _next = next ?? throw new ArgumentNullException(nameof(next));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _next = next;
+        _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext httpContext)
     {
-        var correlationId = GetOrCreateCorrelationId(context);
+        var correlationId = GetOrCreateCorrelationId(httpContext);
 
         // Add correlation ID to response headers for client tracking
-        context.Response.Headers.TryAdd(CorrelationIdHeaderName, correlationId);
-
-        // Add correlation ID to logging context
-        using (_logger.BeginScope(new Dictionary<string, object>
+        if (!httpContext.Response.Headers.ContainsKey(CorrelationIdHeaderName))
         {
-            ["CorrelationId"] = correlationId
-        }))
-        {
-            _logger.LogDebug("Processing request with correlation ID: {CorrelationId}", correlationId);
+            httpContext.Response.Headers[CorrelationIdHeaderName] = correlationId;
+        }
 
-            try
-            {
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Request failed with correlation ID: {CorrelationId}", correlationId);
-                throw;
-            }
+        // Add to logging context
+        using (
+            _logger.BeginScope(new Dictionary<string, object> { ["correlationId"] = correlationId })
+        )
+        {
+            _logger.LogDebug(
+                "Processing request with correlation ID: {CorrelationId}",
+                correlationId
+            );
+            await _next(httpContext);
         }
     }
 
     /// <summary>
     /// Gets existing correlation ID from request headers or creates a new one.
-    /// Validates format and creates new ID if invalid.
     /// </summary>
-    private string GetOrCreateCorrelationId(HttpContext context)
+    private static string GetOrCreateCorrelationId(HttpContext httpContext)
     {
-        var correlationId = context.Request.Headers[CorrelationIdHeaderName].FirstOrDefault();
-
-        if (IsValidCorrelationId(correlationId))
+        if (httpContext.Request.Headers.TryGetValue(CorrelationIdHeaderName, out var correlationId))
         {
-            _logger.LogDebug("Using existing correlation ID: {CorrelationId}", correlationId);
-            return correlationId!;
+            var correlationIdValue = correlationId.ToString();
+            if (IsValidCorrelationId(correlationIdValue))
+            {
+                return correlationIdValue;
+            }
         }
 
-        // Create new correlation ID
+        // Generate new correlation ID if none exists or invalid
         var newCorrelationId = Guid.NewGuid().ToString();
-        context.Request.Headers[CorrelationIdHeaderName] = newCorrelationId;
+        httpContext.Request.Headers[CorrelationIdHeaderName] = newCorrelationId;
 
-        _logger.LogDebug("Created new correlation ID: {CorrelationId}", newCorrelationId);
         return newCorrelationId;
     }
 
     /// <summary>
-    /// Validates correlation ID format (should be a valid GUID).
+    /// Validates if the correlation ID has a proper format.
     /// </summary>
-    private static bool IsValidCorrelationId(string? correlationId)
+    private static bool IsValidCorrelationId(string correlationId)
     {
-        return !string.IsNullOrWhiteSpace(correlationId) &&
-               Guid.TryParse(correlationId, out _);
+        return !string.IsNullOrWhiteSpace(correlationId)
+            && correlationId.Length <= 128
+            && Guid.TryParse(correlationId, out _);
     }
 }

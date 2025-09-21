@@ -49,6 +49,8 @@ The API Gateway is the central entry point for the Bank System Microservices arc
    - Security headers middleware
    - CORS configuration
    - Exception handling with secure error responses
+   - Centralized error handling with RFC 7807 Problem Details
+   - JWT authentication with proper 401 error responses
 
 ### Service Routing
 
@@ -120,6 +122,16 @@ curl -X GET https://localhost:55836/health
 ```bash
 # This should return 401 Unauthorized without a token
 curl -X GET https://localhost:55836/api/v1/accounts
+
+# Expected 401 response with Problem Details JSON:
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.3.1",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Authentication is required to access this resource.",
+  "traceId": "0HN7...",
+  "timestamp": "2025-01-28T..."
+}
 
 # This should work with a valid token
 curl -X GET https://localhost:55836/api/v1/accounts \
@@ -306,6 +318,51 @@ ApiGateway/
 - **Rate Limiting**: API throttling policies per endpoint type
 - **Health Checks**: Service monitoring configuration for all microservices
 
+## Error Handling
+
+### Centralized Exception Handling
+
+The gateway implements centralized error handling using the `ExceptionHandlingMiddleware` which:
+
+- **Catches All Unhandled Exceptions**: Provides consistent error responses across all routes
+- **RFC 7807 Problem Details**: Returns standardized error responses with proper HTTP status codes
+- **Correlation ID Tracking**: Includes correlation IDs in all error responses for request tracing
+- **Security Considerations**: Prevents sensitive information exposure in production
+
+### Error Response Format
+
+All errors return RFC 7807 Problem Details format:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Authentication is required to access this resource",
+  "instance": "/api/v1/accounts",
+  "correlationId": "abc123-def456-ghi789",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+### JWT Authentication Error Handling
+
+The gateway provides enhanced JWT authentication with proper error responses:
+
+- **401 Unauthorized**: Invalid, expired, or missing JWT tokens
+- **403 Forbidden**: Valid JWT token but insufficient permissions for the resource
+- **JSON Error Responses**: All authentication failures return structured JSON instead of default HTML responses
+
+### Middleware Pipeline Order
+
+Critical middleware ordering for proper error handling:
+
+1. **CorrelationIdMiddleware**: Adds correlation ID to requests
+2. **ExceptionHandlingMiddleware**: Catches all exceptions (must be before authentication)
+3. **Authentication**: JWT token validation
+4. **Authorization**: Permission checks
+5. **YARP Reverse Proxy**: Routes to downstream services
+
 ## Monitoring
 
 ### Health Checks
@@ -472,7 +529,45 @@ Once running, the gateway will be available at:
    ```
 
 3. **Protected Endpoint**:
+
    ```bash
    curl https://localhost:55836/api/v1/accounts \
      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+   ```
+
+4. **Authentication Error Response (401)**:
+
+   ```bash
+   # Request without token
+   curl https://localhost:55836/api/v1/accounts
+
+   # Response:
+   {
+     "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+     "title": "Unauthorized",
+     "status": 401,
+     "detail": "Authentication is required to access this resource",
+     "instance": "POST /api/v1/accounts",
+     "correlationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+     "timestamp": "2024-01-15T14:30:00.000Z"
+   }
+   ```
+
+5. **Invalid Token Error Response (401)**:
+
+   ```bash
+   # Request with invalid token
+   curl https://localhost:55836/api/v1/accounts \
+     -H "Authorization: Bearer invalid_token_here"
+
+   # Response:
+   {
+     "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+     "title": "Unauthorized",
+     "status": 401,
+     "detail": "Authentication is required to access this resource",
+     "instance": "POST /api/v1/accounts",
+     "correlationId": "550e8400-e29b-41d4-a716-446655440000",
+     "timestamp": "2024-01-15T14:31:15.000Z"
+   }
    ```
