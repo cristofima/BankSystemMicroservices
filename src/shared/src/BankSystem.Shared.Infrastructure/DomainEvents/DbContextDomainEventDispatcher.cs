@@ -1,4 +1,6 @@
-﻿using BankSystem.Shared.Domain.Validation;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
+using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Kernel.Common;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +17,25 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
 {
     private readonly ILogger<DbContextDomainEventDispatcher> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
+    private static readonly ConcurrentDictionary<Type, PropertyInfo?> IdPropertyCache = new();
+
+    private static readonly string[] ActionPatterns =
+    [
+        "Created",
+        "Updated",
+        "Deleted",
+        "Activated",
+        "Deactivated",
+        "Suspended",
+        "Closed",
+        "Opened",
+        "Processed",
+        "Completed",
+        "Failed",
+        "Cancelled",
+        "Approved",
+        "Rejected",
+    ];
 
     /// <summary>
     /// Initializes a new instance of the DbContextDomainEventDispatcher class.
@@ -50,6 +71,12 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
     )
     {
         var aggregateList = aggregatesWithEvents.ToList();
+        if (aggregateList.Count == 0)
+        {
+            _logger.LogDebug("No aggregates provided for dispatch.");
+            return;
+        }
+
         _logger.LogDebug(
             "Starting enhanced outbox dispatch for {Count} aggregates",
             aggregateList.Count
@@ -180,26 +207,7 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
         // Remove "Event" suffix and try to extract service name
         var withoutEvent = eventType[..^5]; // Remove "Event"
 
-        // Look for common action patterns and extract service name
-        var actionPatterns = new[]
-        {
-            "Created",
-            "Updated",
-            "Deleted",
-            "Activated",
-            "Deactivated",
-            "Suspended",
-            "Closed",
-            "Opened",
-            "Processed",
-            "Completed",
-            "Failed",
-            "Cancelled",
-            "Approved",
-            "Rejected",
-        };
-
-        foreach (var pattern in actionPatterns)
+        foreach (var pattern in ActionPatterns)
         {
             if (withoutEvent.EndsWith(pattern, StringComparison.OrdinalIgnoreCase))
             {
@@ -227,8 +235,11 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
     {
         try
         {
-            // Try to get the Id property using reflection
-            var idProperty = aggregate.GetType().GetProperty("Id");
+            var aggregateType = aggregate.GetType();
+            var idProperty = IdPropertyCache.GetOrAdd(
+                aggregateType,
+                type => type.GetProperty("Id")
+            );
             return idProperty?.GetValue(aggregate);
         }
         catch
