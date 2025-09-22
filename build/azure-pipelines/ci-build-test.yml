@@ -59,12 +59,12 @@ stages:
         projectKey: '$(SONAR_PROJECT_KEY)'
         projectName: '$(SONAR_PROJECT_NAME)'
         extraProperties: |
-          sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs,**/Extensions/**
+          sonar.exclusions=**/bin/**,**/obj/**,**/Migrations/**,**/*.Designer.cs,**/*ModelSnapshot.cs
           sonar.test.exclusions=**/bin/**,**/obj/**
           sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml
           sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx
           sonar.sourceEncoding=UTF-8
-          sonar.coverage.exclusions=**/*.md,**/README.*,**/docs/**/*.md,**/docs/**/*.y?(a)ml,**/Extensions/**
+          sonar.coverage.exclusions=**/*.md,**/README.*,**/docs/**/*.md,**/docs/**/*.y?(a)ml,**/Extensions/**,**/Middlewares/**
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
       timeoutInMinutes: 10
 

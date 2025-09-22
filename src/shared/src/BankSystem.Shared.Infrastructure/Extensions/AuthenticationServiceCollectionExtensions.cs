@@ -81,7 +81,7 @@ public static class AuthenticationServiceCollectionExtensions
                     RequireSignedTokens = true,
                 };
 
-                // Add event handlers for enhanced security
+                // Add event handlers for enhanced security and proper error handling
                 options.Events = new JwtBearerEvents
                 {
                     OnAuthenticationFailed = context =>
@@ -94,7 +94,22 @@ public static class AuthenticationServiceCollectionExtensions
                             "JWT authentication failed: {Error}",
                             context.Exception.Message
                         );
+                        
+                        // Don't handle the response here - let it be handled by ExceptionHandlingMiddleware
+                        // Just mark the authentication as failed
                         return Task.CompletedTask;
+                    },
+                    OnChallenge = context =>
+                    {
+                        // Skip the default challenge response
+                        context.HandleResponse();
+                        
+                        // Throw an exception that will be caught by ExceptionHandlingMiddleware
+                        throw new UnauthorizedAccessException(
+                            string.IsNullOrEmpty(context.ErrorDescription) 
+                                ? "Authentication is required to access this resource"
+                                : context.ErrorDescription
+                        );
                     },
                     OnTokenValidated = context =>
                     {

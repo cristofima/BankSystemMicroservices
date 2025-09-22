@@ -174,7 +174,7 @@ public static class WebApiExtensions
         });
 
         // Add Middlewares
-        services.AddTransient<ExceptionHandlingMiddleware>();
+        services.AddScoped<ExceptionHandlingMiddleware>();
 
         return services;
     }
