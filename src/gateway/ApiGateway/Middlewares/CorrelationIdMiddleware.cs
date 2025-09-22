@@ -1,4 +1,4 @@
-using BankSystem.Shared.Kernel.Common;
+using BankSystem.Shared.WebApiDefaults.Constants;
 
 namespace BankSystem.ApiGateway.Middlewares;
 
@@ -43,7 +43,12 @@ public class CorrelationIdMiddleware : IMiddleware
     /// </summary>
     private static string GetOrCreateCorrelationId(HttpContext context)
     {
-        if (context.Request.Headers.TryGetValue(HttpHeaderConstants.CorrelationId, out var correlationId))
+        if (
+            context.Request.Headers.TryGetValue(
+                HttpHeaderConstants.CorrelationId,
+                out var correlationId
+            )
+        )
         {
             var correlationIdValue = correlationId.Count > 0 ? correlationId[0] : null;
             if (

@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using BankSystem.Shared.Kernel.Common;
+using BankSystem.Shared.WebApiDefaults.Constants;
 
 namespace BankSystem.ApiGateway.Middlewares;
 
@@ -45,7 +45,7 @@ public class ResponseTransformMiddleware
             {
                 // Copy the response as-is
                 responseBodyStream.Seek(0, SeekOrigin.Begin);
-                await responseBodyStream.CopyToAsync(originalBodyStream);
+                await responseBodyStream.CopyToAsync(originalBodyStream, context.RequestAborted);
             }
         }
         finally
@@ -80,7 +80,8 @@ public class ResponseTransformMiddleware
         try
         {
             responseBodyStream.Seek(0, SeekOrigin.Begin);
-            var responseContent = await new StreamReader(responseBodyStream).ReadToEndAsync();
+            using var reader = new StreamReader(responseBodyStream);
+            var responseContent = await reader.ReadToEndAsync(context.RequestAborted);
 
             // Get correlation ID from headers
             var correlationId =
@@ -109,7 +110,7 @@ public class ResponseTransformMiddleware
             context.Response.Headers[HttpHeaderConstants.CorrelationId] = correlationId;
             if (
                 context.Response.StatusCode == StatusCodes.Status401Unauthorized
-                && !context.Response.Headers.ContainsKey("WWW-Authenticate")
+                && !context.Response.Headers.ContainsKey(HttpHeaderConstants.WwwAuthenticate)
             )
             {
                 context.Response.Headers.WWWAuthenticate =
@@ -144,7 +145,7 @@ public class ResponseTransformMiddleware
 
             // Fallback: copy original response to original stream
             responseBodyStream.Seek(0, SeekOrigin.Begin);
-            await responseBodyStream.CopyToAsync(originalBodyStream);
+            await responseBodyStream.CopyToAsync(originalBodyStream, context.RequestAborted);
         }
     }
 

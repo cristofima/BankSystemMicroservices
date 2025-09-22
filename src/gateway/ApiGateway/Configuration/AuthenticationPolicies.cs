@@ -23,10 +23,21 @@ public static class AuthenticationPolicies
             .SetFallbackPolicy(fallbackPolicy)
             .AddPolicy(PublicEndpoints, policy => policy.RequireAssertion(_ => true))
             .AddPolicy(AuthenticatedUsers, policy => policy.RequireAuthenticatedUser())
-            .AddPolicy(AdminOnly, policy => policy.RequireRole(RoleConstants.Admin))
+            .AddPolicy(
+                AdminOnly,
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireRole(RoleConstants.Admin);
+                }
+            )
             .AddPolicy(
                 ManagerOrAdmin,
-                policy => policy.RequireRole(RoleConstants.Manager, RoleConstants.Admin)
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireRole(RoleConstants.Manager, RoleConstants.Admin);
+                }
             );
     }
 }
