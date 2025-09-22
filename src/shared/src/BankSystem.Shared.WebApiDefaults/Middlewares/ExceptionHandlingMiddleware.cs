@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using BankSystem.Shared.Domain.Exceptions;
+using BankSystem.Shared.Kernel.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -26,9 +27,10 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         {
             await next(context);
         }
-        catch (OperationCanceledException oce) when (context.RequestAborted.IsCancellationRequested)
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
-            _logger.LogInformation(oce, "Request was canceled by the client.");
+            // Client disconnected; no response write.
+            _logger.LogDebug("Request was canceled by the client.");
         }
         catch (Exception e)
         {
@@ -57,6 +59,7 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
     {
         var statusCode = GetStatusCode(exception);
         var correlationId = GetCorrelationId(context);
+        context.Response.Headers[HttpHeaderConstants.CorrelationId] = correlationId;
 
         var response = new ProblemDetails
         {
@@ -86,9 +89,8 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
             && !context.Response.Headers.ContainsKey("WWW-Authenticate")
         )
         {
-            context.Response.Headers["WWW-Authenticate"] = """
-                Bearer realm="api", error="invalid_token"
-                """;
+            context.Response.Headers.WWWAuthenticate =
+                "Bearer realm=\"api\", error=\"invalid_token\"";
         }
 
         var jsonOptions = context
@@ -104,7 +106,7 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
     private static string GetCorrelationId(HttpContext httpContext)
     {
         if (
-            httpContext.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId)
+            httpContext.Request.Headers.TryGetValue(HttpHeaderConstants.CorrelationId, out var correlationId)
             && correlationId.Count > 0
             && !string.IsNullOrEmpty(correlationId[0])
         )
