@@ -1,6 +1,6 @@
 using System.Threading.RateLimiting;
 using BankSystem.ApiGateway.Configuration;
-using BankSystem.ApiGateway.Middleware;
+using BankSystem.ApiGateway.Middlewares;
 using BankSystem.Shared.Infrastructure.Extensions;
 using BankSystem.Shared.WebApiDefaults.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;

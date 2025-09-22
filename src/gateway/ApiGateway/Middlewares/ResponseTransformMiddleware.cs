@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace BankSystem.ApiGateway.Middleware;
+namespace BankSystem.ApiGateway.Middlewares;
 
 /// <summary>
 /// Middleware to transform downstream service responses to RFC 7807 format when needed

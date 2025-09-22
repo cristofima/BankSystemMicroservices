@@ -1,4 +1,4 @@
-namespace BankSystem.ApiGateway.Middleware;
+namespace BankSystem.ApiGateway.Middlewares;
 
 /// <summary>
 /// Middleware to handle correlation ID generation and propagation for distributed tracing.
@@ -45,7 +45,10 @@ public class CorrelationIdMiddleware : IMiddleware
         if (httpContext.Request.Headers.TryGetValue(CorrelationIdHeaderName, out var correlationId))
         {
             var correlationIdValue = correlationId.Count > 0 ? correlationId[0] : null;
-            if (!string.IsNullOrEmpty(correlationIdValue) && IsValidCorrelationId(correlationIdValue))
+            if (
+                !string.IsNullOrEmpty(correlationIdValue)
+                && IsValidCorrelationId(correlationIdValue)
+            )
             {
                 return correlationIdValue;
             }

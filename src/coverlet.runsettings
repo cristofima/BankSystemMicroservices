@@ -6,7 +6,7 @@
         <Configuration>
           <Format>cobertura,opencover</Format>
           <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*,[*.Api*]*</Exclude>
-          <ExcludeByFile>**/Extensions/**;**/Migrations/**</ExcludeByFile>
+          <ExcludeByFile>**/Extensions/**;**/Migrations/**;**/Middlewares/**</ExcludeByFile>
           <IncludeTestAssembly>false</IncludeTestAssembly>
         </Configuration>
       </DataCollector>
