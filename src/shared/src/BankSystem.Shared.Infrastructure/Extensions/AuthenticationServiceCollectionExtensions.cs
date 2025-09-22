@@ -52,6 +52,18 @@ public static class AuthenticationServiceCollectionExtensions
         var jwtKey =
             jwtSection["Key"] ?? throw new InvalidOperationException("JWT Key not configured");
 
+        if (
+            jwtSection.GetValue("ValidateIssuer", true)
+            && string.IsNullOrWhiteSpace(jwtSection["Issuer"])
+        )
+            throw new InvalidOperationException("JWT Issuer not configured");
+
+        if (
+            jwtSection.GetValue("ValidateAudience", true)
+            && string.IsNullOrWhiteSpace(jwtSection["Audience"])
+        )
+            throw new InvalidOperationException("JWT Audience not configured");
+
         // Configure JWT Authentication with proper validation
         services
             .AddAuthentication(options =>
@@ -66,6 +78,8 @@ public static class AuthenticationServiceCollectionExtensions
                 options.SaveToken = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
+                    NameClaimType = ClaimTypes.NameIdentifier,
+                    RoleClaimType = "role",
                     ValidateIssuer = jwtSection.GetValue("ValidateIssuer", true),
                     ValidateAudience = jwtSection.GetValue("ValidateAudience", true),
                     ValidateLifetime = jwtSection.GetValue("ValidateLifetime", true),
@@ -94,7 +108,7 @@ public static class AuthenticationServiceCollectionExtensions
                             "JWT authentication failed: {Error}",
                             context.Exception.Message
                         );
-                        
+
                         // Don't handle the response here - let it be handled by ExceptionHandlingMiddleware
                         // Just mark the authentication as failed
                         return Task.CompletedTask;
@@ -103,10 +117,18 @@ public static class AuthenticationServiceCollectionExtensions
                     {
                         // Skip the default challenge response
                         context.HandleResponse();
-                        
+
+                        // Emit challenge header (Bearer)
+                        if (!context.Response.Headers.ContainsKey("WWW-Authenticate"))
+                        {
+                            context.Response.Headers.WWWAuthenticate = """
+                            Bearer realm="api", error="invalid_token"
+                            """;
+                        }
+
                         // Throw an exception that will be caught by ExceptionHandlingMiddleware
                         throw new UnauthorizedAccessException(
-                            string.IsNullOrEmpty(context.ErrorDescription) 
+                            string.IsNullOrEmpty(context.ErrorDescription)
                                 ? "Authentication is required to access this resource"
                                 : context.ErrorDescription
                         );
