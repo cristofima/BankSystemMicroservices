@@ -9,9 +9,7 @@ public static class Program
     public static async Task<int> Main(string[] args)
     {
         // Configure Serilog early for startup logging
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .CreateLogger();
+        Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
 
         try
         {
@@ -21,27 +19,38 @@ public static class Program
             builder.AddServiceDefaults();
 
             // Configure Serilog
-            builder.Host.UseSerilog((context, services, configuration) =>
-                configuration
-                    .ReadFrom.Configuration(context.Configuration)
-                    .ReadFrom.Services(services)
-                    .Enrich.FromLogContext()
-                    .WriteTo.Console());
+            builder.Host.UseSerilog(
+                (context, services, configuration) =>
+                    configuration
+                        .ReadFrom.Configuration(context.Configuration)
+                        .ReadFrom.Services(services)
+                        .Enrich.FromLogContext()
+                        .WriteTo.Console()
+            );
 
             // Add configuration from multiple sources
-            builder.Configuration
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+            builder
+                .Configuration.AddJsonFile(
+                    "appsettings.json",
+                    optional: false,
+                    reloadOnChange: true
+                )
+                .AddJsonFile(
+                    $"appsettings.{builder.Environment.EnvironmentName}.json",
+                    optional: true,
+                    reloadOnChange: true
+                )
                 .AddEnvironmentVariables();
 
             // Add services
             builder.Services.AddGatewayServices(builder.Configuration);
             builder.Services.AddAuthentication(builder.Configuration);
-            builder.Services.AddRateLimiting(builder.Configuration);
+            builder.Services.AddRateLimiting();
             builder.Services.AddHealthChecks(builder.Configuration);
 
             // Add YARP
-            builder.Services.AddReverseProxy()
+            builder
+                .Services.AddReverseProxy()
                 .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
             var app = builder.Build();

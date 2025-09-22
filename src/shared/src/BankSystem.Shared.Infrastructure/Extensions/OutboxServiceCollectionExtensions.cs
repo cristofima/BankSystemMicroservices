@@ -66,7 +66,7 @@ public static class OutboxServiceCollectionExtensions
         IConfiguration configuration,
         DatabaseEngine databaseEngine,
         string serviceName,
-        Action<IServiceBusBusFactoryConfigurator> configureMessageTypes,
+        Action<IServiceBusBusFactoryConfigurator, IRegistrationContext> configureMessageTypes,
         Action<IBusRegistrationConfigurator>? configureAdditionalConsumers = null
     )
         where TDbContext : DbContext
@@ -143,7 +143,7 @@ public static class OutboxServiceCollectionExtensions
 
                     // Delegate message type configuration to the microservice
                     // This allows each service to explicitly control its message topology
-                    configureMessageTypes(cfg);
+                    configureMessageTypes(cfg, context);
 
                     // Enhanced retry policy configuration
                     cfg.UseMessageRetry(retry =>

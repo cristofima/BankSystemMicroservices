@@ -54,52 +54,6 @@ public static class ServiceBusTopologyExtensions
     }
 
     /// <summary>
-    /// Configures cross-service consumption - allows a service to consume events from another domain.
-    /// Example: Security service consuming AccountCreatedEvent from "account-events" topic.
-    /// Creates a subscription named "{consumerService}-service" on "{sourceDomain}-events" topic.
-    /// </summary>
-    /// <param name="cfg">Service Bus configurator</param>
-    /// <param name="consumerServiceName">Name of the consuming service (e.g., "security")</param>
-    /// <param name="sourceDomainName">Name of the source domain (e.g., "account")</param>
-    /// <param name="configureConsumers">Action to configure consumers for this subscription</param>
-    public static void ConfigureCrossServiceConsumption(
-        this IServiceBusBusFactoryConfigurator cfg,
-        string consumerServiceName,
-        string sourceDomainName,
-        Action<IReceiveEndpointConfigurator> configureConsumers
-    )
-    {
-        Guard.AgainstNullOrEmpty(consumerServiceName);
-        Guard.AgainstNullOrEmpty(sourceDomainName);
-        Guard.AgainstNull(configureConsumers);
-
-        var subscriptionName = $"{consumerServiceName.ToLowerInvariant()}-service";
-        var topicName = $"{sourceDomainName.ToLowerInvariant()}-events";
-
-        cfg.SubscriptionEndpoint(
-            subscriptionName,
-            topicName,
-            e =>
-            {
-                // Configure subscription properties for optimal performance and reliability
-                e.ConfigureConsumeTopology = true;
-                e.DefaultMessageTimeToLive = TimeSpan.FromDays(14);
-                e.MaxDeliveryCount = 3;
-                e.EnableBatchedOperations = true;
-
-                // Dead letter queue configuration
-                e.EnableDeadLetteringOnMessageExpiration = true;
-
-                // Lock duration for message processing
-                e.LockDuration = TimeSpan.FromMinutes(5);
-
-                // Configure the consumers for this subscription
-                configureConsumers(e);
-            }
-        );
-    }
-
-    /// <summary>
     /// Validates that the provided type is a domain event
     /// </summary>
     private static void ValidateDomainEventType(Type eventType)
@@ -144,16 +98,5 @@ public static class ServiceBusTopologyExtensions
             // Use the domain topic name (e.g., "account-events") instead of individual entity names
             config.SetEntityName(topicName);
         });
-    }
-
-    /// <summary>
-    /// Gets all domain event types from the specified assembly for automatic discovery
-    /// </summary>
-    public static Type[] GetDomainEventTypes(Assembly assembly)
-    {
-        return assembly
-            .GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract && typeof(IDomainEvent).IsAssignableFrom(t))
-            .ToArray();
     }
 }

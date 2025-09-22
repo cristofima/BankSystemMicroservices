@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.9" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.8.3" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.8.5" />
   </ItemGroup>
 
   <ItemGroup>
