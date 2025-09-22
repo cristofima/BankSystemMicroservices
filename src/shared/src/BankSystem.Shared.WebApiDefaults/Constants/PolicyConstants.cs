@@ -32,30 +32,18 @@ public static class PolicyConstants
     /// <summary>
     /// Gets all available policy names
     /// </summary>
-    public static readonly string[] AllPolicies = 
-    {
-        CustomerAccess,
-        AdminAccess,
-        ManagerAccess,
-        TellerAccess
-    };
+    public static IReadOnlyList<string> AllPolicies { get; } =
+        [CustomerAccess, AdminAccess, ManagerAccess, TellerAccess];
 
     /// <summary>
     /// Gets policies that allow administrative access
     /// </summary>
-    public static readonly string[] AdministrativePolicies = 
-    {
-        AdminAccess,
-        ManagerAccess
-    };
+    public static IReadOnlyList<string> AdministrativePolicies { get; } =
+        [AdminAccess, ManagerAccess];
 
     /// <summary>
     /// Gets policies that allow operational access
     /// </summary>
-    public static readonly string[] OperationalPolicies = 
-    {
-        TellerAccess,
-        ManagerAccess,
-        AdminAccess
-    };
+    public static IReadOnlyList<string> OperationalPolicies { get; } =
+        [TellerAccess, ManagerAccess, AdminAccess];
 }

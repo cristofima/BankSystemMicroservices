@@ -32,39 +32,20 @@ public static class RoleConstants
     /// <summary>
     /// Gets all available role names
     /// </summary>
-    public static readonly string[] AllRoles = 
-    {
-        Customer,
-        Admin,
-        Manager,
-        Teller
-    };
+    public static IReadOnlyList<string> AllRoles { get; } = [Customer, Admin, Manager, Teller];
 
     /// <summary>
     /// Gets administrative role names (Admin, Manager)
     /// </summary>
-    public static readonly string[] AdministrativeRoles = 
-    {
-        Admin,
-        Manager
-    };
+    public static IReadOnlyList<string> AdministrativeRoles { get; } = [Admin, Manager];
 
     /// <summary>
     /// Gets operational role names (Teller, Manager, Admin)
     /// </summary>
-    public static readonly string[] OperationalRoles = 
-    {
-        Teller,
-        Manager,
-        Admin
-    };
+    public static IReadOnlyList<string> OperationalRoles { get; } = [Teller, Manager, Admin];
 
     /// <summary>
     /// Gets customer-facing role names (Customer, Admin)
     /// </summary>
-    public static readonly string[] CustomerFacingRoles = 
-    {
-        Customer,
-        Admin
-    };
+    public static IReadOnlyList<string> CustomerFacingRoles { get; } = [Customer, Admin];
 }

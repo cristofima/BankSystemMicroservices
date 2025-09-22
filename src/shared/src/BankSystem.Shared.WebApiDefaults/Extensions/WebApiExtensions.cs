@@ -55,7 +55,7 @@ public static class WebApiExtensions
                 options.ApiVersionReader = ApiVersionReader.Combine(
                     new UrlSegmentApiVersionReader(),
                     new QueryStringApiVersionReader("version"),
-                    new HeaderApiVersionReader("X-Version")
+                    new HeaderApiVersionReader(HttpHeaderConstants.ApiVersion)
                 );
             })
             .AddApiExplorer(setup =>
@@ -134,7 +134,7 @@ public static class WebApiExtensions
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials()
-                    .WithExposedHeaders(HttpHeaderConstants.CommonExposedHeaders);
+                    .WithExposedHeaders(HttpHeaderConstants.CommonExposedHeaders.ToArray());
             });
         });
 

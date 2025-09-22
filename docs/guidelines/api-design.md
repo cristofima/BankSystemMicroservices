@@ -408,7 +408,7 @@ services.AddApiVersioning(options =>
     options.ApiVersionReader = ApiVersionReader.Combine(
         new UrlSegmentApiVersionReader(),
         new QueryStringApiVersionReader("version"),
-        new HeaderApiVersionReader("X-Version"));
+        new HeaderApiVersionReader("X-API-Version"));
 });
 ```
 

@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using BankSystem.Shared.Domain.Exceptions;
-using BankSystem.Shared.Kernel.Common;
+using BankSystem.Shared.WebApiDefaults.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -86,7 +86,7 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
 
         if (
             statusCode == StatusCodes.Status401Unauthorized
-            && !context.Response.Headers.ContainsKey("WWW-Authenticate")
+            && !context.Response.Headers.ContainsKey(HttpHeaderConstants.WwwAuthenticate)
         )
         {
             context.Response.Headers.WWWAuthenticate =
@@ -106,7 +106,10 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
     private static string GetCorrelationId(HttpContext httpContext)
     {
         if (
-            httpContext.Request.Headers.TryGetValue(HttpHeaderConstants.CorrelationId, out var correlationId)
+            httpContext.Request.Headers.TryGetValue(
+                HttpHeaderConstants.CorrelationId,
+                out var correlationId
+            )
             && correlationId.Count > 0
             && !string.IsNullOrEmpty(correlationId[0])
         )
