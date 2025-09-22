@@ -1,3 +1,4 @@
+using BankSystem.Shared.WebApiDefaults.Constants;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BankSystem.ApiGateway.Configuration;
@@ -11,20 +12,21 @@ public static class AuthenticationPolicies
 
     public static void ConfigureAuthorizationPolicies(this IServiceCollection services)
     {
-        services.AddAuthorization(options =>
-        {
-            // Configure a fallback policy that allows anonymous access by default
-            // This prevents ASP.NET Core from requiring authentication globally
-            options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                .RequireAssertion(_ => true) // Allow anonymous access by default
-                .Build();
-        });
+        // Configure a fallback policy that allows anonymous access by default
+        // This prevents ASP.NET Core from requiring authentication globally
+        var fallbackPolicy = new AuthorizationPolicyBuilder()
+            .RequireAssertion(_ => true) // Allow anonymous access by default
+            .Build();
 
         services
             .AddAuthorizationBuilder()
+            .SetFallbackPolicy(fallbackPolicy)
             .AddPolicy(PublicEndpoints, policy => policy.RequireAssertion(_ => true))
             .AddPolicy(AuthenticatedUsers, policy => policy.RequireAuthenticatedUser())
-            .AddPolicy(AdminOnly, policy => policy.RequireRole("Admin"))
-            .AddPolicy(ManagerOrAdmin, policy => policy.RequireRole("Manager", "Admin"));
+            .AddPolicy(AdminOnly, policy => policy.RequireRole(RoleConstants.Admin))
+            .AddPolicy(
+                ManagerOrAdmin,
+                policy => policy.RequireRole(RoleConstants.Manager, RoleConstants.Admin)
+            );
     }
 }

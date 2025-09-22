@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using BankSystem.ApiGateway.Configuration;
 using BankSystem.ApiGateway.Middlewares;
 using BankSystem.Shared.Infrastructure.Extensions;
+using BankSystem.Shared.Kernel.Common;
 using BankSystem.Shared.WebApiDefaults.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -31,8 +32,8 @@ public static class ServiceExtensions
                     builder
                         .WithOrigins(allowedOrigins)
                         .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .WithHeaders("Authorization", "Content-Type", "X-Correlation-ID")
-                        .WithExposedHeaders("X-Correlation-ID")
+                        .WithHeaders(HttpHeaderConstants.CommonAllowedHeaders)
+                        .WithExposedHeaders(HttpHeaderConstants.CommonExposedHeaders)
                         .AllowCredentials();
                 }
                 else
@@ -192,6 +193,10 @@ public static class ServiceExtensions
         // HTTPS redirection
         app.UseHttpsRedirection();
 
+        // Custom middleware - Exception handling must come before authentication
+        app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         // Request logging
         app.UseSerilogRequestLogging(options =>
         {
@@ -212,10 +217,6 @@ public static class ServiceExtensions
 
         // CORS
         app.UseCors();
-
-        // Custom middleware - Exception handling must come before authentication
-        app.UseMiddleware<CorrelationIdMiddleware>();
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
 
         // Selective authentication middleware (must come BEFORE Auth)
         app.UseSelectiveAuthentication();

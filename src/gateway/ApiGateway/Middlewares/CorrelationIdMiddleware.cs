@@ -1,3 +1,5 @@
+using BankSystem.Shared.Kernel.Common;
+
 namespace BankSystem.ApiGateway.Middlewares;
 
 /// <summary>
@@ -7,21 +9,20 @@ namespace BankSystem.ApiGateway.Middlewares;
 public class CorrelationIdMiddleware : IMiddleware
 {
     private readonly ILogger<CorrelationIdMiddleware> _logger;
-    private static readonly string CorrelationIdHeaderName = "X-Correlation-ID";
 
     public CorrelationIdMiddleware(ILogger<CorrelationIdMiddleware> logger)
     {
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext httpContext, RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        var correlationId = GetOrCreateCorrelationId(httpContext);
+        var correlationId = GetOrCreateCorrelationId(context);
 
         // Add correlation ID to response headers for client tracking
-        if (!httpContext.Response.Headers.ContainsKey(CorrelationIdHeaderName))
+        if (!context.Response.Headers.ContainsKey(HttpHeaderConstants.CorrelationId))
         {
-            httpContext.Response.Headers[CorrelationIdHeaderName] = correlationId;
+            context.Response.Headers[HttpHeaderConstants.CorrelationId] = correlationId;
         }
 
         // Add to logging context
@@ -33,16 +34,16 @@ public class CorrelationIdMiddleware : IMiddleware
                 "Processing request with correlation ID: {CorrelationId}",
                 correlationId
             );
-            await next(httpContext);
+            await next(context);
         }
     }
 
     /// <summary>
     /// Gets existing correlation ID from request headers or creates a new one.
     /// </summary>
-    private static string GetOrCreateCorrelationId(HttpContext httpContext)
+    private static string GetOrCreateCorrelationId(HttpContext context)
     {
-        if (httpContext.Request.Headers.TryGetValue(CorrelationIdHeaderName, out var correlationId))
+        if (context.Request.Headers.TryGetValue(HttpHeaderConstants.CorrelationId, out var correlationId))
         {
             var correlationIdValue = correlationId.Count > 0 ? correlationId[0] : null;
             if (
@@ -56,7 +57,7 @@ public class CorrelationIdMiddleware : IMiddleware
 
         // Generate new correlation ID if none exists or invalid
         var newCorrelationId = Guid.NewGuid().ToString();
-        httpContext.Request.Headers[CorrelationIdHeaderName] = newCorrelationId;
+        context.Request.Headers[HttpHeaderConstants.CorrelationId] = newCorrelationId;
 
         return newCorrelationId;
     }
