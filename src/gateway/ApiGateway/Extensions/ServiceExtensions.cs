@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using BankSystem.ApiGateway.Configuration;
 using BankSystem.ApiGateway.Middlewares;
 using BankSystem.Shared.Infrastructure.Extensions;
+using BankSystem.Shared.WebApiDefaults.Constants;
 using BankSystem.Shared.WebApiDefaults.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -31,8 +32,8 @@ public static class ServiceExtensions
                     builder
                         .WithOrigins(allowedOrigins)
                         .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .WithHeaders("Authorization", "Content-Type", "X-Correlation-ID")
-                        .WithExposedHeaders("X-Correlation-ID")
+                        .WithHeaders(HttpHeaderConstants.CommonAllowedHeaders.ToArray())
+                        .WithExposedHeaders(HttpHeaderConstants.CommonExposedHeaders.ToArray())
                         .AllowCredentials();
                 }
                 else
@@ -115,10 +116,7 @@ public static class ServiceExtensions
         return services;
     }
 
-    public static IServiceCollection AddRateLimiting(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
         {
@@ -140,24 +138,24 @@ public static class ServiceExtensions
             // Auth endpoint rate limiting
             options.AddFixedWindowLimiter(
                 "auth",
-                options =>
+                configOptions =>
                 {
-                    options.PermitLimit = 5;
-                    options.Window = TimeSpan.FromMinutes(1);
-                    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    options.QueueLimit = 0;
+                    configOptions.PermitLimit = 5;
+                    configOptions.Window = TimeSpan.FromMinutes(1);
+                    configOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    configOptions.QueueLimit = 0;
                 }
             );
 
             // Transaction endpoint rate limiting
             options.AddFixedWindowLimiter(
                 "transactions",
-                options =>
+                configOptions =>
                 {
-                    options.PermitLimit = 20;
-                    options.Window = TimeSpan.FromMinutes(1);
-                    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    options.QueueLimit = 5;
+                    configOptions.PermitLimit = 20;
+                    configOptions.Window = TimeSpan.FromMinutes(1);
+                    configOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    configOptions.QueueLimit = 5;
                 }
             );
 
@@ -192,6 +190,10 @@ public static class ServiceExtensions
         // HTTPS redirection
         app.UseHttpsRedirection();
 
+        // Custom middleware - Exception handling must come before authentication
+        app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         // Request logging
         app.UseSerilogRequestLogging(options =>
         {
@@ -212,10 +214,6 @@ public static class ServiceExtensions
 
         // CORS
         app.UseCors();
-
-        // Custom middleware - Exception handling must come before authentication
-        app.UseMiddleware<CorrelationIdMiddleware>();
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
 
         // Selective authentication middleware (must come BEFORE Auth)
         app.UseSelectiveAuthentication();

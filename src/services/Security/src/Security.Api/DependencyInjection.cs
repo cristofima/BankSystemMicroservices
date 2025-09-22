@@ -3,7 +3,6 @@ using System.Threading.RateLimiting;
 using BankSystem.Shared.WebApiDefaults.Extensions;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
-using Security.Api.Filters;
 using Security.Api.Services;
 using Security.Infrastructure.Data;
 
@@ -18,15 +17,7 @@ public static class DependencyInjection
     )
     {
         // Configure common services with Security-specific controller configuration
-        services.AddWebApiDefaults(
-            configuration,
-            "Security API",
-            options =>
-            {
-                // Add global exception filter specific to Security service
-                options.Filters.Add<GlobalExceptionFilter>();
-            }
-        );
+        services.AddWebApiDefaults(configuration, "Security API");
 
         // Add Security-specific health checks
         services.AddDbContextHealthCheck<SecurityDbContext>();

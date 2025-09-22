@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using BankSystem.Shared.WebApiDefaults.Constants;
 
 namespace BankSystem.ApiGateway.Middlewares;
 
@@ -10,7 +11,6 @@ public class ResponseTransformMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ResponseTransformMiddleware> _logger;
-    private const string CorrelationIdHeaderName = "X-Correlation-ID";
 
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = false };
@@ -45,7 +45,7 @@ public class ResponseTransformMiddleware
             {
                 // Copy the response as-is
                 responseBodyStream.Seek(0, SeekOrigin.Begin);
-                await responseBodyStream.CopyToAsync(originalBodyStream);
+                await responseBodyStream.CopyToAsync(originalBodyStream, context.RequestAborted);
             }
         }
         finally
@@ -80,11 +80,12 @@ public class ResponseTransformMiddleware
         try
         {
             responseBodyStream.Seek(0, SeekOrigin.Begin);
-            var responseContent = await new StreamReader(responseBodyStream).ReadToEndAsync();
+            using var reader = new StreamReader(responseBodyStream);
+            var responseContent = await reader.ReadToEndAsync(context.RequestAborted);
 
             // Get correlation ID from headers
             var correlationId =
-                context.Request.Headers[CorrelationIdHeaderName].FirstOrDefault()
+                context.Request.Headers[HttpHeaderConstants.CorrelationId].FirstOrDefault()
                 ?? context.TraceIdentifier;
 
             // Create RFC 7807 problem details response
@@ -106,12 +107,25 @@ public class ResponseTransformMiddleware
 
             // Update response headers
             context.Response.ContentType = "application/problem+json";
-            context.Response.Headers[CorrelationIdHeaderName] = correlationId;
+            context.Response.Headers[HttpHeaderConstants.CorrelationId] = correlationId;
+            if (
+                context.Response.StatusCode == StatusCodes.Status401Unauthorized
+                && !context.Response.Headers.ContainsKey(HttpHeaderConstants.WwwAuthenticate)
+            )
+            {
+                context.Response.Headers.WWWAuthenticate =
+                    "Bearer realm=\"api\", error=\"invalid_token\"";
+            }
 
             // Write the transformed response to the original stream
             var jsonBytes = Encoding.UTF8.GetBytes(jsonResponse);
             context.Response.ContentLength = jsonBytes.Length;
-            await originalBodyStream.WriteAsync(jsonBytes);
+            await originalBodyStream.WriteAsync(
+                jsonBytes,
+                0,
+                jsonBytes.Length,
+                context.RequestAborted
+            );
 
             _logger.LogDebug(
                 "Transformed {StatusCode} response to RFC 7807 format for {Method} {Path}",
@@ -131,7 +145,7 @@ public class ResponseTransformMiddleware
 
             // Fallback: copy original response to original stream
             responseBodyStream.Seek(0, SeekOrigin.Begin);
-            await responseBodyStream.CopyToAsync(originalBodyStream);
+            await responseBodyStream.CopyToAsync(originalBodyStream, context.RequestAborted);
         }
     }
 

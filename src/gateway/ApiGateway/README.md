@@ -335,11 +335,11 @@ All errors return RFC 7807 Problem Details format:
 
 ```json
 {
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
   "title": "Unauthorized",
   "status": 401,
   "detail": "Authentication is required to access this resource",
-  "instance": "POST /api/v1/accounts",
+  "instance": "GET /api/v1/accounts",
   "correlationId": "550e8400-e29b-41d4-a716-446655440000",
   "timestamp": "2024-01-15T10:30:00.000Z"
 }
@@ -543,11 +543,11 @@ Once running, the gateway will be available at:
 
    # Response:
    {
-     "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+     "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
      "title": "Unauthorized",
      "status": 401,
      "detail": "Authentication is required to access this resource",
-     "instance": "POST /api/v1/accounts",
+     "instance": "GET /api/v1/accounts",
      "correlationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
      "timestamp": "2024-01-15T14:30:00.000Z"
    }
@@ -566,7 +566,7 @@ Once running, the gateway will be available at:
      "title": "Unauthorized",
      "status": 401,
      "detail": "Authentication is required to access this resource",
-     "instance": "POST /api/v1/accounts",
+     "instance": "GET /api/v1/accounts",
      "correlationId": "550e8400-e29b-41d4-a716-446655440000",
      "timestamp": "2024-01-15T14:31:15.000Z"
    }

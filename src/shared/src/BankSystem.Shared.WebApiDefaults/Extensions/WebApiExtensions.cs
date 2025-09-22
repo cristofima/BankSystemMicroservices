@@ -4,6 +4,7 @@ using Asp.Versioning;
 using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Infrastructure.Extensions;
 using BankSystem.Shared.Kernel.Common;
+using BankSystem.Shared.WebApiDefaults.Constants;
 using BankSystem.Shared.WebApiDefaults.Middlewares;
 using BankSystem.Shared.WebApiDefaults.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -54,7 +55,7 @@ public static class WebApiExtensions
                 options.ApiVersionReader = ApiVersionReader.Combine(
                     new UrlSegmentApiVersionReader(),
                     new QueryStringApiVersionReader("version"),
-                    new HeaderApiVersionReader("X-Version")
+                    new HeaderApiVersionReader(HttpHeaderConstants.ApiVersion)
                 );
             })
             .AddApiExplorer(setup =>
@@ -72,45 +73,44 @@ public static class WebApiExtensions
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         // Add authorization with banking-specific policies
-        services.AddAuthorization(options =>
-        {
-            // Banking-specific policies
-            options.AddPolicy(
-                "CustomerAccess",
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(
+                PolicyConstants.CustomerAccess,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("role", "Customer", "Admin");
+                    policy.RequireRole(RoleConstants.Customer, RoleConstants.Admin);
                 }
-            );
-
-            options.AddPolicy(
-                "AdminAccess",
+            )
+            .AddPolicy(
+                PolicyConstants.AdminAccess,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("role", "Admin");
+                    policy.RequireRole(RoleConstants.Admin);
                 }
-            );
-
-            options.AddPolicy(
-                "ManagerAccess",
+            )
+            .AddPolicy(
+                PolicyConstants.ManagerAccess,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("role", "Manager", "Admin");
+                    policy.RequireRole(RoleConstants.Manager, RoleConstants.Admin);
                 }
-            );
-
-            options.AddPolicy(
-                "TellerAccess",
+            )
+            .AddPolicy(
+                PolicyConstants.TellerAccess,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("role", "Teller", "Manager", "Admin");
+                    policy.RequireRole(
+                        RoleConstants.Teller,
+                        RoleConstants.Manager,
+                        RoleConstants.Admin
+                    );
                 }
             );
-        });
 
         // Add OpenAPI/Swagger
         services.AddOpenApi();
@@ -133,7 +133,8 @@ public static class WebApiExtensions
                     .WithOrigins(allowedOrigins)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .AllowCredentials();
+                    .AllowCredentials()
+                    .WithExposedHeaders(HttpHeaderConstants.CommonExposedHeaders.ToArray());
             });
         });
 
@@ -151,19 +152,19 @@ public static class WebApiExtensions
                         $"{RateLimitingSection}:PermitLimit",
                         100
                     );
-                    Guard.AgainstZeroOrNegative(permitLimit, "permitLimit");
+                    Guard.AgainstZeroOrNegative(permitLimit);
 
                     var windowSize = configuration.GetValue(
                         $"{RateLimitingSection}:WindowMinutes",
                         1
                     );
-                    Guard.AgainstZeroOrNegative(windowSize, "windowSize");
+                    Guard.AgainstZeroOrNegative(windowSize);
 
                     var queueLimit = configuration.GetValue(
                         $"{RateLimitingSection}:QueueLimit",
                         10
                     );
-                    Guard.AgainstNegative(queueLimit, "queueLimit");
+                    Guard.AgainstNegative(queueLimit);
 
                     limiterOptions.PermitLimit = permitLimit;
                     limiterOptions.Window = TimeSpan.FromMinutes(windowSize);
