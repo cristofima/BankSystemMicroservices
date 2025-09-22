@@ -53,10 +53,10 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         }
     }
 
-    private static async Task HandleExceptionAsync(HttpContext httpContext, Exception exception)
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var statusCode = GetStatusCode(exception);
-        var correlationId = GetCorrelationId(httpContext);
+        var correlationId = GetCorrelationId(context);
 
         var response = new ProblemDetails
         {
@@ -64,7 +64,7 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
             Title = GetTitle(exception),
             Status = statusCode,
             Detail = GetDetailMessage(exception),
-            Instance = GetDescriptiveInstance(httpContext),
+            Instance = GetDescriptiveInstance(context),
         };
 
         // Add custom validation errors if applicable
@@ -78,24 +78,41 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         response.Extensions["correlationId"] = correlationId;
         response.Extensions["timestamp"] = DateTimeOffset.UtcNow;
 
-        httpContext.Response.ContentType = "application/problem+json";
-        httpContext.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/problem+json";
+        context.Response.StatusCode = statusCode;
 
-        var jsonOptions = httpContext
+        if (
+            statusCode == StatusCodes.Status401Unauthorized
+            && !context.Response.Headers.ContainsKey("WWW-Authenticate")
+        )
+        {
+            context.Response.Headers["WWW-Authenticate"] = """
+                Bearer realm="api", error="invalid_token"
+                """;
+        }
+
+        var jsonOptions = context
             .RequestServices.GetRequiredService<IOptions<JsonOptions>>()
             .Value.JsonSerializerOptions;
 
-        await httpContext.Response.WriteAsync(
+        await context.Response.WriteAsync(
             JsonSerializer.Serialize(response, jsonOptions),
-            httpContext.RequestAborted
+            context.RequestAborted
         );
     }
 
     private static string GetCorrelationId(HttpContext httpContext)
     {
-        return httpContext.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId)
-            ? correlationId.ToString()
-            : httpContext.TraceIdentifier;
+        if (
+            httpContext.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId)
+            && correlationId.Count > 0
+            && !string.IsNullOrEmpty(correlationId[0])
+        )
+        {
+            return correlationId[0]!;
+        }
+
+        return Guid.NewGuid().ToString();
     }
 
     private static string GetDescriptiveInstance(HttpContext httpContext)
@@ -114,6 +131,11 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
             404 => "https://tools.ietf.org/html/rfc7231#section-6.5.4",
             409 => "https://tools.ietf.org/html/rfc7231#section-6.5.8",
             422 => "https://tools.ietf.org/html/rfc4918#section-11.2",
+            500 => "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+            501 => "https://tools.ietf.org/html/rfc7231#section-6.6.2",
+            502 => "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+            503 => "https://tools.ietf.org/html/rfc7231#section-6.6.4",
+            504 => "https://tools.ietf.org/html/rfc7231#section-6.6.5",
             _ => "https://tools.ietf.org/html/rfc7231#section-6.6.1",
         };
 

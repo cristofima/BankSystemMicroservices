@@ -39,7 +39,7 @@ public class ResponseTransformMiddleware
             // Check if we need to transform the response
             if (ShouldTransformResponse(context))
             {
-                await TransformResponseAsync(context, responseBodyStream);
+                await TransformResponseAsync(context, responseBodyStream, originalBodyStream);
             }
             else
             {
@@ -57,11 +57,25 @@ public class ResponseTransformMiddleware
     private static bool ShouldTransformResponse(HttpContext context)
     {
         // Transform error responses that don't have proper content-type
-        return context.Response.StatusCode is >= 400 and < 600
-            && !context.Response.ContentType?.Contains("application/json") == true;
+        if (context.Response.StatusCode is < 400 or >= 600)
+            return false;
+
+        var ct = context.Response.ContentType;
+        if (string.IsNullOrWhiteSpace(ct))
+            return true;
+
+        return !(
+            ct.Contains("application/json", StringComparison.OrdinalIgnoreCase)
+            || ct.Contains("json", StringComparison.OrdinalIgnoreCase)
+            || ct.Contains("application/problem+json", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
-    private async Task TransformResponseAsync(HttpContext context, MemoryStream responseBodyStream)
+    private async Task TransformResponseAsync(
+        HttpContext context,
+        MemoryStream responseBodyStream,
+        Stream originalBodyStream
+    )
     {
         try
         {
@@ -94,11 +108,10 @@ public class ResponseTransformMiddleware
             context.Response.ContentType = "application/problem+json";
             context.Response.Headers[CorrelationIdHeaderName] = correlationId;
 
-            // Write the transformed response
+            // Write the transformed response to the original stream
             var jsonBytes = Encoding.UTF8.GetBytes(jsonResponse);
             context.Response.ContentLength = jsonBytes.Length;
-
-            await context.Response.Body.WriteAsync(jsonBytes);
+            await originalBodyStream.WriteAsync(jsonBytes);
 
             _logger.LogDebug(
                 "Transformed {StatusCode} response to RFC 7807 format for {Method} {Path}",
@@ -116,9 +129,9 @@ public class ResponseTransformMiddleware
                 context.Request.Path
             );
 
-            // Fallback: copy original response
+            // Fallback: copy original response to original stream
             responseBodyStream.Seek(0, SeekOrigin.Begin);
-            await responseBodyStream.CopyToAsync(context.Response.Body);
+            await responseBodyStream.CopyToAsync(originalBodyStream);
         }
     }
 
@@ -135,7 +148,7 @@ public class ResponseTransformMiddleware
             500 => "https://tools.ietf.org/html/rfc7231#section-6.6.1",
             502 => "https://tools.ietf.org/html/rfc7231#section-6.6.3",
             503 => "https://tools.ietf.org/html/rfc7231#section-6.6.4",
-            _ => "https://tools.ietf.org/html/rfc7231",
+            _ => "https://tools.ietf.org/html/rfc7231#section-6.6.1",
         };
     }
 

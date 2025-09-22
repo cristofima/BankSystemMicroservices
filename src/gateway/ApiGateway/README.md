@@ -49,8 +49,8 @@ The API Gateway is the central entry point for the Bank System Microservices arc
    - Security headers middleware
    - CORS configuration
    - Exception handling with secure error responses
-   - Centralized error handling with RFC 7807 Problem Details
-   - JWT authentication with proper 401 error responses
+   - Centralized error handling with RFC 7807 Problem Details (application/problem+json)
+   - JWT authentication with proper 401 (RFC 7235 §3.1) challenge semantics
 
 ### Service Routing
 
@@ -125,11 +125,11 @@ curl -X GET https://localhost:55836/api/v1/accounts
 
 # Expected 401 response with Problem Details JSON:
 {
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.3.1",
+  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
   "title": "Unauthorized",
   "status": 401,
   "detail": "Authentication is required to access this resource.",
-  "traceId": "0HN7...",
+  "correlationId": "550e8400-e29b-41d4-a716-446655440000",
   "timestamp": "2025-01-28T..."
 }
 
@@ -339,8 +339,8 @@ All errors return RFC 7807 Problem Details format:
   "title": "Unauthorized",
   "status": 401,
   "detail": "Authentication is required to access this resource",
-  "instance": "/api/v1/accounts",
-  "correlationId": "abc123-def456-ghi789",
+  "instance": "POST /api/v1/accounts",
+  "correlationId": "550e8400-e29b-41d4-a716-446655440000",
   "timestamp": "2024-01-15T10:30:00.000Z"
 }
 ```
@@ -379,7 +379,7 @@ The gateway uses structured logging with correlation IDs:
 {
   "Timestamp": "2024-01-15T10:30:00.000Z",
   "Level": "Information",
-  "CorrelationId": "abc123-def456-ghi789",
+  "CorrelationId": "550e8400-e29b-41d4-a716-446655440000",
   "Message": "Request processed",
   "Properties": {
     "Method": "GET",
@@ -558,11 +558,11 @@ Once running, the gateway will be available at:
    ```bash
    # Request with invalid token
    curl https://localhost:55836/api/v1/accounts \
-     -H "Authorization: Bearer invalid_token_here"
+     -H "Authorization: Bearer <INVALID_TOKEN>"
 
    # Response:
    {
-     "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+     "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
      "title": "Unauthorized",
      "status": 401,
      "detail": "Authentication is required to access this resource",

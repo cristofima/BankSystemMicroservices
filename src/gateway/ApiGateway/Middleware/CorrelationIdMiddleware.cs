@@ -4,19 +4,17 @@ namespace BankSystem.ApiGateway.Middleware;
 /// Middleware to handle correlation ID generation and propagation for distributed tracing.
 /// Ensures every request has a correlation ID for tracking across microservices.
 /// </summary>
-public class CorrelationIdMiddleware
+public class CorrelationIdMiddleware : IMiddleware
 {
-    private readonly RequestDelegate _next;
     private readonly ILogger<CorrelationIdMiddleware> _logger;
     private static readonly string CorrelationIdHeaderName = "X-Correlation-ID";
 
-    public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
+    public CorrelationIdMiddleware(ILogger<CorrelationIdMiddleware> logger)
     {
-        _next = next;
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext httpContext)
+    public async Task InvokeAsync(HttpContext httpContext, RequestDelegate next)
     {
         var correlationId = GetOrCreateCorrelationId(httpContext);
 
@@ -35,7 +33,7 @@ public class CorrelationIdMiddleware
                 "Processing request with correlation ID: {CorrelationId}",
                 correlationId
             );
-            await _next(httpContext);
+            await next(httpContext);
         }
     }
 
@@ -46,8 +44,8 @@ public class CorrelationIdMiddleware
     {
         if (httpContext.Request.Headers.TryGetValue(CorrelationIdHeaderName, out var correlationId))
         {
-            var correlationIdValue = correlationId.ToString();
-            if (IsValidCorrelationId(correlationIdValue))
+            var correlationIdValue = correlationId.Count > 0 ? correlationId[0] : null;
+            if (!string.IsNullOrEmpty(correlationIdValue) && IsValidCorrelationId(correlationIdValue))
             {
                 return correlationIdValue;
             }

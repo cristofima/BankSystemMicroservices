@@ -32,6 +32,7 @@ public static class ServiceExtensions
                         .WithOrigins(allowedOrigins)
                         .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .WithHeaders("Authorization", "Content-Type", "X-Correlation-ID")
+                        .WithExposedHeaders("X-Correlation-ID")
                         .AllowCredentials();
                 }
                 else
@@ -50,7 +51,8 @@ public static class ServiceExtensions
         services.AddMemoryCache();
 
         // Add middlewares that implement IMiddleware (only these need DI registration)
-        services.AddTransient<ExceptionHandlingMiddleware>();
+        services.AddScoped<CorrelationIdMiddleware>();
+        services.AddScoped<ExceptionHandlingMiddleware>();
 
         return services;
     }
@@ -181,7 +183,6 @@ public static class ServiceExtensions
         }
         else
         {
-            app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
 
