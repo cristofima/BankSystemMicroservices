@@ -37,6 +37,11 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
         "Rejected",
     ];
 
+    // Longest-suffix-first to prevent collisions (e.g., Deactivated vs Activated)
+    private static readonly string[] OrderedActionPatterns = ActionPatterns
+        .OrderByDescending(p => p.Length)
+        .ToArray();
+
     /// <summary>
     /// Initializes a new instance of the DbContextDomainEventDispatcher class.
     /// </summary>
@@ -104,11 +109,12 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
             foreach (var aggregate in aggregateList)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                var aggregateId = GetAggregateId(aggregate) ?? "Unknown";
                 _logger.LogDebug(
                     "Processing {EventCount} events for aggregate {AggregateType} {AggregateId}",
                     aggregate.DomainEvents.Count,
                     aggregate.GetType().Name,
-                    GetAggregateId(aggregate) ?? "Unknown"
+                    aggregateId
                 );
 
                 foreach (var domainEvent in aggregate.DomainEvents)
@@ -139,10 +145,7 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
 
                                 // Add custom headers for routing and filtering
                                 context.Headers.Set("EventType", eventType);
-                                context.Headers.Set(
-                                    "AggregateId",
-                                    GetAggregateId(aggregate) ?? "Unknown"
-                                );
+                                context.Headers.Set("AggregateId", aggregateId);
                                 context.Headers.Set("Version", domainEvent.Version);
                                 context.Headers.Set("OccurredOn", domainEvent.OccurredOn);
                                 context.Headers.Set("Source", GetSourceFromEventType(eventType));
@@ -207,7 +210,7 @@ public class DbContextDomainEventDispatcher : IDbContextDomainEventDispatcher
         // Remove "Event" suffix and try to extract service name
         var withoutEvent = eventType[..^5]; // Remove "Event"
 
-        foreach (var pattern in ActionPatterns)
+        foreach (var pattern in OrderedActionPatterns)
         {
             if (withoutEvent.EndsWith(pattern, StringComparison.OrdinalIgnoreCase))
             {
