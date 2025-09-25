@@ -34,8 +34,10 @@
 │   │   └── Reporting/                # Analytics & Reports
 │   └── shared/
 │       └── src/
+│           ├── BankSystem.Shared.Application/    # Application layer components
 │           ├── BankSystem.Shared.Domain/         # Common domain logic
 │           ├── BankSystem.Shared.Infrastructure/ # Common infrastructure
+│           ├── BankSystem.Shared.Kernel/         # Core domain abstractions
 │           └── BankSystem.Shared.WebApi/         # Web API configurations
 ├── tests/
 ├── docs/
@@ -107,6 +109,16 @@ Each microservice follows Clean Architecture with this structure:
 
 The shared projects provide common functionality across all microservices:
 
+#### BankSystem.Shared.Application
+
+- **Purpose**: Common application layer components, pipeline behaviors, and cross-cutting concerns
+- **Contents**:
+  - MediatR pipeline behaviors (`ValidationPipelineBehavior`, `LoggingPipelineBehavior`)
+  - FluentValidation extensions (`ValidationExtensions`)
+  - Application interfaces (`IValidationRequest`)
+  - Pipeline behavior registration extensions
+  - Common application patterns and utilities
+
 #### BankSystem.Shared.Domain
 
 - **Purpose**: Common domain logic, base entities, value objects, and domain events
@@ -126,6 +138,16 @@ The shared projects provide common functionality across all microservices:
   - Common database configurations
   - Caching abstractions
   - Azure Service Bus integration
+
+#### BankSystem.Shared.Kernel
+
+- **Purpose**: Core domain abstractions, common interfaces, and foundational utilities
+- **Contents**:
+  - Core domain interfaces (`IAggregateRoot`, `ICurrentUser`)
+  - Domain events base interfaces (`IDomainEvent`)
+  - Database engine enumerations (`DatabaseEngine`)
+  - Common domain abstractions
+  - Foundational domain patterns
 
 #### BankSystem.Shared.WebApi
 
@@ -152,11 +174,19 @@ The shared projects provide common functionality across all microservices:
     └─────────────┬─────────────┘
                   │
 ┌─────────────────▼─────────────────┐
+│ BankSystem.Shared.Application    │
+└─────────────────┬─────────────────┘
+                  │
+┌─────────────────▼─────────────────┐
 │ BankSystem.Shared.Infrastructure │
 └─────────────────┬─────────────────┘
                   │
     ┌─────────────▼─────────────┐
     │  BankSystem.Shared.Domain │
+    └─────────────┬─────────────┘
+                  │
+    ┌─────────────▼─────────────┐
+    │  BankSystem.Shared.Kernel │
     └───────────────────────────┘
 ```
 
