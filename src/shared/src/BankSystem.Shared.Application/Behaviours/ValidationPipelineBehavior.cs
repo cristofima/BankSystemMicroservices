@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using BankSystem.Account.Application.Interfaces;
+using BankSystem.Shared.Application.Interfaces;
 using BankSystem.Shared.Domain.Exceptions;
 using FluentValidation;
 using MediatR;
 
-namespace BankSystem.Account.Application.Behaviours;
+namespace BankSystem.Shared.Application.Behaviours;
 
 /// <summary>
 /// Pipeline behavior for handling validation
@@ -12,7 +12,8 @@ namespace BankSystem.Account.Application.Behaviours;
 /// <typeparam name="TRequest">The request type</typeparam>
 /// <typeparam name="TResponse">The response type</typeparam>
 [ExcludeFromCodeCoverage]
-public sealed class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+public sealed class ValidationPipelineBehavior<TRequest, TResponse>
+    : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
     private readonly IEnumerable<IValidator<TRequest>> _validators;
@@ -25,7 +26,8 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineB
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (!_validators.Any())
             return await next(cancellationToken);
@@ -33,7 +35,8 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineB
         var context = new ValidationContext<TRequest>(request);
 
         var validationFailures = await Task.WhenAll(
-            _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+            _validators.Select(v => v.ValidateAsync(context, cancellationToken))
+        );
 
         var errorsDictionary = validationFailures
             .Where(validationResult => !validationResult.IsValid)
@@ -42,11 +45,9 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineB
             .GroupBy(
                 x => x.PropertyName,
                 x => x.ErrorMessage,
-                (propertyName, errorMessages) => new
-                {
-                    Key = propertyName,
-                    Values = errorMessages.Distinct().ToArray()
-                })
+                (propertyName, errorMessages) =>
+                    new { Key = propertyName, Values = errorMessages.Distinct().ToArray() }
+            )
             .ToDictionary(x => x.Key, x => x.Values);
 
         if (errorsDictionary.Count == 0)

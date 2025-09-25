@@ -1,4 +1,4 @@
-﻿using BankSystem.Account.Application.Interfaces;
+﻿using BankSystem.Shared.Application.Interfaces;
 using BankSystem.Shared.Domain.Common;
 using MediatR;
 

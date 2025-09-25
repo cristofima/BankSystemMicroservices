@@ -1,4 +1,5 @@
 ﻿using BankSystem.Account.Application.Commands;
+using BankSystem.Shared.Application.Extensions;
 using FluentValidation;
 
 namespace BankSystem.Account.Application.Validators;
@@ -7,9 +8,7 @@ public class FreezeAccountCommandValidator : AbstractValidator<FreezeAccountComm
 {
     public FreezeAccountCommandValidator()
     {
-        RuleFor(x => x.AccountId)
-            .NotEmpty()
-            .WithMessage("Account ID is required");
+        RuleFor(x => x.AccountId).NotEmptyGuid().WithMessage("Account ID is required");
 
         RuleFor(x => x.Reason)
             .NotEmpty()
