@@ -1,10 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
 using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Infrastructure.Extensions;
 using BankSystem.Shared.Kernel.Common;
 using BankSystem.Shared.WebApiDefaults.Constants;
+using BankSystem.Shared.WebApiDefaults.JsonConverters;
 using BankSystem.Shared.WebApiDefaults.Middlewares;
 using BankSystem.Shared.WebApiDefaults.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -37,14 +40,26 @@ public static class WebApiExtensions
     )
     {
         // Add Controllers with common configuration
-        services.AddControllers(options =>
-        {
-            // Global model validation
-            options.ModelValidatorProviders.Clear();
+        services
+            .AddControllers(options =>
+            {
+                // Global model validation
+                options.ModelValidatorProviders.Clear();
 
-            // Allow services to add additional configuration
-            configureControllers?.Invoke(options);
-        });
+                // Allow services to add additional configuration
+                configureControllers?.Invoke(options);
+            })
+            .AddJsonOptions(options =>
+            {
+                // Add custom GUID converters for handling empty string scenarios
+                options.JsonSerializerOptions.Converters.Add(new GuidJsonConverter());
+
+                // Configure JSON serialization settings
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.WriteIndented = false;
+                options.JsonSerializerOptions.DefaultIgnoreCondition =
+                    JsonIgnoreCondition.WhenWritingNull;
+            });
 
         // Configure API versioning
         services
@@ -134,6 +149,7 @@ public static class WebApiExtensions
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials()
+                    .SetPreflightMaxAge(TimeSpan.FromMinutes(10))
                     .WithExposedHeaders(HttpHeaderConstants.CommonExposedHeaders.ToArray());
             });
         });
