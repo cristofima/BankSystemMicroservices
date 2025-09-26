@@ -227,11 +227,14 @@ BankSystemMicroservices/
 │   │       └── 📂 tests/                        # Same test structure
 │   └── 📂 shared/                               # 🔗 Shared Components
 │       ├── 📂 src/
+│       │   ├── 📂 BankSystem.Shared.Application/ # Application layer components
 │       │   ├── 📂 BankSystem.Shared.Domain/     # Common domain logic
 │       │   ├── 📂 BankSystem.Shared.Infrastructure/ # Common infrastructure
-│       │   └── 📂 BankSystem.Shared.WebApi/     # Web API configurations
+│       │   ├── 📂 BankSystem.Shared.Kernel/     # Core domain abstractions
+│       │   └── 📂 BankSystem.Shared.WebApiDefaults/     # Web API configurations
 │       └── 📂 tests/
-│           └── 📂 BankSystem.Shared.Domain.UnitTests/
+│           │── 📂 BankSystem.Shared.Domain.UnitTests/
+│           └── 📂 BankSystem.Shared.Infrastructure.IntegrationTests/
 ├── 📂 docs/                                     # 📚 Documentation
 │   ├── 📄 dotnet-development-guidelines.md      # Development guidelines
 │   ├── 📄 health-checks-configuration.md        # Health checks guide

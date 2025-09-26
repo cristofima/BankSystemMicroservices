@@ -5,8 +5,15 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura,opencover</Format>
-          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*,[*.Api*]*</Exclude>
-          <ExcludeByFile>**/Extensions/**;**/Migrations/**;**/Middlewares/**</ExcludeByFile>
+          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*,[*Api*]*,[*.Shared.Application*]*</Exclude>
+          <ExcludeByFile>
+            **/Migrations/**;
+            **/*Extensions.cs;
+            **/*Behavior.cs;
+            **/*DbContext.cs;
+            **/DependencyInjection.cs;
+          </ExcludeByFile>
+          <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
           <IncludeTestAssembly>false</IncludeTestAssembly>
         </Configuration>
       </DataCollector>

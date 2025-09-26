@@ -64,7 +64,7 @@ stages:
           sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/*.xml
           sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/*.trx
           sonar.sourceEncoding=UTF-8
-          sonar.coverage.exclusions=**/*.md,**/README.*,**/docs/**/*.md,**/docs/**/*.y?(a)ml,**/Extensions/**,**/Middlewares/**
+          sonar.coverage.exclusions=**/*.md,**/README.*,**/docs/**,**/Extensions/**,**/*Api*/**,**/*AppHost/**,**/*Behavior.cs,**/DependencyInjection.cs,**/*DbContext.cs
       condition: and(succeeded(), ne(variables['SONAR_PROJECT_KEY'], ''))
       timeoutInMinutes: 10
 

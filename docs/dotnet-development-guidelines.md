@@ -34,9 +34,11 @@
 │   │   └── Reporting/                # Analytics & Reports
 │   └── shared/
 │       └── src/
+│           ├── BankSystem.Shared.Application/    # Application layer components
 │           ├── BankSystem.Shared.Domain/         # Common domain logic
 │           ├── BankSystem.Shared.Infrastructure/ # Common infrastructure
-│           └── BankSystem.Shared.WebApi/         # Web API configurations
+│           ├── BankSystem.Shared.Kernel/         # Core domain abstractions
+│           └── BankSystem.Shared.WebApiDefaults/ # Web API configuration defaults
 ├── tests/
 ├── docs/
 ├── scripts/                  # Build and deployment scripts
@@ -107,6 +109,16 @@ Each microservice follows Clean Architecture with this structure:
 
 The shared projects provide common functionality across all microservices:
 
+#### BankSystem.Shared.Application
+
+- **Purpose**: Common application layer components, pipeline behaviors, and cross-cutting concerns
+- **Contents**:
+  - MediatR pipeline behaviors (`ValidationPipelineBehavior`, `LoggingPipelineBehavior`)
+  - FluentValidation extensions (`ValidationExtensions`)
+  - Application interfaces (`IValidationRequest`)
+  - Pipeline behavior registration extensions
+  - Common application patterns and utilities
+
 #### BankSystem.Shared.Domain
 
 - **Purpose**: Common domain logic, base entities, value objects, and domain events
@@ -127,17 +139,25 @@ The shared projects provide common functionality across all microservices:
   - Caching abstractions
   - Azure Service Bus integration
 
-#### BankSystem.Shared.WebApi
+#### BankSystem.Shared.Kernel
 
-- **Purpose**: Web API common configurations and extensions
+- **Purpose**: Core domain abstractions, common interfaces, and foundational utilities
 - **Contents**:
-  - Authentication and authorization setup
-  - CORS configuration
-  - API versioning
-  - Rate limiting
-  - Health checks
-  - Scalar documentation
-  - Common middleware extensions
+  - Core domain interfaces (`IAggregateRoot`, `ICurrentUser`)
+  - Domain events base interfaces (`IDomainEvent`)
+  - Database engine enumerations (`DatabaseEngine`)
+  - Common domain abstractions
+  - Foundational domain patterns
+
+#### BankSystem.Shared.WebApiDefaults
+
+- **Purpose**: Opinionated defaults for configuring Web API layers across services
+- **Contents**:
+  - JSON serialization defaults and converters (e.g., `GuidJsonConverter`)
+  - ProblemDetails and error response conventions
+  - CORS helpers and middleware extensions
+  - Common API pipeline extensions (Serilog, health checks, etc.)
+  - Integration glue for Aspire ServiceDefaults
 
 ### Project Dependencies
 
@@ -147,16 +167,24 @@ The shared projects provide common functionality across all microservices:
 │    (Security, Account, etc.)        │
 └─────────────────┬───────────────────┘
                   │
-    ┌─────────────▼─────────────┐
-    │  BankSystem.Shared.WebApi │
-    └─────────────┬─────────────┘
+┌─────────────────▼─────────────────┐
+│  BankSystem.Shared.WebApiDefaults │
+└─────────────────┬─────────────────┘
                   │
 ┌─────────────────▼─────────────────┐
-│ BankSystem.Shared.Infrastructure │
+│ BankSystem.Shared.Application     │
+└─────────────────┬─────────────────┘
+                  │
+┌─────────────────▼─────────────────┐
+│ BankSystem.Shared.Infrastructure  │
 └─────────────────┬─────────────────┘
                   │
     ┌─────────────▼─────────────┐
     │  BankSystem.Shared.Domain │
+    └─────────────┬─────────────┘
+                  │
+    ┌─────────────▼─────────────┐
+    │  BankSystem.Shared.Kernel │
     └───────────────────────────┘
 ```
 

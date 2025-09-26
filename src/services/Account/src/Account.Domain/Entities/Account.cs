@@ -1,7 +1,6 @@
 using BankSystem.Account.Domain.Enums;
-using BankSystem.Account.Domain.Events;
-using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Shared.Domain.Common;
+using BankSystem.Shared.Domain.Events.Account;
 using BankSystem.Shared.Domain.Validation;
 using BankSystem.Shared.Domain.ValueObjects;
 

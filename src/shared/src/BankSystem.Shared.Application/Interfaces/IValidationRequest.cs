@@ -1,4 +1,4 @@
-﻿namespace BankSystem.Account.Application.Interfaces;
+﻿namespace BankSystem.Shared.Application.Interfaces;
 
 /// <summary>
 /// Represents a request that can provide a custom title for validation errors.

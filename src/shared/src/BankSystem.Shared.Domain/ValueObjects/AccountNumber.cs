@@ -1,6 +1,6 @@
 using BankSystem.Shared.Domain.Exceptions;
 
-namespace BankSystem.Account.Domain.ValueObjects;
+namespace BankSystem.Shared.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a bank account number with validation and formatting logic.
@@ -21,7 +21,9 @@ public record AccountNumber
         var cleanValue = value.Trim();
 
         if (!IsValidFormat(cleanValue))
-            throw new DomainException($"Invalid account number format: {value}. Expected format are 10 digits");
+            throw new DomainException(
+                $"Invalid account number format: {value}. Expected format are 10 digits"
+            );
 
         Value = cleanValue;
     }

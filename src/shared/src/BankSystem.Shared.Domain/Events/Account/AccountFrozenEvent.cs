@@ -1,7 +1,6 @@
-﻿using BankSystem.Account.Domain.ValueObjects;
-using BankSystem.Shared.Domain.Events;
+﻿using BankSystem.Shared.Domain.ValueObjects;
 
-namespace BankSystem.Account.Domain.Events;
+namespace BankSystem.Shared.Domain.Events.Account;
 
 public record AccountFrozenEvent(
     Guid AccountId,

@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BankSystem.Account.Application.Interfaces;
-using BankSystem.Account.Domain.Events;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Account.Infrastructure.Repositories;
 using BankSystem.Shared.Auditing;
+using BankSystem.Shared.Domain.Events.Account;
 using BankSystem.Shared.Infrastructure.DomainEvents;
 using BankSystem.Shared.Infrastructure.Extensions;
 using BankSystem.Shared.Kernel.Common;
