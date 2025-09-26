@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using BankSystem.Account.Domain.ValueObjects;
+using BankSystem.Shared.Domain.ValueObjects;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;

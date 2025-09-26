@@ -8,9 +8,7 @@ public class CreateAccountCommandValidator : AbstractValidator<CreateAccountComm
 {
     public CreateAccountCommandValidator()
     {
-        RuleFor(x => x.AccountType)
-            .IsInEnum()
-            .WithMessage("Invalid account type");
+        RuleFor(x => x.AccountType).IsInEnum().WithMessage("Invalid account type");
 
         RuleFor(x => x.Currency)
             .NotEmpty()

@@ -1,5 +1,5 @@
 using BankSystem.Account.Domain.Enums;
-using BankSystem.Account.Domain.Events;
+using BankSystem.Shared.Domain.Events.Account;
 using BankSystem.Shared.Domain.ValueObjects;
 using FluentAssertions;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;

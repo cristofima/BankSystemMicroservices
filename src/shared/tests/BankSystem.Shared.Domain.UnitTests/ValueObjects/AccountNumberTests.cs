@@ -1,7 +1,7 @@
-﻿using BankSystem.Account.Domain.ValueObjects;
+﻿using BankSystem.Shared.Domain.ValueObjects;
 using BankSystem.Shared.Domain.Exceptions;
 
-namespace BankSystem.Account.Domain.UnitTests.ValueObjects;
+namespace BankSystem.Shared.Domain.UnitTests.ValueObjects;
 
 public class AccountNumberTests
 {

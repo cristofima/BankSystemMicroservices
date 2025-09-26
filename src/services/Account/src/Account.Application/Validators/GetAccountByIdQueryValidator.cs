@@ -1,5 +1,6 @@
-using FluentValidation;
 using BankSystem.Account.Application.Queries;
+using BankSystem.Shared.Application.Extensions;
+using FluentValidation;
 
 namespace BankSystem.Account.Application.Validators;
 
@@ -7,8 +8,6 @@ public class GetAccountByIdQueryValidator : AbstractValidator<GetAccountByIdQuer
 {
     public GetAccountByIdQueryValidator()
     {
-        RuleFor(x => x.AccountId)
-            .NotEmpty()
-            .WithMessage("Account ID is required");
+        RuleFor(x => x.AccountId).NotEmptyGuid().WithMessage("Account ID is required");
     }
 }

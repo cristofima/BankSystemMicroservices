@@ -1,7 +1,7 @@
 ﻿using BankSystem.Account.Application.Interfaces;
-using BankSystem.Account.Domain.ValueObjects;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using AccountEntity = BankSystem.Account.Domain.Entities.Account;

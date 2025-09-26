@@ -1,8 +1,8 @@
-﻿using MediatR;
+﻿using System.Diagnostics.CodeAnalysis;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
 
-namespace BankSystem.Account.Application.Behaviours;
+namespace BankSystem.Shared.Application.Behaviours;
 
 /// <summary>
 /// Pipeline behavior for logging request/response information
@@ -23,7 +23,8 @@ public class LoggingPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TR
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var requestName = typeof(TRequest).Name;
 

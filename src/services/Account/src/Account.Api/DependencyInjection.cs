@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using BankSystem.Account.Application.Behaviours;
 using BankSystem.Account.Infrastructure.Data;
 using BankSystem.Shared.WebApiDefaults.Extensions;
 
@@ -17,12 +16,6 @@ public static class DependencyInjection
         services.AddWebApiDefaults(configuration, "Account API");
 
         services.AddDbContextHealthCheck<AccountDbContext>();
-
-        services.AddMediatR(config =>
-        {
-            config.RegisterServicesFromAssembly(typeof(Application.IAssemblyReference).Assembly);
-            config.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
-        });
 
         return services;
     }

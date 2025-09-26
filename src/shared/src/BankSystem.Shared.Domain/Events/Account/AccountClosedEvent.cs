@@ -1,7 +1,6 @@
-using BankSystem.Account.Domain.ValueObjects;
-using BankSystem.Shared.Domain.Events;
+using BankSystem.Shared.Domain.ValueObjects;
 
-namespace BankSystem.Account.Domain.Events;
+namespace BankSystem.Shared.Domain.Events.Account;
 
 /// <summary>
 /// Domain event raised when an account is closed.
