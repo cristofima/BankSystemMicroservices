@@ -34,8 +34,9 @@ public class GuidJsonConverter : JsonConverter<Guid>
                 return Guid.Empty;
 
             default:
-                // For any other token type, try default parsing
-                return JsonSerializer.Deserialize<Guid>(ref reader, options);
+                throw new JsonException(
+                    $"Unexpected token parsing Guid. Expected String or Null but got {reader.TokenType}."
+                );
         }
     }
 

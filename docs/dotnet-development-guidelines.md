@@ -38,7 +38,7 @@
 │           ├── BankSystem.Shared.Domain/         # Common domain logic
 │           ├── BankSystem.Shared.Infrastructure/ # Common infrastructure
 │           ├── BankSystem.Shared.Kernel/         # Core domain abstractions
-│           └── BankSystem.Shared.WebApi/         # Web API configurations
+│           └── BankSystem.Shared.WebApiDefaults/ # Web API configuration defaults
 ├── tests/
 ├── docs/
 ├── scripts/                  # Build and deployment scripts
@@ -149,17 +149,15 @@ The shared projects provide common functionality across all microservices:
   - Common domain abstractions
   - Foundational domain patterns
 
-#### BankSystem.Shared.WebApi
+#### BankSystem.Shared.WebApiDefaults
 
-- **Purpose**: Web API common configurations and extensions
+- **Purpose**: Opinionated defaults for configuring Web API layers across services
 - **Contents**:
-  - Authentication and authorization setup
-  - CORS configuration
-  - API versioning
-  - Rate limiting
-  - Health checks
-  - Scalar documentation
-  - Common middleware extensions
+  - JSON serialization defaults and converters (e.g., `GuidJsonConverter`)
+  - ProblemDetails and error response conventions
+  - CORS helpers and middleware extensions
+  - Common API pipeline extensions (Serilog, health checks, etc.)
+  - Integration glue for Aspire ServiceDefaults
 
 ### Project Dependencies
 
@@ -169,16 +167,16 @@ The shared projects provide common functionality across all microservices:
 │    (Security, Account, etc.)        │
 └─────────────────┬───────────────────┘
                   │
-    ┌─────────────▼─────────────┐
-    │  BankSystem.Shared.WebApi │
-    └─────────────┬─────────────┘
-                  │
 ┌─────────────────▼─────────────────┐
-│ BankSystem.Shared.Application    │
+│  BankSystem.Shared.WebApiDefaults │
 └─────────────────┬─────────────────┘
                   │
 ┌─────────────────▼─────────────────┐
-│ BankSystem.Shared.Infrastructure │
+│ BankSystem.Shared.Application     │
+└─────────────────┬─────────────────┘
+                  │
+┌─────────────────▼─────────────────┐
+│ BankSystem.Shared.Infrastructure  │
 └─────────────────┬─────────────────┘
                   │
     ┌─────────────▼─────────────┐
