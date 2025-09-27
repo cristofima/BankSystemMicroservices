@@ -1,0 +1,350 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+using BankSystem.Shared.WebApiDefaults.Authentication;
+using BankSystem.Shared.WebApiDefaults.Configuration;
+using BankSystem.Shared.WebApiDefaults.Interceptors;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
+using Microsoft.Extensions.Options;
+
+namespace BankSystem.Shared.WebApiDefaults.Extensions;
+
+/// <summary>
+/// Extensions for configuring gRPC services with common defaults for the Bank System.
+/// Provides authentication, authorization, and configuration for gRPC services.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public static class GrpcExtensions
+{
+    /// <summary>
+    /// Adds gRPC services with Bank System defaults including enhanced inter-service security.
+    /// Supports both API Key (development) and mTLS (production) authentication methods.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configuration">The application configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddGrpcDefaults(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        var isDevelopment =
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
+        // Configure inter-service security options
+        var interServiceOptions = new InterServiceSecurityOptions();
+        configuration.GetSection(InterServiceSecurityOptions.SectionName).Bind(interServiceOptions);
+        services.Configure<InterServiceSecurityOptions>(
+            configuration.GetSection(InterServiceSecurityOptions.SectionName)
+        );
+
+        // Set authentication method based on environment if not explicitly configured
+        if (
+            interServiceOptions.Authentication.Method == AuthenticationMethod.ApiKey
+            && !isDevelopment
+        )
+        {
+            // In production, prefer mTLS if certificates are available
+            if (interServiceOptions.MTls.IsValid())
+            {
+                interServiceOptions.Authentication.Method = AuthenticationMethod.MTls;
+            }
+        }
+
+        // Add gRPC services with enhanced configuration
+        services.AddGrpc(options =>
+        {
+            // Configure message size limits from options
+            options.MaxReceiveMessageSize = interServiceOptions.Grpc.MaxMessageSize;
+            options.MaxSendMessageSize = interServiceOptions.Grpc.MaxMessageSize;
+
+            // Enable detailed errors based on environment and configuration
+            options.EnableDetailedErrors =
+                isDevelopment && interServiceOptions.Grpc.EnableDetailedErrors;
+
+            // Add inter-service authentication interceptor
+            options.Interceptors.Add<InterServiceAuthenticationInterceptor>();
+        });
+
+        // Register the interceptor
+        services.AddTransient<InterServiceAuthenticationInterceptor>();
+
+        // Add gRPC reflection based on configuration
+        if (isDevelopment && interServiceOptions.Grpc.Reflection.Enabled)
+        {
+            services.AddGrpcReflection();
+        }
+
+        // Configure authentication schemes
+        ConfigureAuthentication(services, configuration, interServiceOptions);
+
+        // Configure authorization policies
+        ConfigureAuthorization(services, interServiceOptions);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures gRPC middleware and endpoints for the Web API.
+    /// This should be called after UseWebApiDefaults.
+    /// </summary>
+    /// <param name="app">The web application</param>
+    /// <returns>The web application for chaining</returns>
+    public static WebApplication UseGrpcDefaults(this WebApplication app)
+    {
+        // Get inter-service security options to check if reflection is enabled
+        var interServiceOptions = app
+            .Services.GetRequiredService<IOptions<InterServiceSecurityOptions>>()
+            .Value;
+
+        // Add gRPC reflection only if it was registered and enabled
+        if (app.Environment.IsDevelopment() && interServiceOptions.Grpc.Reflection.Enabled)
+        {
+            app.MapGrpcReflectionService();
+        }
+
+        return app;
+    }
+
+    /// <summary>
+    /// Maps a gRPC service with proper authentication based on environment.
+    /// In development, uses API Key authentication for testing.
+    /// Maps a gRPC service with enhanced authentication based on configuration.
+    /// Supports both API Key (development) and mTLS (production) authentication methods.
+    /// </summary>
+    /// <typeparam name="TService">The gRPC service type</typeparam>
+    /// <param name="app">The web application</param>
+    /// <param name="requireAuth">Whether to require authentication (default: true)</param>
+    /// <returns>The gRPC service endpoint convention builder</returns>
+    public static GrpcServiceEndpointConventionBuilder MapGrpcServiceWithAuth<TService>(
+        this WebApplication app,
+        bool requireAuth = true
+    )
+        where TService : class
+    {
+        var endpointBuilder = app.MapGrpcService<TService>();
+
+        if (!requireAuth)
+            return endpointBuilder;
+
+        // Get inter-service security options to determine authentication method
+        var interServiceOptions = app
+            .Services.GetRequiredService<IOptions<InterServiceSecurityOptions>>()
+            .Value;
+        var isDevelopment = app.Environment.IsDevelopment();
+
+        if (
+            isDevelopment
+            || interServiceOptions.Authentication.Method == AuthenticationMethod.ApiKey
+        )
+        {
+            // Use API Key authentication with policy-based authorization
+            endpointBuilder.RequireAuthorization("InterServiceApiKey");
+        }
+        else
+        {
+            // Use mTLS authentication with certificate validation
+            endpointBuilder.RequireAuthorization("InterServiceMTls");
+        }
+
+        return endpointBuilder;
+    }
+
+    #region Private Helper Methods
+
+    /// <summary>
+    /// Configures authentication schemes based on the security options.
+    /// </summary>
+    private static void ConfigureAuthentication(
+        IServiceCollection services,
+        IConfiguration configuration,
+        InterServiceSecurityOptions options
+    )
+    {
+        var authBuilder = services.AddAuthentication();
+
+        // Configure API Key authentication if enabled
+        if (options.Authentication.Method == AuthenticationMethod.ApiKey)
+        {
+            authBuilder.AddScheme<ApiKeyAuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+                "InterServiceApiKey",
+                configureOptions =>
+                {
+                    configureOptions.ApiKeyHeaderName = options.ApiKey.HeaderName;
+                    configureOptions.ApiKeyValue = options.ApiKey.Value;
+                    configureOptions.UserName = options.ApiKey.UserName;
+                    configureOptions.UserRole = options.ApiKey.UserRole;
+                    configureOptions.ValidServices = options.Authentication.AllowedServices;
+                }
+            );
+        }
+
+        // Configure certificate authentication for mTLS if enabled
+        // TODO: Implement mTLS authentication when Microsoft.AspNetCore.Authentication.Certificate package is added
+        if (options.Authentication.Method == AuthenticationMethod.MTls)
+        {
+            // For now, mTLS authentication requires additional package:
+            // Microsoft.AspNetCore.Authentication.Certificate
+            throw new NotImplementedException(
+                "mTLS authentication requires Microsoft.AspNetCore.Authentication.Certificate package. "
+                    + "Please install the package or use ApiKey authentication for development."
+            );
+        }
+    }
+
+    /// <summary>
+    /// Configures authorization policies for inter-service communication.
+    /// </summary>
+    private static void ConfigureAuthorization(
+        IServiceCollection services,
+        InterServiceSecurityOptions options
+    )
+    {
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(
+                "InterServiceApiKey",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.AddAuthenticationSchemes("InterServiceApiKey");
+                    policy.RequireClaim("scope", options.Authentication.RequiredScope);
+                }
+            )
+            .AddPolicy(
+                "InterServiceMTls",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.AddAuthenticationSchemes("InterServiceMTls");
+                    policy.RequireClaim("scope", options.Authentication.RequiredScope);
+                }
+            );
+    }
+
+    /// <summary>
+    /// Configures the HTTP client handler for mTLS authentication.
+    /// </summary>
+    private static void ConfigureMTlsClient(
+        HttpClientHandler handler,
+        InterServiceSecurityOptions.MTlsOptions options
+    )
+    {
+        if (!options.IsValid())
+            return;
+
+        try
+        {
+            // Load client certificate
+            X509Certificate2? clientCertificate = null;
+
+            if (!string.IsNullOrEmpty(options.ClientCertificatePath))
+            {
+                // For now, assume no password. In production, passwords should be managed securely
+                clientCertificate = new X509Certificate2(options.ClientCertificatePath);
+            }
+            else if (options.AzureKeyVault.Enabled)
+            {
+                // TODO: Implement Azure Key Vault certificate loading
+                // clientCertificate = await LoadCertificateFromKeyVault(options.AzureKeyVault);
+                throw new NotImplementedException(
+                    "Azure Key Vault certificate loading not implemented yet"
+                );
+            }
+
+            if (clientCertificate != null)
+            {
+                handler.ClientCertificates.Add(clientCertificate);
+                handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+            }
+
+            // Configure server certificate validation
+            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, errors) =>
+                ValidateServerCertificate(cert, chain, errors, options);
+        }
+        catch (Exception)
+        {
+            // Log certificate configuration error
+            // In a real implementation, proper logging should be added here
+            throw new InvalidOperationException("Failed to configure mTLS client certificate");
+        }
+    }
+
+    /// <summary>
+    /// Configures Kestrel listen options for mTLS server authentication.
+    /// </summary>
+    private static void ConfigureMTlsServer(
+        ListenOptions listenOptions,
+        InterServiceSecurityOptions.MTlsOptions options
+    )
+    {
+        if (!options.IsValid())
+            return;
+
+        try
+        {
+            // Load server certificate
+            X509Certificate2? serverCertificate = null;
+
+            if (!string.IsNullOrEmpty(options.ServerCertificatePath))
+            {
+                // For now, assume no password. In production, passwords should be managed securely
+                serverCertificate = new X509Certificate2(options.ServerCertificatePath);
+            }
+            else if (options.AzureKeyVault.Enabled)
+            {
+                // TODO: Implement Azure Key Vault certificate loading
+                // serverCertificate = await LoadCertificateFromKeyVault(options.AzureKeyVault);
+                throw new NotImplementedException(
+                    "Azure Key Vault certificate loading not implemented yet"
+                );
+            }
+
+            if (serverCertificate != null)
+            {
+                listenOptions.UseHttps(
+                    serverCertificate,
+                    httpsOptions =>
+                    {
+                        httpsOptions.ClientCertificateMode =
+                            ClientCertificateMode.RequireCertificate;
+                        httpsOptions.AllowAnyClientCertificate();
+                    }
+                );
+            }
+        }
+        catch (Exception)
+        {
+            // Log certificate configuration error
+            // In a real implementation, proper logging should be added here
+            throw new InvalidOperationException("Failed to configure mTLS server certificate");
+        }
+    }
+
+    /// <summary>
+    /// Validates the server certificate for mTLS connections.
+    /// </summary>
+    private static bool ValidateServerCertificate(
+        X509Certificate2? cert,
+        X509Chain? chain,
+        SslPolicyErrors errors,
+        InterServiceSecurityOptions.MTlsOptions options
+    )
+    {
+        if (cert == null)
+            return false;
+
+        // In development or testing, allow self-signed certificates
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+        {
+            return true;
+        }
+
+        // Perform additional certificate validation based on requirements
+        // This is a simplified validation - in production, implement proper certificate chain validation
+        return errors == SslPolicyErrors.None;
+    }
+
+    #endregion Private Helper Methods
+}
