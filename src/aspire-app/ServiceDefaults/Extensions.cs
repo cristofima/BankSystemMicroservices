@@ -182,8 +182,8 @@ public static partial class Extensions
                             return !IsExcludedPath(path);
                         }
                     )
-                    // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
-                    //.AddGrpcClientInstrumentation()
+                    // Enable gRPC instrumentation for microservices communication
+                    .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation();
             });
 
