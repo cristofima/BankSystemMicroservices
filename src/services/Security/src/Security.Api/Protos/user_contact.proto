@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package security.v1;
+
+option csharp_namespace = "BankSystem.Security.Api.Protos";
+
+// Service for retrieving user contact information for inter-service communication
+service UserContactService {
+  // Get user contact information by customer ID
+  rpc GetUserContactByCustomerId(GetUserContactRequest) returns (GetUserContactResponse);
+  
+  // Get multiple user contacts by customer IDs (for batch operations)
+  rpc GetUserContactsByCustomerIds(GetUserContactsBatchRequest) returns (GetUserContactsBatchResponse);
+}
+
+// Request messages
+message GetUserContactRequest {
+  string customer_id = 1;
+}
+
+message GetUserContactsBatchRequest {
+  repeated string customer_ids = 1;
+}
+
+// Response messages
+message GetUserContactResponse {
+  bool success = 1;
+  string error_message = 2;
+  UserContactInfo data = 3;
+}
+
+message GetUserContactsBatchResponse {
+  bool success = 1;
+  string error_message = 2;
+  repeated UserContactInfo data = 3;
+}
+
+// Data transfer objects
+message UserContactInfo {
+  string customer_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string phone_number = 5;
+  bool is_active = 6;
+}
