@@ -10,19 +10,19 @@ namespace Security.Api.Controllers;
 [ApiController]
 public abstract class BaseController : ControllerBase
 {
-    protected readonly IHttpContextInfoService HttpContextInfoService;
-    protected readonly IApiResponseService ApiResponseService;
+    protected readonly HttpContextInfoService HttpContextInfoService;
+    private readonly ApiResponseService _apiResponseService;
 
     protected BaseController(
-        IHttpContextInfoService httpContextInfoService,
-        IApiResponseService apiResponseService
+        HttpContextInfoService httpContextInfoService,
+        ApiResponseService apiResponseService
     )
     {
         Guard.AgainstNull(httpContextInfoService);
         Guard.AgainstNull(apiResponseService);
 
         HttpContextInfoService = httpContextInfoService;
-        ApiResponseService = apiResponseService;
+        _apiResponseService = apiResponseService;
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult ValidationError(string message)
     {
-        var problemDetails = ApiResponseService.CreateValidationFailedResponse(
+        var problemDetails = _apiResponseService.CreateValidationFailedResponse(
             message,
             Request.Path
         );
@@ -58,7 +58,7 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult AuthenticationFailed(string message)
     {
-        var problemDetails = ApiResponseService.CreateAuthenticationFailedResponse(
+        var problemDetails = _apiResponseService.CreateAuthenticationFailedResponse(
             message,
             Request.Path
         );
@@ -70,7 +70,7 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult ResourceNotFound(string message)
     {
-        var problemDetails = ApiResponseService.CreateNotFoundResponse(message, Request.Path);
+        var problemDetails = _apiResponseService.CreateNotFoundResponse(message, Request.Path);
         return NotFound(problemDetails);
     }
 
@@ -79,7 +79,7 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult Conflict(string message)
     {
-        var problemDetails = ApiResponseService.CreateProblemDetails(
+        var problemDetails = _apiResponseService.CreateProblemDetails(
             "Conflict",
             message,
             409,
@@ -93,7 +93,7 @@ public abstract class BaseController : ControllerBase
     /// </summary>
     protected IActionResult UnprocessableEntity(string message)
     {
-        var problemDetails = ApiResponseService.CreateProblemDetails(
+        var problemDetails = _apiResponseService.CreateProblemDetails(
             "Unprocessable Entity",
             message,
             422,

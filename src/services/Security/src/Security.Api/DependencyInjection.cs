@@ -62,11 +62,8 @@ public static class DependencyInjection
         services.AddMemoryCache();
 
         // Register API helper services
-        services.AddScoped<IHttpContextInfoService, HttpContextInfoService>();
-        services.AddScoped<IApiResponseService, ApiResponseService>();
-
-        // Register middleware services
-        services.AddScoped<ITokenRevocationService, TokenRevocationService>();
+        services.AddScoped<HttpContextInfoService>();
+        services.AddScoped<ApiResponseService>();
 
         // Register background services
         services.AddHostedService<RevokedTokensBackgroundService>();

@@ -107,16 +107,10 @@ public static class DependencyInjection
             .AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"))
             .AddPolicy("RequireManagerRole", policy => policy.RequireRole("Manager", "Admin"));
 
-        // Register HTTP context accessor for gRPC services
-        services.AddHttpContextAccessor();
-
         // Register application services
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ISecurityAuditService, SecurityAuditService>();
-
-        // Register gRPC specialized services
-        services.AddScoped<IGrpcContextService, GrpcContextService>();
 
         // Register repositories
         services.AddScoped<IUserRepository, UserRepository>();
