@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using BankSystem.Shared.WebApiDefaults.Constants;
 
 namespace BankSystem.Shared.WebApiDefaults.Configuration;
 
@@ -95,7 +96,7 @@ public class InterServiceSecurityOptions
         /// <summary>
         /// Username for API key authentication context
         /// </summary>
-        public string UserName { get; set; } = "InterServiceApiKey";
+        public string UserName { get; set; } = InterServiceConstants.ApiKeyScheme;
 
         /// <summary>
         /// Role assigned to API key authenticated requests

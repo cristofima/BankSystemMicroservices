@@ -3,6 +3,7 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using BankSystem.Shared.WebApiDefaults.Authentication;
 using BankSystem.Shared.WebApiDefaults.Configuration;
+using BankSystem.Shared.WebApiDefaults.Constants;
 using BankSystem.Shared.WebApiDefaults.Interceptors;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
@@ -30,7 +31,8 @@ public static class GrpcExtensions
     )
     {
         var isDevelopment =
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+            Environment.GetEnvironmentVariable(InterServiceConstants.AspNetCoreEnvironment)
+            == InterServiceConstants.DevelopmentEnvironment;
 
         // Configure inter-service security options
         var interServiceOptions = new InterServiceSecurityOptions();
@@ -140,12 +142,12 @@ public static class GrpcExtensions
         )
         {
             // Use API Key authentication with policy-based authorization
-            endpointBuilder.RequireAuthorization("InterServiceApiKey");
+            endpointBuilder.RequireAuthorization(InterServiceConstants.ApiKeyScheme);
         }
         else
         {
             // Use mTLS authentication with certificate validation
-            endpointBuilder.RequireAuthorization("InterServiceMTls");
+            endpointBuilder.RequireAuthorization(InterServiceConstants.MTlsScheme);
         }
 
         return endpointBuilder;
@@ -168,7 +170,7 @@ public static class GrpcExtensions
         if (options.Authentication.Method == AuthenticationMethod.ApiKey)
         {
             authBuilder.AddScheme<ApiKeyAuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
-                "InterServiceApiKey",
+                InterServiceConstants.ApiKeyScheme,
                 configureOptions =>
                 {
                     configureOptions.ApiKeyHeaderName = options.ApiKey.HeaderName;
@@ -186,10 +188,7 @@ public static class GrpcExtensions
         {
             // For now, mTLS authentication requires additional package:
             // Microsoft.AspNetCore.Authentication.Certificate
-            throw new NotImplementedException(
-                "mTLS authentication requires Microsoft.AspNetCore.Authentication.Certificate package. "
-                    + "Please install the package or use ApiKey authentication for development."
-            );
+            throw new NotImplementedException(InterServiceConstants.MTlsPackageRequiredError);
         }
     }
 
@@ -204,21 +203,27 @@ public static class GrpcExtensions
         services
             .AddAuthorizationBuilder()
             .AddPolicy(
-                "InterServiceApiKey",
+                InterServiceConstants.ApiKeyScheme,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.AddAuthenticationSchemes("InterServiceApiKey");
-                    policy.RequireClaim("scope", options.Authentication.RequiredScope);
+                    policy.AddAuthenticationSchemes(InterServiceConstants.ApiKeyScheme);
+                    policy.RequireClaim(
+                        InterServiceConstants.ScopeClaim,
+                        options.Authentication.RequiredScope
+                    );
                 }
             )
             .AddPolicy(
-                "InterServiceMTls",
+                InterServiceConstants.MTlsScheme,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.AddAuthenticationSchemes("InterServiceMTls");
-                    policy.RequireClaim("scope", options.Authentication.RequiredScope);
+                    policy.AddAuthenticationSchemes(InterServiceConstants.MTlsScheme);
+                    policy.RequireClaim(
+                        InterServiceConstants.ScopeClaim,
+                        options.Authentication.RequiredScope
+                    );
                 }
             );
     }
@@ -249,7 +254,7 @@ public static class GrpcExtensions
                 // TODO: Implement Azure Key Vault certificate loading
                 // clientCertificate = await LoadCertificateFromKeyVault(options.AzureKeyVault);
                 throw new NotImplementedException(
-                    "Azure Key Vault certificate loading not implemented yet"
+                    InterServiceConstants.KeyVaultNotImplementedError
                 );
             }
 
@@ -267,7 +272,7 @@ public static class GrpcExtensions
         {
             // Log certificate configuration error
             // In a real implementation, proper logging should be added here
-            throw new InvalidOperationException("Failed to configure mTLS client certificate");
+            throw new InvalidOperationException(InterServiceConstants.MTlsClientConfigError);
         }
     }
 
@@ -297,7 +302,7 @@ public static class GrpcExtensions
                 // TODO: Implement Azure Key Vault certificate loading
                 // serverCertificate = await LoadCertificateFromKeyVault(options.AzureKeyVault);
                 throw new NotImplementedException(
-                    "Azure Key Vault certificate loading not implemented yet"
+                    InterServiceConstants.KeyVaultNotImplementedError
                 );
             }
 
@@ -318,7 +323,7 @@ public static class GrpcExtensions
         {
             // Log certificate configuration error
             // In a real implementation, proper logging should be added here
-            throw new InvalidOperationException("Failed to configure mTLS server certificate");
+            throw new InvalidOperationException(InterServiceConstants.MTlsServerConfigError);
         }
     }
 
@@ -336,7 +341,10 @@ public static class GrpcExtensions
             return false;
 
         // In development or testing, allow self-signed certificates
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+        if (
+            Environment.GetEnvironmentVariable(InterServiceConstants.AspNetCoreEnvironment)
+            == InterServiceConstants.DevelopmentEnvironment
+        )
         {
             return true;
         }

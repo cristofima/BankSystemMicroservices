@@ -1,6 +1,7 @@
 using AutoMapper;
 using BankSystem.Security.Api.Protos;
 using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.WebApiDefaults.Constants;
 using Grpc.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +16,7 @@ namespace Security.Api.Services;
 /// This service is secured and only accessible by authenticated microservices.
 /// Uses inter-service authentication (API Key in development, mTLS in production).
 /// </summary>
-[Authorize(Policy = "InterServiceApiKey")]
+[Authorize(Policy = InterServiceConstants.ApiKeyScheme)]
 public class UserContactGrpcService : UserContactService.UserContactServiceBase
 {
     private readonly IMediator _mediator;
