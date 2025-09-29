@@ -16,7 +16,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddWebApiServices(builder.Configuration);
 
 // Add gRPC services with shared defaults
-builder.Services.AddGrpcDefaults(builder.Configuration);
+builder.Services.AddGrpcDefaults(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 app.MapDefaultEndpoints();

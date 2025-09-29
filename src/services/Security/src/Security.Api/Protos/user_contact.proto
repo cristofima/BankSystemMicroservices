@@ -24,15 +24,11 @@ message GetUserContactsBatchRequest {
 
 // Response messages
 message GetUserContactResponse {
-  bool success = 1;
-  string error_message = 2;
-  UserContactInfo data = 3;
+  UserContactInfo data = 1;
 }
 
 message GetUserContactsBatchResponse {
-  bool success = 1;
-  string error_message = 2;
-  repeated UserContactInfo data = 3;
+  repeated UserContactInfo data = 1;
 }
 
 // Data transfer objects

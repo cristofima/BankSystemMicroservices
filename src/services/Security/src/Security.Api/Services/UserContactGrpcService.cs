@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AutoMapper;
 using BankSystem.Security.Api.Protos;
 using BankSystem.Shared.Domain.Validation;
@@ -50,52 +51,67 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
         ServerCallContext context
     )
     {
-        var correlationId = Guid.NewGuid().ToString();
+        var correlationId = GetCorrelationId(context);
+
+        using var _ = _logger.BeginScope(
+            new Dictionary<string, object> { ["CorrelationId"] = correlationId }
+        );
 
         try
         {
-            var (isValid, parsedId, errorMessage) =
-                _grpcValidationService.ValidateAndParseCustomerId(request.CustomerId);
-            if (!isValid)
+            var validationResult = _grpcValidationService.ValidateAndParseCustomerId(
+                request.CustomerId
+            );
+            if (validationResult.IsFailure)
             {
                 _logger.LogWarning(
                     "Invalid request: {ErrorMessage}. CorrelationId: {CorrelationId}",
-                    errorMessage,
+                    validationResult.Error,
                     correlationId
                 );
-                return new GetUserContactResponse { Success = false, ErrorMessage = errorMessage };
+                throw new RpcException(
+                    new Status(StatusCode.InvalidArgument, validationResult.Error)
+                );
             }
 
             _logger.LogInformation(
                 "Processing GetUserContactByCustomerId request for CustomerId: {ParsedId}. CorrelationId: {CorrelationId}",
-                parsedId,
+                validationResult.Value,
                 correlationId
             );
 
             // Execute query using Clean Architecture pattern
-            var query = new GetUserContactByCustomerIdQuery(parsedId);
+            var query = new GetUserContactByCustomerIdQuery(validationResult.Value);
             var result = await _mediator.Send(query, context.CancellationToken);
 
             if (result is { IsSuccess: true, Value: not null })
             {
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "Successfully retrieved user contact for CustomerId: {ParsedId}. CorrelationId: {CorrelationId}",
-                    parsedId,
+                    validationResult.Value,
                     correlationId
                 );
 
                 // Use AutoMapper to map from UserContactDto to UserContactInfo proto message
                 var userContactInfo = _mapper.Map<UserContactInfo>(result.Value);
 
-                return new GetUserContactResponse { Success = true, Data = userContactInfo };
+                return new GetUserContactResponse { Data = userContactInfo };
             }
 
             _logger.LogWarning(
                 "User contact not found for CustomerId: {ParsedId}. CorrelationId: {CorrelationId}",
-                parsedId,
+                result.Value,
                 correlationId
             );
-            return new GetUserContactResponse { Success = false, ErrorMessage = result.Error };
+
+            context.ResponseTrailers.Add(HttpHeaderConstants.CorrelationId, correlationId);
+
+            throw new RpcException(new Status(StatusCode.NotFound, result.Error));
+        }
+        catch (RpcException)
+        {
+            context.ResponseTrailers.Add(HttpHeaderConstants.CorrelationId, correlationId);
+            throw;
         }
         catch (Exception ex)
         {
@@ -106,11 +122,14 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
                 correlationId
             );
 
-            return new GetUserContactResponse
-            {
-                Success = false,
-                ErrorMessage = "An internal error occurred while processing your request",
-            };
+            context.ResponseTrailers.Add(HttpHeaderConstants.CorrelationId, correlationId);
+
+            throw new RpcException(
+                new Status(
+                    StatusCode.Internal,
+                    "An internal error occurred while processing your request"
+                )
+            );
         }
     }
 
@@ -122,36 +141,32 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
         ServerCallContext context
     )
     {
-        var correlationId = Guid.NewGuid().ToString();
+        var correlationId = GetCorrelationId(context);
 
         try
         {
-            var (isValid, validIds, errorMessage) = _grpcValidationService.ValidateCustomerIds(
-                request.CustomerIds
-            );
+            var validationResult = _grpcValidationService.ValidateCustomerIds(request.CustomerIds);
 
-            if (!isValid)
+            if (validationResult.IsFailure)
             {
                 _logger.LogWarning(
                     "Invalid request: {ErrorMessage}. CorrelationId: {CorrelationId}",
-                    errorMessage,
+                    validationResult.Error,
                     correlationId
                 );
-                return new GetUserContactsBatchResponse
-                {
-                    Success = false,
-                    ErrorMessage = errorMessage,
-                };
+                throw new RpcException(
+                    new Status(StatusCode.InvalidArgument, validationResult.Error)
+                );
             }
 
             _logger.LogInformation(
                 "Processing GetUserContactsByCustomerIds batch request for {Count} customers. CorrelationId: {CorrelationId}",
-                validIds.Count,
+                validationResult.Value.Count,
                 correlationId
             );
 
             // Execute query
-            var query = new GetUserContactsByCustomerIdsQuery(validIds);
+            var query = new GetUserContactsByCustomerIdsQuery(validationResult.Value);
             var result = await _mediator.Send(query, context.CancellationToken);
 
             if (result is { IsSuccess: true, Value: not null })
@@ -159,14 +174,14 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
                 // Use AutoMapper to map the collection directly to UserContactInfo proto messages
                 var userContacts = _mapper.Map<IEnumerable<UserContactInfo>>(result.Value).ToList();
 
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "Successfully retrieved {Count} user contacts from {RequestedCount} requested. CorrelationId: {CorrelationId}",
                     userContacts.Count,
-                    validIds.Count,
+                    validationResult.Value.Count,
                     correlationId
                 );
 
-                return new GetUserContactsBatchResponse { Success = true, Data = { userContacts } };
+                return new GetUserContactsBatchResponse { Data = { userContacts } };
             }
 
             _logger.LogWarning(
@@ -174,11 +189,12 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
                 result.Error,
                 correlationId
             );
-            return new GetUserContactsBatchResponse
-            {
-                Success = false,
-                ErrorMessage = result.Error,
-            };
+            throw new RpcException(new Status(StatusCode.OutOfRange, result.Error));
+        }
+        catch (RpcException)
+        {
+            context.ResponseTrailers.Add(HttpHeaderConstants.CorrelationId, correlationId);
+            throw;
         }
         catch (Exception ex)
         {
@@ -187,11 +203,28 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
                 "Error processing GetUserContactsByCustomerIds batch request. CorrelationId: {CorrelationId}",
                 correlationId
             );
-            return new GetUserContactsBatchResponse
-            {
-                Success = false,
-                ErrorMessage = "An internal error occurred while processing the batch request",
-            };
+
+            throw new RpcException(
+                new Status(
+                    StatusCode.Internal,
+                    "An internal error occurred while processing the batch request"
+                )
+            );
         }
+    }
+
+    private string GetCorrelationId(ServerCallContext context)
+    {
+        return context
+                .RequestHeaders.FirstOrDefault(h =>
+                    h.Key.Equals(
+                        HttpHeaderConstants.CorrelationId,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                ?.Value.ToString()
+            ?? Activity.Current?.TraceId.ToString()
+            ?? context.GetHttpContext()?.TraceIdentifier
+            ?? Guid.NewGuid().ToString();
     }
 }

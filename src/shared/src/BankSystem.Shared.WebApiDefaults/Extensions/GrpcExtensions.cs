@@ -24,15 +24,15 @@ public static class GrpcExtensions
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="configuration">The application configuration</param>
+    /// <param name="environment">The application environment</param>
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddGrpcDefaults(
         this IServiceCollection services,
-        IConfiguration configuration
+        IConfiguration configuration,
+        IWebHostEnvironment environment
     )
     {
-        var isDevelopment =
-            Environment.GetEnvironmentVariable(InterServiceConstants.AspNetCoreEnvironment)
-            == InterServiceConstants.DevelopmentEnvironment;
+        var isDevelopment = environment.IsDevelopment();
 
         // Configure inter-service security options
         var interServiceOptions = new InterServiceSecurityOptions();
@@ -42,13 +42,10 @@ public static class GrpcExtensions
         );
         services.PostConfigure<InterServiceSecurityOptions>(opts =>
         {
-            var isDev =
-                Environment.GetEnvironmentVariable(InterServiceConstants.AspNetCoreEnvironment)
-                == InterServiceConstants.DevelopmentEnvironment;
             // Set authentication method based on environment if not explicitly configured
             if (
                 opts.Authentication.Method == AuthenticationMethod.ApiKey
-                && !isDev
+                && !isDevelopment
                 && opts.MTls.IsValid()
             )
             {
