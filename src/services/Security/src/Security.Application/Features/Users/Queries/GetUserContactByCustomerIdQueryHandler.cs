@@ -1,3 +1,4 @@
+using AutoMapper;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
 using MediatR;
@@ -14,17 +15,21 @@ public class GetUserContactByCustomerIdQueryHandler
     : IRequestHandler<GetUserContactByCustomerIdQuery, Result<UserContactDto>>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
     private readonly ILogger<GetUserContactByCustomerIdQueryHandler> _logger;
 
     public GetUserContactByCustomerIdQueryHandler(
         IUserRepository userRepository,
+        IMapper mapper,
         ILogger<GetUserContactByCustomerIdQueryHandler> logger
     )
     {
         Guard.AgainstNull(userRepository);
+        Guard.AgainstNull(mapper);
         Guard.AgainstNull(logger);
 
         _userRepository = userRepository;
+        _mapper = mapper;
         _logger = logger;
     }
 
@@ -54,20 +59,7 @@ public class GetUserContactByCustomerIdQueryHandler
                 return Result<UserContactDto>.Failure("User not found");
             }
 
-            var userContactDto = new UserContactDto
-            {
-                CustomerId = user.ClientId,
-                Email = user.Email ?? string.Empty,
-                FirstName = user.FirstName ?? string.Empty,
-                LastName = user.LastName ?? string.Empty,
-                PhoneNumber = user.PhoneNumber ?? string.Empty,
-                IsActive =
-                    !user.LockoutEnabled
-                    || user.LockoutEnd == null
-                    || user.LockoutEnd <= DateTimeOffset.UtcNow,
-                CreatedAt = user.CreatedAt.DateTime,
-                UpdatedAt = user.UpdatedAt?.DateTime,
-            };
+            var userContactDto = _mapper.Map<UserContactDto>(user);
 
             _logger.LogDebug(
                 "Successfully retrieved user contact for CustomerId: {CustomerId}",

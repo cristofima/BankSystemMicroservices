@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using AutoFixture;
+using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Security.Application.Mapping;
 
 namespace Security.Application.UnitTests.Common;
 
@@ -10,7 +12,8 @@ namespace Security.Application.UnitTests.Common;
 /// </summary>
 public abstract class TestBase
 {
-    private IFixture Fixture { get; }
+    private Fixture Fixture { get; }
+    protected IMapper Mapper { get; }
 
     protected TestBase()
     {
@@ -20,6 +23,13 @@ public abstract class TestBase
 
         // Configure fixture to create valid GUIDs
         Fixture.Register(Guid.NewGuid);
+
+        // Configure AutoMapper
+        var mapperConfig = new MapperConfiguration(cfg =>
+        {
+            cfg.AddProfile<UserContactMappingProfile>();
+        });
+        Mapper = mapperConfig.CreateMapper();
     }
 
     /// <summary>

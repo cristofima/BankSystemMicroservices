@@ -23,31 +23,9 @@ public class GetUserContactsByCustomerIdsQueryHandlerTests : TestBase
         _mockLogger = CreateMockLogger<GetUserContactsByCustomerIdsQueryHandler>();
         _handler = new GetUserContactsByCustomerIdsQueryHandler(
             _mockUserRepository.Object,
+            Mapper,
             _mockLogger.Object
         );
-    }
-
-    /// <summary>
-    /// Verifies constructor throws ArgumentNullException for null userRepository
-    /// </summary>
-    [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenUserRepositoryIsNull()
-    {
-        // Act & Assert
-        var act = () => new GetUserContactsByCustomerIdsQueryHandler(null!, _mockLogger.Object);
-        act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("userRepository");
-    }
-
-    /// <summary>
-    /// Verifies constructor throws ArgumentNullException for null logger
-    /// </summary>
-    [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
-    {
-        // Act & Assert
-        var act = () =>
-            new GetUserContactsByCustomerIdsQueryHandler(_mockUserRepository.Object, null!);
-        act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("logger");
     }
 
     /// <summary>

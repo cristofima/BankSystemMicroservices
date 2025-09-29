@@ -1,3 +1,4 @@
+using AutoMapper;
 using BankSystem.Shared.Domain.Common;
 using BankSystem.Shared.Domain.Validation;
 using MediatR;
@@ -14,17 +15,21 @@ public class GetUserContactsByCustomerIdsQueryHandler
     : IRequestHandler<GetUserContactsByCustomerIdsQuery, Result<IEnumerable<UserContactDto>>>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
     private readonly ILogger<GetUserContactsByCustomerIdsQueryHandler> _logger;
 
     public GetUserContactsByCustomerIdsQueryHandler(
         IUserRepository userRepository,
+        IMapper mapper,
         ILogger<GetUserContactsByCustomerIdsQueryHandler> logger
     )
     {
         Guard.AgainstNull(userRepository);
+        Guard.AgainstNull(mapper);
         Guard.AgainstNull(logger);
 
         _userRepository = userRepository;
+        _mapper = mapper;
         _logger = logger;
     }
 
@@ -66,22 +71,7 @@ public class GetUserContactsByCustomerIdsQueryHandler
                 cancellationToken
             );
 
-            var userContactDtos = users
-                .Select(u => new UserContactDto
-                {
-                    CustomerId = u.ClientId,
-                    Email = u.Email ?? string.Empty,
-                    FirstName = u.FirstName ?? string.Empty,
-                    LastName = u.LastName ?? string.Empty,
-                    PhoneNumber = u.PhoneNumber ?? string.Empty,
-                    IsActive =
-                        !u.LockoutEnabled
-                        || u.LockoutEnd == null
-                        || u.LockoutEnd <= DateTimeOffset.UtcNow,
-                    CreatedAt = u.CreatedAt.DateTime,
-                    UpdatedAt = u.UpdatedAt?.DateTime,
-                })
-                .ToList();
+            var userContactDtos = users.Select(user => _mapper.Map<UserContactDto>(user)).ToList();
 
             _logger.LogDebug(
                 "Successfully retrieved {FoundCount} user contacts from {RequestedCount} requested customer IDs",

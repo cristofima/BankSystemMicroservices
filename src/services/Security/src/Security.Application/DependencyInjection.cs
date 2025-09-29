@@ -17,6 +17,8 @@ public static class DependencyInjection
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
         );
 
+        services.AddAutoMapper(typeof(Mapping.UserContactMappingProfile));
+
         // Register all validators from the Application assembly
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 

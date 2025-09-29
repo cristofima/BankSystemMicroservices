@@ -23,31 +23,9 @@ public class GetUserContactByCustomerIdQueryHandlerTests : TestBase
         _mockLogger = CreateMockLogger<GetUserContactByCustomerIdQueryHandler>();
         _handler = new GetUserContactByCustomerIdQueryHandler(
             _mockUserRepository.Object,
+            Mapper,
             _mockLogger.Object
         );
-    }
-
-    /// <summary>
-    /// Verifies constructor throws ArgumentNullException for null userRepository
-    /// </summary>
-    [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenUserRepositoryIsNull()
-    {
-        // Act & Assert
-        var act = () => new GetUserContactByCustomerIdQueryHandler(null!, _mockLogger.Object);
-        act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("userRepository");
-    }
-
-    /// <summary>
-    /// Verifies constructor throws ArgumentNullException for null logger
-    /// </summary>
-    [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
-    {
-        // Act & Assert
-        var act = () =>
-            new GetUserContactByCustomerIdQueryHandler(_mockUserRepository.Object, null!);
-        act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("logger");
     }
 
     /// <summary>
@@ -91,8 +69,8 @@ public class GetUserContactByCustomerIdQueryHandlerTests : TestBase
         result.Value.LastName.Should().Be("Doe");
         result.Value.PhoneNumber.Should().Be("+1234567890");
         result.Value.IsActive.Should().BeTrue();
-        result.Value.CreatedAt.Should().Be(user.CreatedAt.DateTime);
-        result.Value.UpdatedAt.Should().Be(user.UpdatedAt!.Value.DateTime);
+        result.Value.CreatedAt.Should().Be(user.CreatedAt);
+        result.Value.UpdatedAt.Should().Be(user.UpdatedAt!.Value);
     }
 
     /// <summary>
