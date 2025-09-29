@@ -20,8 +20,7 @@ public class GuidJsonConverter : JsonConverter<Guid>
             case JsonTokenType.String:
                 var stringValue = reader.GetString();
 
-                // Handle null or empty strings by returning Guid.Empty
-                if (string.IsNullOrEmpty(stringValue) || string.IsNullOrWhiteSpace(stringValue))
+                if (string.IsNullOrWhiteSpace(stringValue))
                 {
                     return Guid.Empty;
                 }
