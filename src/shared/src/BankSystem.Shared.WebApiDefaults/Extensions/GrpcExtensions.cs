@@ -40,19 +40,21 @@ public static class GrpcExtensions
         services.Configure<InterServiceSecurityOptions>(
             configuration.GetSection(InterServiceSecurityOptions.SectionName)
         );
-
-        // Set authentication method based on environment if not explicitly configured
-        if (
-            interServiceOptions.Authentication.Method == AuthenticationMethod.ApiKey
-            && !isDevelopment
-        )
+        services.PostConfigure<InterServiceSecurityOptions>(opts =>
         {
-            // In production, prefer mTLS if certificates are available
-            if (interServiceOptions.MTls.IsValid())
+            var isDev =
+                Environment.GetEnvironmentVariable(InterServiceConstants.AspNetCoreEnvironment)
+                == InterServiceConstants.DevelopmentEnvironment;
+            // Set authentication method based on environment if not explicitly configured
+            if (
+                opts.Authentication.Method == AuthenticationMethod.ApiKey
+                && !isDev
+                && opts.MTls.IsValid()
+            )
             {
-                interServiceOptions.Authentication.Method = AuthenticationMethod.MTls;
+                opts.Authentication.Method = AuthenticationMethod.MTls;
             }
-        }
+        });
 
         // Add gRPC services with enhanced configuration
         services.AddGrpc(options =>
@@ -314,7 +316,8 @@ public static class GrpcExtensions
                     {
                         httpsOptions.ClientCertificateMode =
                             ClientCertificateMode.RequireCertificate;
-                        httpsOptions.AllowAnyClientCertificate();
+                        httpsOptions.ClientCertificateValidation = (cert, chain, errors) =>
+                            ValidateServerCertificate(cert, chain, errors, options);
                     }
                 );
             }

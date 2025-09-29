@@ -85,7 +85,7 @@ public class InterServiceSecurityOptions
         /// <summary>
         /// HTTP header name containing the API key
         /// </summary>
-        public string HeaderName { get; set; } = "X-Service-Key";
+        public string HeaderName { get; set; } = "X-Service-ApiKey";
 
         /// <summary>
         /// API key value (should be configured via environment variables or Azure Key Vault)

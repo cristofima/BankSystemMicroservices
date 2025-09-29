@@ -6,7 +6,7 @@ namespace BankSystem.Shared.WebApiDefaults.Authentication;
 /// Options for API Key authentication scheme.
 /// Used for inter-service gRPC authentication in development and testing environments.
 /// </summary>
-public class ApiKeyAuthenticationSchemeOptions : AuthenticationSchemeOptions
+public sealed class ApiKeyAuthenticationSchemeOptions : AuthenticationSchemeOptions
 {
     /// <summary>
     /// The name of the header that contains the API key.
@@ -37,4 +37,7 @@ public class ApiKeyAuthenticationSchemeOptions : AuthenticationSchemeOptions
     /// If null or empty, all services are allowed.
     /// </summary>
     public IList<string>? ValidServices { get; set; }
+
+    public override string ToString() =>
+        $"{nameof(ApiKeyAuthenticationSchemeOptions)}(Header={ApiKeyHeaderName}, Services={ValidServices?.Count ?? 0})";
 }

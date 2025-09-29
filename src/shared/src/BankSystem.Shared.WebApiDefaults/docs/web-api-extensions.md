@@ -302,7 +302,7 @@ services.AddSwaggerGen(options =>
       "Version": "v1",
       "Description": "RESTful API for banking operations",
       "ContactName": "Development Team",
-      "ContactEmail": "dev@bankystem.com"
+      "ContactEmail": "dev@banksystem.com"
     },
     "HealthChecks": {
       "Path": "/health",

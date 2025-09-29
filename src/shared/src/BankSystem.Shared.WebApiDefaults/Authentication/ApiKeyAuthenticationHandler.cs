@@ -1,5 +1,8 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
+using BankSystem.Shared.WebApiDefaults.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
@@ -24,7 +27,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         if (!Request.Headers.TryGetValue(Options.ApiKeyHeaderName, out var apiKeyHeaderValues))
         {
             Logger.LogDebug("API key header '{HeaderName}' not found", Options.ApiKeyHeaderName);
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return Task.FromResult(AuthenticateResult.Fail("Missing API key header"));
         }
 
         var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
@@ -67,7 +70,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             new(ClaimTypes.Name, Options.UserName),
             new(ClaimTypes.NameIdentifier, Options.UserName),
             new(ClaimTypes.Role, Options.UserRole),
-            new("scope", "inter-service"),
+            new(InterServiceConstants.ScopeClaim, "inter-service"),
             new(ClaimTypes.AuthenticationMethod, "apikey"),
             new("api_key_type", "inter-service"),
         };
@@ -75,7 +78,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         // Add service name claim if available
         if (!string.IsNullOrEmpty(serviceName))
         {
-            claims.Add(new("service_name", serviceName));
+            claims.Add(new Claim("service_name", serviceName));
         }
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
@@ -121,16 +124,10 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
     /// <returns>True if strings are equal, false otherwise</returns>
     private static bool CryptographicEquals(string a, string b)
     {
-        if (a.Length != b.Length)
-            return false;
-
-        var result = 0;
-        for (var i = 0; i < a.Length; i++)
-        {
-            result |= a[i] ^ b[i];
-        }
-
-        return result == 0;
+        // Compare normalized UTF8 bytes in fixed time
+        var ab = Encoding.UTF8.GetBytes(a);
+        var bb = Encoding.UTF8.GetBytes(b);
+        return CryptographicOperations.FixedTimeEquals(ab, bb);
     }
 
     /// <summary>

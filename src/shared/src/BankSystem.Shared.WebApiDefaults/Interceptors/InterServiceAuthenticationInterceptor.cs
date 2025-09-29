@@ -1,4 +1,7 @@
+using System.Security.Cryptography;
+using System.Text;
 using BankSystem.Shared.Domain.Validation;
+using BankSystem.Shared.WebApiDefaults.Common;
 using BankSystem.Shared.WebApiDefaults.Configuration;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
@@ -40,7 +43,10 @@ public class InterServiceAuthenticationInterceptor : Interceptor
             {
                 AuthenticationMethod.ApiKey => await ValidateApiKeyAsync(context),
                 AuthenticationMethod.MTls => await ValidateMTlsAsync(context),
-                _ => AuthenticationResult.Failure("Unknown authentication method"),
+                _ => AuthenticationResult.Failure(
+                    "Unknown authentication method",
+                    _options.Authentication.Method
+                ),
             };
 
             if (!authenticationResult.IsSuccess)
@@ -56,7 +62,11 @@ public class InterServiceAuthenticationInterceptor : Interceptor
             }
 
             // Add authentication context to gRPC context
-            AddAuthenticationContext(context, authenticationResult);
+            AddAuthenticationContext(
+                context,
+                authenticationResult,
+                _options.Authentication.RequiredScope
+            );
 
             _logger.LogDebug(
                 "Inter-service authentication successful for service: {ServiceName}",
@@ -98,8 +108,11 @@ public class InterServiceAuthenticationInterceptor : Interceptor
             return Task.FromResult(AuthenticationResult.Failure("Empty API key provided"));
         }
 
-        // Validate API key
-        if (!string.Equals(providedApiKey, _options.ApiKey.Value, StringComparison.Ordinal))
+        // Validate API key using constant-time comparison
+        var expectedApiKey = _options.ApiKey.Value ?? string.Empty;
+        var providedBytes = Encoding.UTF8.GetBytes(providedApiKey);
+        var expectedBytes = Encoding.UTF8.GetBytes(expectedApiKey);
+        if (!CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes))
         {
             return Task.FromResult(AuthenticationResult.Failure("Invalid API key"));
         }
@@ -197,7 +210,10 @@ public class InterServiceAuthenticationInterceptor : Interceptor
         if (string.IsNullOrWhiteSpace(peerInfo))
         {
             return Task.FromResult(
-                AuthenticationResult.Failure("No peer certificate information available")
+                AuthenticationResult.Failure(
+                    "No peer certificate information available",
+                    AuthenticationMethod.MTls
+                )
             );
         }
 
@@ -213,6 +229,23 @@ public class InterServiceAuthenticationInterceptor : Interceptor
         var metadata = context.RequestHeaders;
         var serviceName = GetServiceNameFromMetadata(metadata);
 
+        // Validate service is allowed
+        if (
+            _options.Authentication.AllowedServices.Any()
+            && !_options.Authentication.AllowedServices.Contains(
+                serviceName,
+                StringComparer.OrdinalIgnoreCase
+            )
+        )
+        {
+            return Task.FromResult(
+                AuthenticationResult.Failure(
+                    $"Service '{serviceName}' is not allowed",
+                    AuthenticationMethod.MTls
+                )
+            );
+        }
+
         return Task.FromResult(
             AuthenticationResult.Success(serviceName, AuthenticationMethod.MTls)
         );
@@ -220,7 +253,8 @@ public class InterServiceAuthenticationInterceptor : Interceptor
 
     private static void AddAuthenticationContext(
         ServerCallContext context,
-        AuthenticationResult authResult
+        AuthenticationResult authResult,
+        string requiredScope
     )
     {
         // Add authentication information to the gRPC context for downstream services
@@ -229,7 +263,7 @@ public class InterServiceAuthenticationInterceptor : Interceptor
             ["authenticated"] = "true",
             ["auth_method"] = authResult.Method.ToString().ToLowerInvariant(),
             ["service_name"] = authResult.ServiceName,
-            ["scope"] = "inter-service",
+            ["scope"] = requiredScope,
             ["authenticated_at"] = DateTimeOffset.UtcNow.ToString("O"),
         };
 
@@ -237,21 +271,5 @@ public class InterServiceAuthenticationInterceptor : Interceptor
         {
             context.UserState[kvp.Key] = kvp.Value;
         }
-    }
-
-    private record AuthenticationResult(
-        bool IsSuccess,
-        string ServiceName,
-        AuthenticationMethod Method,
-        string ErrorMessage
-    )
-    {
-        public static AuthenticationResult Success(
-            string serviceName,
-            AuthenticationMethod method
-        ) => new(true, serviceName, method, string.Empty);
-
-        public static AuthenticationResult Failure(string errorMessage) =>
-            new(false, string.Empty, AuthenticationMethod.ApiKey, errorMessage);
     }
 }
