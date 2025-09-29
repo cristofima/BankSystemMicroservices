@@ -261,7 +261,8 @@ public class GetUserContactByCustomerIdQueryHandlerTests : TestBase
         // Arrange
         var customerId = Guid.NewGuid();
         var query = new GetUserContactByCustomerIdQuery(customerId);
-        var cancellationToken = new CancellationToken(true);
+        using var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
 
         _mockUserRepository
             .Setup(x => x.GetUserByCustomerIdAsync(customerId, cancellationToken))

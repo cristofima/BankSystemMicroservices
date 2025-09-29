@@ -1,3 +1,5 @@
+using BankSystem.Shared.Domain.Common;
+
 namespace Security.Domain.Interfaces;
 
 /// <summary>
@@ -9,17 +11,13 @@ public interface IGrpcValidationService
     /// Validates and parses a customer ID from string to Guid
     /// </summary>
     /// <param name="customerId">The customer ID as string</param>
-    /// <returns>A tuple indicating if validation succeeded and the parsed Guid</returns>
-    (bool isValid, Guid parsedId, string errorMessage) ValidateAndParseCustomerId(
-        string customerId
-    );
+    /// <returns>A Result containing the parsed Guid if successful, or an error message if validation fails</returns>
+    Result<Guid> ValidateAndParseCustomerId(string customerId);
 
     /// <summary>
     /// Validates a list of customer IDs
     /// </summary>
     /// <param name="customerIds">The list of customer IDs to validate</param>
-    /// <returns>A tuple with validation result, valid IDs, and error message</returns>
-    (bool isValid, List<Guid> validIds, string errorMessage) ValidateCustomerIds(
-        IEnumerable<string> customerIds
-    );
+    /// <returns>A Result containing the list of valid parsed Guids if successful, or an error message if validation fails</returns>
+    Result<List<Guid>> ValidateCustomerIds(IEnumerable<string> customerIds);
 }

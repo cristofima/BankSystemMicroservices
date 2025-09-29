@@ -1,3 +1,4 @@
+using BankSystem.Shared.Domain.Common;
 using Security.Domain.Interfaces;
 
 namespace Security.Application.Services;
@@ -8,62 +9,52 @@ namespace Security.Application.Services;
 public class GrpcValidationService : IGrpcValidationService
 {
     /// <inheritdoc/>
-    public (bool isValid, Guid parsedId, string errorMessage) ValidateAndParseCustomerId(
-        string customerId
-    )
+    public Result<Guid> ValidateAndParseCustomerId(string customerId)
     {
         if (string.IsNullOrWhiteSpace(customerId))
         {
-            return (false, Guid.Empty, "Customer ID cannot be null or empty");
+            return Result<Guid>.Failure("Customer ID cannot be null or empty");
         }
 
         if (!Guid.TryParse(customerId, out var parsedId))
         {
-            return (false, Guid.Empty, $"Invalid Customer ID format: {customerId}");
+            return Result<Guid>.Failure($"Invalid Customer ID format: {customerId}");
         }
 
         return parsedId == Guid.Empty
-            ? (false, Guid.Empty, "Customer ID cannot be empty GUID")
-            : (true, parsedId, string.Empty);
+            ? Result<Guid>.Failure("Customer ID cannot be empty GUID")
+            : Result<Guid>.Success(parsedId);
     }
 
     /// <inheritdoc/>
-    public (bool isValid, List<Guid> validIds, string errorMessage) ValidateCustomerIds(
-        IEnumerable<string>? customerIds
-    )
+    public Result<List<Guid>> ValidateCustomerIds(IEnumerable<string> customerIds)
     {
         var validIds = new List<Guid>();
-
-        if (customerIds == null)
-        {
-            return (false, validIds, "Customer IDs collection cannot be null");
-        }
 
         var customerIdList = customerIds.ToList();
 
         if (customerIdList.Count == 0)
         {
-            return (false, validIds, "Customer IDs collection cannot be empty");
+            return Result<List<Guid>>.Failure("Customer IDs collection cannot be empty");
         }
 
         if (customerIdList.Count > 100) // Reasonable limit to prevent abuse
         {
-            return (false, validIds, "Too many customer IDs requested. Maximum allowed: 100");
+            return Result<List<Guid>>.Failure(
+                "Too many customer IDs requested. Maximum allowed: 100"
+            );
         }
 
-        foreach (var customerId in customerIdList)
+        foreach (var result in customerIdList.Select(ValidateAndParseCustomerId))
         {
-            var (isValid, parsedId, _) = ValidateAndParseCustomerId(customerId);
-            if (isValid)
+            if (result.IsFailure)
             {
-                validIds.Add(parsedId);
+                return Result<List<Guid>>.Failure(result.Error);
             }
-            else
-            {
-                return (false, validIds, "Some customer IDs are invalid");
-            }
+
+            validIds.Add(result.Value);
         }
 
-        return (true, validIds, string.Empty);
+        return Result<List<Guid>>.Success(validIds);
     }
 }

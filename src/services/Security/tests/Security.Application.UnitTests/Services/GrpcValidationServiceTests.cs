@@ -29,12 +29,12 @@ public class GrpcValidationServiceTests : TestBase
         var customerId = validGuid.ToString();
 
         // Act
-        var (isValid, parsedId, errorMessage) = _service.ValidateAndParseCustomerId(customerId);
+        var result = _service.ValidateAndParseCustomerId(customerId);
 
         // Assert
-        isValid.Should().BeTrue();
-        parsedId.Should().Be(validGuid);
-        errorMessage.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(validGuid);
+        result.Error.Should().BeEmpty();
     }
 
     /// <summary>
@@ -55,12 +55,12 @@ public class GrpcValidationServiceTests : TestBase
         var customerId = validGuid.ToString(format);
 
         // Act
-        var (isValid, parsedId, errorMessage) = _service.ValidateAndParseCustomerId(customerId);
+        var result = _service.ValidateAndParseCustomerId(customerId);
 
         // Assert
-        isValid.Should().BeTrue();
-        parsedId.Should().Be(validGuid);
-        errorMessage.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(validGuid);
+        result.Error.Should().BeEmpty();
     }
 
     /// <summary>
@@ -73,12 +73,12 @@ public class GrpcValidationServiceTests : TestBase
         string customerId = null!;
 
         // Act
-        var (isValid, parsedId, errorMessage) = _service.ValidateAndParseCustomerId(customerId);
+        var result = _service.ValidateAndParseCustomerId(customerId);
 
         // Assert
-        isValid.Should().BeFalse();
-        parsedId.Should().Be(Guid.Empty);
-        errorMessage.Should().Be("Customer ID cannot be null or empty");
+        result.IsFailure.Should().BeTrue();
+        result.Value.Should().Be(Guid.Empty);
+        result.Error.Should().Be("Customer ID cannot be null or empty");
     }
 
     /// <summary>
@@ -91,12 +91,12 @@ public class GrpcValidationServiceTests : TestBase
         var customerId = string.Empty;
 
         // Act
-        var (isValid, parsedId, errorMessage) = _service.ValidateAndParseCustomerId(customerId);
+        var result = _service.ValidateAndParseCustomerId(customerId);
 
         // Assert
-        isValid.Should().BeFalse();
-        parsedId.Should().Be(Guid.Empty);
-        errorMessage.Should().Be("Customer ID cannot be null or empty");
+        result.IsFailure.Should().BeTrue();
+        result.Value.Should().Be(Guid.Empty);
+        result.Error.Should().Be("Customer ID cannot be null or empty");
     }
 
     /// <summary>
@@ -113,12 +113,12 @@ public class GrpcValidationServiceTests : TestBase
     )
     {
         // Act
-        var (isValid, parsedId, errorMessage) = _service.ValidateAndParseCustomerId(customerId);
+        var result = _service.ValidateAndParseCustomerId(customerId);
 
         // Assert
-        isValid.Should().BeFalse();
-        parsedId.Should().Be(Guid.Empty);
-        errorMessage.Should().Be("Customer ID cannot be null or empty");
+        result.IsFailure.Should().BeTrue();
+        result.Value.Should().Be(Guid.Empty);
+        result.Error.Should().Be("Customer ID cannot be null or empty");
     }
 
     /// <summary>
@@ -136,12 +136,12 @@ public class GrpcValidationServiceTests : TestBase
     )
     {
         // Act
-        var (isValid, parsedId, errorMessage) = _service.ValidateAndParseCustomerId(customerId);
+        var result = _service.ValidateAndParseCustomerId(customerId);
 
         // Assert
-        isValid.Should().BeFalse();
-        parsedId.Should().Be(Guid.Empty);
-        errorMessage.Should().Be($"Invalid Customer ID format: {customerId}");
+        result.IsFailure.Should().BeTrue();
+        result.Value.Should().Be(Guid.Empty);
+        result.Error.Should().Be($"Invalid Customer ID format: {customerId}");
     }
 
     /// <summary>
@@ -154,12 +154,12 @@ public class GrpcValidationServiceTests : TestBase
         var customerId = Guid.Empty.ToString();
 
         // Act
-        var (isValid, parsedId, errorMessage) = _service.ValidateAndParseCustomerId(customerId);
+        var result = _service.ValidateAndParseCustomerId(customerId);
 
         // Assert
-        isValid.Should().BeFalse();
-        parsedId.Should().Be(Guid.Empty);
-        errorMessage.Should().Be("Customer ID cannot be empty GUID");
+        result.IsFailure.Should().BeTrue();
+        result.Value.Should().Be(Guid.Empty);
+        result.Error.Should().Be("Customer ID cannot be empty GUID");
     }
 
     #endregion ValidateAndParseCustomerId Tests
@@ -179,15 +179,15 @@ public class GrpcValidationServiceTests : TestBase
         var customerIds = new List<string> { guid1.ToString(), guid2.ToString(), guid3.ToString() };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeTrue();
-        validIds.Should().HaveCount(3);
-        validIds.Should().Contain(guid1);
-        validIds.Should().Contain(guid2);
-        validIds.Should().Contain(guid3);
-        errorMessage.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(3);
+        result.Value.Should().Contain(guid1);
+        result.Value.Should().Contain(guid2);
+        result.Value.Should().Contain(guid3);
+        result.Error.Should().BeEmpty();
     }
 
     /// <summary>
@@ -201,31 +201,13 @@ public class GrpcValidationServiceTests : TestBase
         var customerIds = new List<string> { validGuid.ToString() };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeTrue();
-        validIds.Should().HaveCount(1);
-        validIds.Should().Contain(validGuid);
-        errorMessage.Should().BeEmpty();
-    }
-
-    /// <summary>
-    /// Verifies ValidateCustomerIds returns failure for null collection
-    /// </summary>
-    [Fact]
-    public void ValidateCustomerIds_ShouldReturnFailure_WhenCollectionIsNull()
-    {
-        // Arrange
-        IEnumerable<string>? customerIds = null;
-
-        // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
-
-        // Assert
-        isValid.Should().BeFalse();
-        validIds.Should().BeEmpty();
-        errorMessage.Should().Be("Customer IDs collection cannot be null");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value.Should().Contain(validGuid);
+        result.Error.Should().BeEmpty();
     }
 
     /// <summary>
@@ -238,12 +220,11 @@ public class GrpcValidationServiceTests : TestBase
         var customerIds = new List<string>();
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeFalse();
-        validIds.Should().BeEmpty();
-        errorMessage.Should().Be("Customer IDs collection cannot be empty");
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Customer IDs collection cannot be empty");
     }
 
     /// <summary>
@@ -256,12 +237,11 @@ public class GrpcValidationServiceTests : TestBase
         var customerIds = Enumerable.Range(0, 101).Select(_ => Guid.NewGuid().ToString()).ToList();
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeFalse();
-        validIds.Should().BeEmpty();
-        errorMessage.Should().Be("Too many customer IDs requested. Maximum allowed: 100");
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Too many customer IDs requested. Maximum allowed: 100");
     }
 
     /// <summary>
@@ -275,13 +255,12 @@ public class GrpcValidationServiceTests : TestBase
         var customerIds = guids.Select(g => g.ToString()).ToList();
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeTrue();
-        validIds.Should().HaveCount(100);
-        validIds.Should().BeEquivalentTo(guids);
-        errorMessage.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(100);
+        result.Value.Should().BeEquivalentTo(guids);
     }
 
     /// <summary>
@@ -300,13 +279,11 @@ public class GrpcValidationServiceTests : TestBase
         };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeFalse();
-        validIds.Should().HaveCount(1); // Only the first valid one is processed before failure
-        validIds.Should().Contain(validGuid);
-        errorMessage.Should().Be("Some customer IDs are invalid");
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Invalid Customer ID format: invalid-guid");
     }
 
     /// <summary>
@@ -324,12 +301,11 @@ public class GrpcValidationServiceTests : TestBase
         };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeFalse();
-        validIds.Should().BeEmpty(); // No valid IDs processed before failure
-        errorMessage.Should().Be("Some customer IDs are invalid");
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Invalid Customer ID format: invalid-guid");
     }
 
     /// <summary>
@@ -347,12 +323,11 @@ public class GrpcValidationServiceTests : TestBase
         };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeFalse();
-        validIds.Should().HaveCount(1); // Only the first valid one
-        errorMessage.Should().Be("Some customer IDs are invalid");
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Customer ID cannot be empty GUID");
     }
 
     /// <summary>
@@ -368,15 +343,14 @@ public class GrpcValidationServiceTests : TestBase
         var customerIds = new List<string> { guid1.ToString(), guid2.ToString(), guid3.ToString() };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeTrue();
-        validIds.Should().HaveCount(3);
-        validIds[0].Should().Be(guid1);
-        validIds[1].Should().Be(guid2);
-        validIds[2].Should().Be(guid3);
-        errorMessage.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(3);
+        result.Value[0].Should().Be(guid1);
+        result.Value[1].Should().Be(guid2);
+        result.Value[2].Should().Be(guid3);
     }
 
     /// <summary>
@@ -400,15 +374,14 @@ public class GrpcValidationServiceTests : TestBase
         };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeTrue();
-        validIds.Should().HaveCount(3);
-        validIds.Should().Contain(guid1);
-        validIds.Should().Contain(guid2);
-        validIds.Should().Contain(guid3);
-        errorMessage.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(3);
+        result.Value.Should().Contain(guid1);
+        result.Value.Should().Contain(guid2);
+        result.Value.Should().Contain(guid3);
     }
 
     /// <summary>
@@ -427,13 +400,11 @@ public class GrpcValidationServiceTests : TestBase
         };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeFalse();
-        validIds.Should().HaveCount(1); // Only the first valid one
-        validIds.Should().Contain(validGuid);
-        errorMessage.Should().Be("Some customer IDs are invalid");
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Customer ID cannot be null or empty");
     }
 
     /// <summary>
@@ -454,15 +425,14 @@ public class GrpcValidationServiceTests : TestBase
         };
 
         // Act
-        var (isValid, validIds, errorMessage) = _service.ValidateCustomerIds(customerIds);
+        var result = _service.ValidateCustomerIds(customerIds);
 
         // Assert
-        isValid.Should().BeTrue();
-        validIds.Should().HaveCount(3); // All three are included, duplicates allowed
-        validIds.Should().Contain(duplicateGuid);
-        validIds.Should().Contain(uniqueGuid);
-        validIds.Where(id => id == duplicateGuid).Should().HaveCount(2);
-        errorMessage.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(3); // All three are included, duplicates allowed
+        result.Value.Should().Contain(duplicateGuid);
+        result.Value.Should().Contain(uniqueGuid);
+        result.Value.Where(id => id == duplicateGuid).Should().HaveCount(2);
     }
 
     #endregion ValidateCustomerIds Tests

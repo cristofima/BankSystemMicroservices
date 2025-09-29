@@ -75,6 +75,15 @@ public class GetUserContactByCustomerIdQueryHandler
             );
             return Result<UserContactDto>.Success(userContactDto);
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(
+                ex,
+                "Request cancelled while retrieving user contact for CustomerId: {CustomerId}",
+                request.CustomerId
+            );
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(

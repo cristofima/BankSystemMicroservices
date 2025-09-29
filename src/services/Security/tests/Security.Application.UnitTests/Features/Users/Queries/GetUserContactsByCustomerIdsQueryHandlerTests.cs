@@ -345,7 +345,8 @@ public class GetUserContactsByCustomerIdsQueryHandlerTests : TestBase
         // Arrange
         var customerIds = new List<Guid> { Guid.NewGuid() };
         var query = new GetUserContactsByCustomerIdsQuery(customerIds);
-        var cancellationToken = new CancellationToken(true);
+        using var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
 
         _mockUserRepository
             .Setup(x => x.GetUsersByCustomerIdsAsync(customerIds, cancellationToken))

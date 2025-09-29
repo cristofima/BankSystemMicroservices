@@ -91,6 +91,11 @@ public class GetUserContactsByCustomerIdsQueryHandler
 
             return Result<IEnumerable<UserContactDto>>.Success(userContactDtos);
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Request cancelled while retrieving users contact");
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving user contacts for batch request");
