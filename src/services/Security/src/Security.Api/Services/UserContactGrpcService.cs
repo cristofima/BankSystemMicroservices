@@ -104,8 +104,6 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
                 correlationId
             );
 
-            context.ResponseTrailers.Add(HttpHeaderConstants.CorrelationId, correlationId);
-
             throw new RpcException(new Status(StatusCode.NotFound, result.Error));
         }
         catch (RpcException)
@@ -213,7 +211,7 @@ public class UserContactGrpcService : UserContactService.UserContactServiceBase
         }
     }
 
-    private string GetCorrelationId(ServerCallContext context)
+    private static string GetCorrelationId(ServerCallContext context)
     {
         return context
                 .RequestHeaders.FirstOrDefault(h =>
