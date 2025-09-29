@@ -5,25 +5,7 @@ namespace Security.Api.Services;
 /// <summary>
 /// Service for extracting HTTP context information
 /// </summary>
-public interface IHttpContextInfoService
-{
-    /// <summary>
-    /// Gets the client IP address from the HTTP context
-    /// </summary>
-    /// <returns>Client IP address or unknown if not available</returns>
-    string GetClientIpAddress();
-
-    /// <summary>
-    /// Gets device information from the User-Agent header
-    /// </summary>
-    /// <returns>Device information or unknown if not available</returns>
-    string GetDeviceInfo();
-}
-
-/// <summary>
-/// Implementation of HTTP context information service
-/// </summary>
-public class HttpContextInfoService : IHttpContextInfoService
+public class HttpContextInfoService
 {
     private const string UnknownValue = "unknown";
 
@@ -36,6 +18,10 @@ public class HttpContextInfoService : IHttpContextInfoService
         _httpContextAccessor = httpContextAccessor;
     }
 
+    /// <summary>
+    /// Gets the client IP address from the HTTP context
+    /// </summary>
+    /// <returns>Client IP address or unknown if not available</returns>
     public string GetClientIpAddress()
     {
         var context = _httpContextAccessor.HttpContext;
@@ -48,6 +34,10 @@ public class HttpContextInfoService : IHttpContextInfoService
             ?? UnknownValue;
     }
 
+    /// <summary>
+    /// Gets device information from the User-Agent header
+    /// </summary>
+    /// <returns>Device information or unknown if not available</returns>
     public string GetDeviceInfo()
     {
         var context = _httpContextAccessor.HttpContext;

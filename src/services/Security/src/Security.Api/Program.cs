@@ -3,6 +3,7 @@ using BankSystem.ServiceDefaults;
 using BankSystem.Shared.WebApiDefaults.Extensions;
 using Security.Api;
 using Security.Api.Middleware;
+using Security.Api.Services;
 using Security.Application;
 using Security.Infrastructure;
 
@@ -14,6 +15,9 @@ builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddWebApiServices(builder.Configuration);
 
+// Add gRPC services with shared defaults
+builder.Services.AddGrpcDefaults(builder.Configuration, builder.Environment);
+
 var app = builder.Build();
 app.MapDefaultEndpoints();
 
@@ -22,6 +26,12 @@ app.UseMiddleware<TokenRevocationMiddleware>();
 
 // Use service defaults middleware pipeline
 app.UseWebApiDefaults("Security API");
+
+// Use gRPC defaults middleware pipeline
+app.UseGrpcDefaults();
+
+// Map gRPC service with environment-aware authentication
+app.MapGrpcServiceWithAuth<UserContactGrpcService>();
 
 await app.RunAsync();
 

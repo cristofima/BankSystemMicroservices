@@ -17,10 +17,12 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.12.0-beta.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.GrpcCore" Version="1.0.0-beta.6" />
     
     <!-- Service Discovery and Resilience -->
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.9.0" />
-    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="9.5.0" />
     
     <!-- Configuration and Options -->
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9" />

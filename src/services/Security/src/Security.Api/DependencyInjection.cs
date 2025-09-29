@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Threading.RateLimiting;
+using BankSystem.Shared.WebApiDefaults.Configuration;
 using BankSystem.Shared.WebApiDefaults.Extensions;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
@@ -22,15 +23,47 @@ public static class DependencyInjection
         // Add Security-specific health checks
         services.AddDbContextHealthCheck<SecurityDbContext>();
 
+        // Configure Inter-Service Security Options
+        services.Configure<InterServiceSecurityOptions>(
+            configuration.GetSection("InterServiceSecurity")
+        );
+
+        // Add inter-service security validation
+        services.PostConfigure<InterServiceSecurityOptions>(options =>
+        {
+            // Validate authentication method configuration
+            if (options.Authentication.Method == AuthenticationMethod.ApiKey)
+            {
+                if (string.IsNullOrWhiteSpace(options.ApiKey.Value))
+                {
+                    throw new InvalidOperationException(
+                        "API Key is required when using ApiKey authentication method. "
+                            + "Please configure InterServiceSecurity:ApiKey:Value in your settings."
+                    );
+                }
+
+                if (options.ApiKey.Value.Length < 16)
+                {
+                    throw new InvalidOperationException(
+                        "API Key must be at least 16 characters long for security reasons."
+                    );
+                }
+            }
+
+            if (options.Authentication.AllowedServices?.Count < 1)
+            {
+                throw new InvalidOperationException(
+                    "At least one allowed service must be configured in InterServiceSecurity:Authentication:AllowedServices."
+                );
+            }
+        });
+
         // Add memory cache for token revocation
         services.AddMemoryCache();
 
         // Register API helper services
-        services.AddScoped<IHttpContextInfoService, HttpContextInfoService>();
-        services.AddScoped<IApiResponseService, ApiResponseService>();
-
-        // Register middleware services
-        services.AddScoped<ITokenRevocationService, TokenRevocationService>();
+        services.AddScoped<HttpContextInfoService>();
+        services.AddScoped<ApiResponseService>();
 
         // Register background services
         services.AddHostedService<RevokedTokensBackgroundService>();
@@ -54,6 +87,9 @@ public static class DependencyInjection
                 }
             );
         });
+
+        // Add AutoMapper with gRPC mapping profile
+        services.AddAutoMapper(typeof(Mapping.GrpcMappingProfile));
 
         // Add rate limiting with Security-specific policies (in addition to default)
         services.Configure<RateLimiterOptions>(options =>

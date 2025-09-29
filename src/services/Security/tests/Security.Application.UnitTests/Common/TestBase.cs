@@ -1,6 +1,9 @@
+using System.Security.Cryptography;
 using AutoFixture;
+using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Security.Application.Mapping;
 
 namespace Security.Application.UnitTests.Common;
 
@@ -9,7 +12,8 @@ namespace Security.Application.UnitTests.Common;
 /// </summary>
 public abstract class TestBase
 {
-    protected IFixture Fixture { get; private set; } = null!;
+    private Fixture Fixture { get; }
+    protected IMapper Mapper { get; }
 
     protected TestBase()
     {
@@ -18,7 +22,14 @@ public abstract class TestBase
         Fixture.Behaviors.Add(new OmitOnRecursionBehavior());
 
         // Configure fixture to create valid GUIDs
-        Fixture.Register(() => Guid.NewGuid());
+        Fixture.Register(Guid.NewGuid);
+
+        // Configure AutoMapper
+        var mapperConfig = new MapperConfiguration(cfg =>
+        {
+            cfg.AddProfile<UserContactMappingProfile>();
+        });
+        Mapper = mapperConfig.CreateMapper();
     }
 
     /// <summary>
@@ -27,22 +38,6 @@ public abstract class TestBase
     protected static Mock<ILogger<T>> CreateMockLogger<T>()
     {
         return new Mock<ILogger<T>>();
-    }
-
-    /// <summary>
-    /// Creates an entity using AutoFixture
-    /// </summary>
-    protected T CreateEntity<T>() where T : class
-    {
-        return Fixture.Create<T>();
-    }
-
-    /// <summary>
-    /// Creates multiple entities using AutoFixture
-    /// </summary>
-    protected List<T> CreateMany<T>(int count = 3) where T : class
-    {
-        return Fixture.CreateMany<T>(count).ToList();
     }
 
     /// <summary>
@@ -82,6 +77,6 @@ public abstract class TestBase
     /// </summary>
     protected static string CreateValidRefreshToken()
     {
-        return Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
     }
 }
