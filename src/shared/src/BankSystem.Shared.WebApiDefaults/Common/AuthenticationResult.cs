@@ -14,6 +14,7 @@ internal sealed record AuthenticationResult(
 
     public static AuthenticationResult Failure(
         string errorMessage,
-        AuthenticationMethod method = AuthenticationMethod.ApiKey
-    ) => new(false, string.Empty, method, errorMessage);
+        AuthenticationMethod method = AuthenticationMethod.ApiKey,
+        string serviceName = ""
+    ) => new(false, serviceName, method, errorMessage);
 }

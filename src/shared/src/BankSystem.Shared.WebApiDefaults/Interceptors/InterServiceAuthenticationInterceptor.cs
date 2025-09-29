@@ -129,7 +129,7 @@ public class InterServiceAuthenticationInterceptor : Interceptor
 
         // Validate service is allowed
         if (
-            _options.Authentication.AllowedServices.Any()
+            _options.Authentication.AllowedServices.Count > 0
             && !_options.Authentication.AllowedServices.Contains(
                 serviceName,
                 StringComparer.OrdinalIgnoreCase
@@ -231,7 +231,7 @@ public class InterServiceAuthenticationInterceptor : Interceptor
 
         // Validate service is allowed
         if (
-            _options.Authentication.AllowedServices.Any()
+            _options.Authentication.AllowedServices.Count > 0
             && !_options.Authentication.AllowedServices.Contains(
                 serviceName,
                 StringComparer.OrdinalIgnoreCase

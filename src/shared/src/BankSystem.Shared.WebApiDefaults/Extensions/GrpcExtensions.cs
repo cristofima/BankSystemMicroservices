@@ -1,12 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using BankSystem.Shared.WebApiDefaults.Authentication;
 using BankSystem.Shared.WebApiDefaults.Configuration;
 using BankSystem.Shared.WebApiDefaults.Constants;
 using BankSystem.Shared.WebApiDefaults.Interceptors;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Options;
 
 namespace BankSystem.Shared.WebApiDefaults.Extensions;
@@ -78,7 +74,7 @@ public static class GrpcExtensions
         }
 
         // Configure authentication schemes
-        ConfigureAuthentication(services, configuration, interServiceOptions);
+        ConfigureAuthentication(services, interServiceOptions);
 
         // Configure authorization policies
         ConfigureAuthorization(services, interServiceOptions);
@@ -159,7 +155,6 @@ public static class GrpcExtensions
     /// </summary>
     private static void ConfigureAuthentication(
         IServiceCollection services,
-        IConfiguration configuration,
         InterServiceSecurityOptions options
     )
     {
@@ -225,133 +220,6 @@ public static class GrpcExtensions
                     );
                 }
             );
-    }
-
-    /// <summary>
-    /// Configures the HTTP client handler for mTLS authentication.
-    /// </summary>
-    private static void ConfigureMTlsClient(
-        HttpClientHandler handler,
-        InterServiceSecurityOptions.MTlsOptions options
-    )
-    {
-        if (!options.IsValid())
-            return;
-
-        try
-        {
-            // Load client certificate
-            X509Certificate2? clientCertificate = null;
-
-            if (!string.IsNullOrEmpty(options.ClientCertificatePath))
-            {
-                // For now, assume no password. In production, passwords should be managed securely
-                clientCertificate = new X509Certificate2(options.ClientCertificatePath);
-            }
-            else if (options.AzureKeyVault.Enabled)
-            {
-                // TODO: Implement Azure Key Vault certificate loading
-                // clientCertificate = await LoadCertificateFromKeyVault(options.AzureKeyVault);
-                throw new NotImplementedException(
-                    InterServiceConstants.KeyVaultNotImplementedError
-                );
-            }
-
-            if (clientCertificate != null)
-            {
-                handler.ClientCertificates.Add(clientCertificate);
-                handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-            }
-
-            // Configure server certificate validation
-            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, errors) =>
-                ValidateServerCertificate(cert, chain, errors, options);
-        }
-        catch (Exception)
-        {
-            // Log certificate configuration error
-            // In a real implementation, proper logging should be added here
-            throw new InvalidOperationException(InterServiceConstants.MTlsClientConfigError);
-        }
-    }
-
-    /// <summary>
-    /// Configures Kestrel listen options for mTLS server authentication.
-    /// </summary>
-    private static void ConfigureMTlsServer(
-        ListenOptions listenOptions,
-        InterServiceSecurityOptions.MTlsOptions options
-    )
-    {
-        if (!options.IsValid())
-            return;
-
-        try
-        {
-            // Load server certificate
-            X509Certificate2? serverCertificate = null;
-
-            if (!string.IsNullOrEmpty(options.ServerCertificatePath))
-            {
-                // For now, assume no password. In production, passwords should be managed securely
-                serverCertificate = new X509Certificate2(options.ServerCertificatePath);
-            }
-            else if (options.AzureKeyVault.Enabled)
-            {
-                // TODO: Implement Azure Key Vault certificate loading
-                // serverCertificate = await LoadCertificateFromKeyVault(options.AzureKeyVault);
-                throw new NotImplementedException(
-                    InterServiceConstants.KeyVaultNotImplementedError
-                );
-            }
-
-            if (serverCertificate != null)
-            {
-                listenOptions.UseHttps(
-                    serverCertificate,
-                    httpsOptions =>
-                    {
-                        httpsOptions.ClientCertificateMode =
-                            ClientCertificateMode.RequireCertificate;
-                        httpsOptions.ClientCertificateValidation = (cert, chain, errors) =>
-                            ValidateServerCertificate(cert, chain, errors, options);
-                    }
-                );
-            }
-        }
-        catch (Exception)
-        {
-            // Log certificate configuration error
-            // In a real implementation, proper logging should be added here
-            throw new InvalidOperationException(InterServiceConstants.MTlsServerConfigError);
-        }
-    }
-
-    /// <summary>
-    /// Validates the server certificate for mTLS connections.
-    /// </summary>
-    private static bool ValidateServerCertificate(
-        X509Certificate2? cert,
-        X509Chain? chain,
-        SslPolicyErrors errors,
-        InterServiceSecurityOptions.MTlsOptions options
-    )
-    {
-        if (cert == null)
-            return false;
-
-        // In development or testing, allow self-signed certificates
-        if (
-            Environment.GetEnvironmentVariable(InterServiceConstants.AspNetCoreEnvironment)
-            == InterServiceConstants.DevelopmentEnvironment
-        )
-        {
-            return true;
-        }
-
-        // Perform additional certificate validation based on requirements
-        // This is a simplified validation - in production, implement proper certificate chain validation
-        return errors == SslPolicyErrors.None;
     }
 
     #endregion Private Helper Methods

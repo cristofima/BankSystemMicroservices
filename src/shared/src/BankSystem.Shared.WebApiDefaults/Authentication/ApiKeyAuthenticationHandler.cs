@@ -50,18 +50,19 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 
         // Extract and validate service name
         var serviceName = GetServiceNameFromRequest();
-        if (!string.IsNullOrEmpty(serviceName) && Options.ValidServices?.Any() == true)
+        if (
+            !string.IsNullOrEmpty(serviceName)
+            && Options.ValidServices?.Any() == true
+            && !Options.ValidServices.Contains(serviceName, StringComparer.OrdinalIgnoreCase)
+        )
         {
-            if (!Options.ValidServices.Contains(serviceName, StringComparer.OrdinalIgnoreCase))
-            {
-                Logger.LogWarning(
-                    "Service '{ServiceName}' is not in the allowed services list",
-                    serviceName
-                );
-                return Task.FromResult(
-                    AuthenticateResult.Fail($"Service '{serviceName}' is not authorized")
-                );
-            }
+            Logger.LogWarning(
+                "Service '{ServiceName}' is not in the allowed services list",
+                serviceName
+            );
+            return Task.FromResult(
+                AuthenticateResult.Fail($"Service '{serviceName}' is not authorized")
+            );
         }
 
         // Create claims for authenticated user

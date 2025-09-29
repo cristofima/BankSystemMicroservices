@@ -25,20 +25,6 @@ public static class InterServiceConstants
 
     #endregion
 
-    #region Environment Variables
-
-    /// <summary>
-    /// ASP.NET Core environment variable name.
-    /// </summary>
-    public const string AspNetCoreEnvironment = "ASPNETCORE_ENVIRONMENT";
-
-    /// <summary>
-    /// Development environment name.
-    /// </summary>
-    public const string DevelopmentEnvironment = "Development";
-
-    #endregion
-
     #region Claims
 
     /// <summary>
@@ -53,27 +39,25 @@ public static class InterServiceConstants
     /// <summary>
     /// Error message when mTLS authentication is requested but the required package is not available.
     /// </summary>
-    public const string MTlsPackageRequiredError = 
-        "mTLS authentication requires Microsoft.AspNetCore.Authentication.Certificate package. " +
-        "Please install the package or use ApiKey authentication for development.";
+    public const string MTlsPackageRequiredError =
+        "mTLS authentication requires Microsoft.AspNetCore.Authentication.Certificate package. "
+        + "Please install the package or use ApiKey authentication for development.";
 
     /// <summary>
     /// Error message when Azure Key Vault certificate loading is not implemented.
     /// </summary>
-    public const string KeyVaultNotImplementedError = 
+    public const string KeyVaultNotImplementedError =
         "Azure Key Vault certificate loading not implemented yet";
 
     /// <summary>
     /// Error message when mTLS client certificate configuration fails.
     /// </summary>
-    public const string MTlsClientConfigError = 
-        "Failed to configure mTLS client certificate";
+    public const string MTlsClientConfigError = "Failed to configure mTLS client certificate";
 
     /// <summary>
     /// Error message when mTLS server certificate configuration fails.
     /// </summary>
-    public const string MTlsServerConfigError = 
-        "Failed to configure mTLS server certificate";
+    public const string MTlsServerConfigError = "Failed to configure mTLS server certificate";
 
     #endregion
 }
