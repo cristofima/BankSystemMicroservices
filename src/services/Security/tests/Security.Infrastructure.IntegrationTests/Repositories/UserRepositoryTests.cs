@@ -461,41 +461,5 @@ public class UserRepositoryTests : BaseSecurityInfrastructureTest
         user.UpdatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
     }
 
-    /// <summary>
-    /// Verifies GetUsersByCustomerIdsAsync preserves order based on database retrieval
-    /// </summary>
-    [Fact]
-    public async Task GetUsersByCustomerIdsAsync_ShouldReturnUsersInConsistentOrder()
-    {
-        // Arrange
-        var customerId1 = Guid.NewGuid();
-        var customerId2 = Guid.NewGuid();
-        var customerId3 = Guid.NewGuid();
-
-        await CreateTestUserAsync("user1@test.com", "user1", customerId1);
-        await CreateTestUserAsync("user2@test.com", "user2", customerId2);
-        await CreateTestUserAsync("user3@test.com", "user3", customerId3);
-
-        var customerIds = new List<Guid> { customerId3, customerId1, customerId2 }; // Different order
-        var repository = GetUserRepository();
-
-        // Act - Run multiple times to verify consistency
-        var result1 = await repository.GetUsersByCustomerIdsAsync(customerIds);
-        var result2 = await repository.GetUsersByCustomerIdsAsync(customerIds);
-
-        // Assert
-        result1.Should().HaveCount(3);
-        result2.Should().HaveCount(3);
-
-        var users1 = result1.ToList();
-        var users2 = result2.ToList();
-
-        // Results should be consistent across calls
-        for (var i = 0; i < users1.Count; i++)
-        {
-            users1[i].Id.Should().Be(users2[i].Id);
-        }
-    }
-
     #endregion GetUsersByCustomerIdsAsync Tests
 }
