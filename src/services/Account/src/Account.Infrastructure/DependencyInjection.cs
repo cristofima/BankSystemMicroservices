@@ -32,6 +32,9 @@ public static class DependencyInjection
         ConfigureInterceptors(services);
         ConfigureMessaging(services, configuration);
 
+        // Configure automatic database migrations
+        services.AddAutomaticMigrations<AccountDbContext>();
+
         return services;
     }
 
