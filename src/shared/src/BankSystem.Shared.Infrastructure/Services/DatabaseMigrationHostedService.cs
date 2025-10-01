@@ -32,7 +32,7 @@ public class DatabaseMigrationHostedService<TContext> : IHostedService
     }
 
     /// <summary>
-    /// Starts the hosted service and applies database migrations
+    /// Starts the hosted service
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Task representing the asynchronous operation</returns>
@@ -48,32 +48,7 @@ public class DatabaseMigrationHostedService<TContext> : IHostedService
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
 
-            var pendingMigrations = await context.Database.GetPendingMigrationsAsync(
-                cancellationToken
-            );
-            var migrations = pendingMigrations as string[] ?? pendingMigrations.ToArray();
-            if (migrations.Length > 0)
-            {
-                _logger.LogInformation(
-                    "Applying {Count} pending migrations for {ContextType}",
-                    migrations.Length,
-                    typeof(TContext).Name
-                );
-
-                await context.Database.MigrateAsync(cancellationToken);
-
-                _logger.LogInformation(
-                    "Successfully applied automatic migrations for {ContextType}",
-                    typeof(TContext).Name
-                );
-            }
-            else
-            {
-                _logger.LogInformation(
-                    "No pending migrations found for {ContextType}",
-                    typeof(TContext).Name
-                );
-            }
+            await ApplyMigrationsAsync(context, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -83,6 +58,41 @@ public class DatabaseMigrationHostedService<TContext> : IHostedService
                 typeof(TContext).Name
             );
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Applies database migrations
+    /// </summary>
+    /// <param name="context">The DbContext type</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns></returns>
+    private async Task ApplyMigrationsAsync(TContext context, CancellationToken cancellationToken)
+    {
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
+        var migrations = pendingMigrations as string[] ?? pendingMigrations.ToArray();
+
+        if (migrations.Length > 0)
+        {
+            _logger.LogInformation(
+                "Applying {Count} pending migrations for {ContextType}",
+                migrations.Length,
+                typeof(TContext).Name
+            );
+
+            await context.Database.MigrateAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Successfully applied automatic migrations for {ContextType}",
+                typeof(TContext).Name
+            );
+        }
+        else
+        {
+            _logger.LogInformation(
+                "No pending migrations found for {ContextType}",
+                typeof(TContext).Name
+            );
         }
     }
 
