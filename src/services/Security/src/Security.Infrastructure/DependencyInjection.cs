@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BankSystem.Shared.Auditing;
+using BankSystem.Shared.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -114,6 +115,9 @@ public static class DependencyInjection
 
         // Register repositories
         services.AddScoped<IUserRepository, UserRepository>();
+
+        // Configure automatic database migrations
+        services.AddAutomaticMigrations<SecurityDbContext>();
 
         return services;
     }

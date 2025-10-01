@@ -137,14 +137,13 @@ public abstract class BaseAccountInfrastructureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Initializes the database schema and applies migrations
+    /// Initializes the database schema
     /// </summary>
     private async Task InitializeDatabaseAsync()
     {
         using var scope = CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
 
-        // Ensure database is created and all migrations are applied
-        await dbContext.Database.MigrateAsync();
+        await dbContext.Database.EnsureCreatedAsync();
     }
 }
